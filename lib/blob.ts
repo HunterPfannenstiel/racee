@@ -7,6 +7,11 @@ export async function readBlob(pathname: string) {
   return get(blobs[0].url, { access: "private", useCache: false });
 }
 
+export async function deleteBlob(pathname: string) {
+  const { blobs } = await list({ prefix: pathname });
+  if (blobs.length > 0) await del(blobs.map((b) => b.url));
+}
+
 export async function overwriteBlob(pathname: string, data: unknown) {
   const { blobs } = await list({ prefix: pathname });
   if (blobs.length > 0) await del(blobs.map((b) => b.url));
