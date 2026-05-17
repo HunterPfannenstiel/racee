@@ -1,10 +1,14 @@
 import { put, list, get, del } from "@vercel/blob";
 
-export async function readBlob(pathname: string) {
+export async function readBlobUrl<T = unknown>(url: string): Promise<T> {
+  const res = await get(url, { access: "private", useCache: false });
+  return new Response(res.stream).json() as Promise<T>;
+}
+
+export async function readBlob<T = unknown>(pathname: string): Promise<T | null> {
   const { blobs } = await list({ prefix: pathname, limit: 1 });
   if (blobs.length === 0) return null;
-  // useCache: false ensures we always read the latest version from origin
-  return get(blobs[0].url, { access: "private", useCache: false });
+  return readBlobUrl<T>(blobs[0].url);
 }
 
 export async function deleteBlob(pathname: string) {

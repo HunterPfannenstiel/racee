@@ -7,8 +7,7 @@ const BLOB_PATHNAME = "participants.json";
 export async function GET() {
   const result = await readBlob(BLOB_PATHNAME);
   if (!result) return NextResponse.json({ users: [], teams: [] });
-  const data = await new Response(result.stream).json();
-  return NextResponse.json(data);
+  return NextResponse.json(result);
 }
 
 export async function PUT(request: Request) {

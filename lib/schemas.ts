@@ -43,3 +43,12 @@ export const RaceSchema = z.object({
 export type Season = z.infer<typeof SeasonSchema>;
 export type Racer = z.infer<typeof RacerSchema>;
 export type Race = z.infer<typeof RaceSchema>;
+
+export const PredictionSchema = z.object({
+  seasonId: z.string().uuid(),
+  raceId: z.string().uuid(),
+  userId: z.string().uuid(),
+  racerIds: z.array(z.string().uuid()),
+});
+
+export type Prediction = z.infer<typeof PredictionSchema>;
