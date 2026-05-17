@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { ParticipantsSchema } from "@/lib/schemas";
-import { readBlob, overwriteBlob } from "@/lib/blob";
+import { blob } from "@/lib/blob";
 
 const BLOB_PATHNAME = "participants.json";
 
 export async function GET() {
-  const result = await readBlob(BLOB_PATHNAME);
-  if (!result) return NextResponse.json({ users: [], teams: [] });
+  const result = await blob.read(BLOB_PATHNAME);
+  if (!result) return NextResponse.json({ users: [] });
   return NextResponse.json(result);
 }
 
@@ -18,7 +18,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  await overwriteBlob(BLOB_PATHNAME, parsed.data);
+  await blob.write(BLOB_PATHNAME, parsed.data);
 
   return NextResponse.json({ ok: true });
 }

@@ -13,12 +13,20 @@ export const TeamSchema = z.object({
 
 export const ParticipantsSchema = z.object({
   users: z.array(UserSchema),
-  teams: z.array(TeamSchema),
+});
+
+export const SeasonTeamsSchema = z.array(TeamSchema);
+
+export const TeamJoinSchema = z.object({
+  seasonId: z.string().uuid(),
+  userId: z.string().uuid(),
+  teamId: z.string().uuid(),
 });
 
 export type User = z.infer<typeof UserSchema>;
 export type Team = z.infer<typeof TeamSchema>;
 export type Participants = z.infer<typeof ParticipantsSchema>;
+export type TeamJoin = z.infer<typeof TeamJoinSchema>;
 
 export const SeasonSchema = z.object({
   id: z.string().uuid(),
@@ -44,14 +52,29 @@ export type Season = z.infer<typeof SeasonSchema>;
 export type Racer = z.infer<typeof RacerSchema>;
 export type Race = z.infer<typeof RaceSchema>;
 
-export const PredictionSchema = z.object({
+export const RacesFileSchema = z.array(RaceSchema);
+export type RacesFile = z.infer<typeof RacesFileSchema>;
+
+export const PredictionsFileSchema = z.object({
+  key: z.array(z.string().uuid()).nullable(),
+  predictions: z.record(z.string().uuid(), z.array(z.string().uuid())),
+});
+export type PredictionsFile = z.infer<typeof PredictionsFileSchema>;
+
+export const PredictionMutationSchema = z.object({
   seasonId: z.string().uuid(),
   raceId: z.string().uuid(),
   userId: z.string().uuid(),
   racerIds: z.array(z.string().uuid()),
 });
+export type PredictionMutation = z.infer<typeof PredictionMutationSchema>;
 
-export type Prediction = z.infer<typeof PredictionSchema>;
+export const KeyMutationSchema = z.object({
+  seasonId: z.string().uuid(),
+  raceId: z.string().uuid(),
+  racerIds: z.array(z.string().uuid()),
+});
+export type KeyMutation = z.infer<typeof KeyMutationSchema>;
 
 export const RaceScoreEntrySchema = z.object({
   raceId: z.string().uuid(),

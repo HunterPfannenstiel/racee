@@ -1,3 +1,6 @@
+// Run with: node --env-file=.env.local seed-2026.mjs
+// WARNING: wipes all blob storage before seeding, including participants
+
 const BASE_URL = "http://localhost:3000";
 
 const season = { id: crypto.randomUUID(), name: "F1 2026" };
@@ -54,14 +57,34 @@ const races = [
   { title: "Abu Dhabi Grand Prix", date: "2026-12-06" },
 ].map((r) => ({ id: crypto.randomUUID(), seasonId: season.id, racerIds: allRacerIds, ...r }));
 
+async function wipeStorage() {
+  console.log("Wiping existing storage...");
+  if (process.env.USE_LOCAL_BLOB === "true") {
+    const { rm } = await import("fs/promises");
+    const { join } = await import("path");
+    await rm(join(process.cwd(), ".blob-store"), { recursive: true, force: true });
+  } else {
+    const { list, del } = await import("@vercel/blob");
+    let cursor;
+    do {
+      const { blobs, cursor: next } = await list({ cursor, limit: 1000 });
+      if (blobs.length > 0) await del(blobs.map((b) => b.url));
+      cursor = next;
+    } while (cursor);
+  }
+  console.log("  Done");
+}
+
 async function put(path, body) {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
+  if (!res.ok) throw new Error(`${path} failed: ${res.status} ${await res.text()}`);
 }
+
+await wipeStorage();
 
 console.log("Seeding season...");
 await put("/api/seasons", [season]);

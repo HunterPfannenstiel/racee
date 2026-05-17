@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server";
-import { PredictionSchema } from "@/lib/schemas";
-import { overwriteBlob } from "@/lib/blob";
-import { predictionPath } from "@/lib/paths";
+import { blob } from "@/lib/blob";
+import { predictionsPath } from "@/lib/paths";
+import { PredictionMutationSchema, PredictionsFile } from "@/lib/schemas";
 
-export async function PUT(request: Request) {
-  const parsed = PredictionSchema.safeParse(await request.json());
+export async function POST(request: Request) {
+  const parsed = PredictionMutationSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { seasonId, raceId, userId } = parsed.data;
-  await overwriteBlob(predictionPath(seasonId, raceId, userId), parsed.data);
+  const { seasonId, raceId, userId, racerIds } = parsed.data;
+  const path = predictionsPath(seasonId, raceId);
+
+  const current = await blob.read<PredictionsFile>(path) ?? { key: null, predictions: {} };
+
+  await blob.write(path, {
+    ...current,
+    predictions: { ...current.predictions, [userId]: racerIds },
+  });
 
   return NextResponse.json({ ok: true });
 }

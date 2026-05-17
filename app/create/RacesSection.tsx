@@ -5,6 +5,8 @@ import { type Race, type Racer, type Season } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -111,85 +113,96 @@ export function RacesSection({ seasons, races, racers, onRacesChange, onError }:
   }
 
   return (
-    <section className="space-y-3">
-      <h2 className="text-lg font-semibold">Races</h2>
-      <Select
-        value={selectedSeasonId ?? ""}
-        onValueChange={(v) => { setSelectedSeasonId(v); setEditor(null); }}
-      >
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select a season" />
-        </SelectTrigger>
-        <SelectContent>
-          {seasons.map((s) => (
-            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {selectedSeasonId !== null && (
-        <>
-          <ul className="space-y-2">
-            {seasonRaces.map((race) => (
-              <li key={race.id} className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">{race.title}</p>
-                  <p className="text-xs text-muted-foreground">{race.date}</p>
-                </div>
-                <div className="flex gap-1 items-center">
-                  {loadingOp === `remove-${race.id}` && <Spinner className="w-3 h-3" />}
-                  <Button variant="ghost" size="sm" onClick={() => openEditor(race)} disabled={busy}>Edit</Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleRemove(race)} disabled={busy}>Remove</Button>
-                </div>
-              </li>
+    <Card>
+      <CardHeader>
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Races</h2>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Select
+          value={selectedSeasonId ?? ""}
+          onValueChange={(v) => { setSelectedSeasonId(v); setEditor(null); }}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a season" />
+          </SelectTrigger>
+          <SelectContent>
+            {seasons.map((s) => (
+              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
             ))}
-          </ul>
-          {editor === null ? (
-            <Button variant="outline" onClick={() => openEditor()} disabled={busy}>Create new race</Button>
-          ) : (
-            <div className="border rounded-lg p-4 space-y-3">
-              <Input value={editor.title} onChange={(e) => setEditor({ ...editor, title: e.target.value })} placeholder="Race title" />
-              <Input type="date" value={editor.date} onChange={(e) => setEditor({ ...editor, date: e.target.value })} autoComplete="off" />
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">Racers</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const allSelected = racers.every((r) => editor.racerIds.includes(r.id));
-                      setEditor({ ...editor, racerIds: allSelected ? [] : racers.map((r) => r.id) });
-                    }}
-                  >
-                    {racers.every((r) => editor.racerIds.includes(r.id)) ? "Deselect all" : "Select all"}
-                  </Button>
-                </div>
-                <ul className="space-y-1 max-h-48 overflow-y-auto">
-                  {racers.map((racer) => (
-                    <li key={racer.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id={racer.id}
-                        checked={editor.racerIds.includes(racer.id)}
-                        onChange={() => toggleRacerId(racer.id)}
-                      />
-                      <label htmlFor={racer.id} className="text-sm">
-                        {racer.name} <span className="text-muted-foreground">— {racer.team}</span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex gap-2 items-center">
-                <Button onClick={commitRace} disabled={busy}>
-                  {loadingOp === "save" && <Spinner className="w-3 h-3 mr-1" />}
-                  Save
+          </SelectContent>
+        </Select>
+
+        {selectedSeasonId !== null && (
+          <>
+            <ul className="space-y-1">
+              {seasonRaces.map((race) => (
+                <li key={race.id} className="flex items-center justify-between py-1.5">
+                  <div>
+                    <p className="text-sm font-medium">{race.title}</p>
+                    <p className="text-xs text-muted-foreground">{race.date}</p>
+                  </div>
+                  <div className="flex gap-1 items-center shrink-0">
+                    {loadingOp === `remove-${race.id}` && <Spinner className="w-3 h-3" />}
+                    <Button variant="ghost" size="sm" onClick={() => openEditor(race)} disabled={busy}>Edit</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleRemove(race)} disabled={busy}>Remove</Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {editor === null ? (
+              <>
+                {seasonRaces.length > 0 && <Separator />}
+                <Button variant="outline" onClick={() => openEditor()} disabled={busy}>
+                  Create new race
                 </Button>
-                <Button variant="ghost" onClick={() => setEditor(null)} disabled={busy}>Cancel</Button>
+              </>
+            ) : (
+              <div className="bg-muted/50 rounded-sm p-3 space-y-3">
+                <Input value={editor.title} onChange={(e) => setEditor({ ...editor, title: e.target.value })} placeholder="Race title" />
+                <Input type="date" value={editor.date} onChange={(e) => setEditor({ ...editor, date: e.target.value })} autoComplete="off" />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Racers</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const allSelected = racers.every((r) => editor.racerIds.includes(r.id));
+                        setEditor({ ...editor, racerIds: allSelected ? [] : racers.map((r) => r.id) });
+                      }}
+                    >
+                      {racers.every((r) => editor.racerIds.includes(r.id)) ? "Deselect all" : "Select all"}
+                    </Button>
+                  </div>
+                  <ul className="space-y-1 max-h-48 overflow-y-auto">
+                    {racers.map((racer) => (
+                      <li key={racer.id} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={racer.id}
+                          checked={editor.racerIds.includes(racer.id)}
+                          onChange={() => toggleRacerId(racer.id)}
+                        />
+                        <label htmlFor={racer.id} className="text-sm">
+                          {racer.name} <span className="text-muted-foreground">— {racer.team}</span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <Button onClick={commitRace} disabled={busy}>
+                    {loadingOp === "save" && <Spinner className="w-3 h-3 mr-1" />}
+                    Save
+                  </Button>
+                  <Button variant="ghost" onClick={() => setEditor(null)} disabled={busy}>Cancel</Button>
+                </div>
               </div>
-            </div>
-          )}
-        </>
-      )}
-    </section>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

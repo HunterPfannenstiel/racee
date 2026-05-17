@@ -1,16 +1,17 @@
 export const SEASONS_PATH = "seasons.json";
 export const RACERS_PATH = "racers.json";
+export const PARTICIPANTS_PATH = "participants.json";
 
-export function racePath(seasonId: string, raceId: string) {
-  return `seasons/${seasonId}/races/${raceId}/race.json`;
+export function teamsPath(seasonId: string) {
+  return `seasons/${seasonId}/teams.json`;
 }
 
-export function predictionPath(seasonId: string, raceId: string, userId: string) {
-  return `seasons/${seasonId}/races/${raceId}/predictions/${userId}.json`;
+export function racesPath(seasonId: string) {
+  return `seasons/${seasonId}/races.json`;
 }
 
-export function keyPath(seasonId: string, raceId: string) {
-  return `seasons/${seasonId}/races/${raceId}/predictions/key.json`;
+export function predictionsPath(seasonId: string, raceId: string) {
+  return `seasons/${seasonId}/races/${raceId}/predictions.json`;
 }
 
 export function scoresPath(seasonId: string, raceId: string) {

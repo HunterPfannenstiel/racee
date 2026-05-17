@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { type Season, type Racer, type Race } from "@/lib/schemas";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { SeasonsSection } from "./SeasonsSection";
-import { RacersSection } from "./RacersSection";
+import { PageShell } from "@/components/ui/page-shell";
+import { SeasonsSection } from "@/app/admin/seasons/SeasonsSection";
+import { DriversSection } from "@/app/admin/drivers/DriversSection";
 import { RacesSection } from "./RacesSection";
 
 type InitData = { seasons: Season[]; racers: Racer[]; races: Race[] };
@@ -27,7 +28,7 @@ export default function CreatePage() {
   }, []);
 
   return (
-    <main className="max-w-lg mx-auto p-6 space-y-8">
+    <PageShell title="Create">
       {error && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
@@ -37,11 +38,9 @@ export default function CreatePage() {
         </Alert>
       )}
 
-      <h1 className="text-2xl font-bold">Create</h1>
-
       <SeasonsSection seasons={seasons} onSeasonsChange={setSeasons} onError={setError} />
 
-      <RacersSection racers={racers} onRacersChange={setRacers} onError={setError} />
+      <DriversSection racers={racers} onRacersChange={setRacers} onError={setError} />
 
       <RacesSection
         seasons={seasons}
@@ -50,6 +49,6 @@ export default function CreatePage() {
         onRacesChange={setRaces}
         onError={setError}
       />
-    </main>
+    </PageShell>
   );
 }

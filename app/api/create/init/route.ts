@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
-import { list } from "@vercel/blob";
-import { readBlob, readBlobUrl } from "@/lib/blob";
-import { SEASONS_PATH, RACERS_PATH } from "@/lib/paths";
+import { blob } from "@/lib/blob";
+import { SEASONS_PATH, RACERS_PATH, racesPath } from "@/lib/paths";
+import { Season, Race } from "@/lib/schemas";
 
 export async function GET() {
   const [seasons, racers] = await Promise.all([
-    readBlob(SEASONS_PATH).then((r) => r ?? []),
-    readBlob(RACERS_PATH).then((r) => r ?? []),
+    blob.read<Season[]>(SEASONS_PATH).then(r => r ?? []),
+    blob.read(RACERS_PATH).then(r => r ?? []),
   ]);
 
-  const { blobs } = await list({ prefix: "seasons/" });
-  const raceBlobs = blobs.filter((b) => b.pathname.endsWith("/race.json"));
-  const races = await Promise.all(raceBlobs.map((b) => readBlobUrl(b.url)));
+  const racesPerSeason = await Promise.all(
+    seasons.map(s => blob.read<Race[]>(racesPath(s.id)).then(r => r ?? []))
+  );
 
-  return NextResponse.json({ seasons, racers, races });
+  return NextResponse.json({ seasons, racers, races: racesPerSeason.flat() });
 }
