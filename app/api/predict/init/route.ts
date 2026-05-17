@@ -23,8 +23,9 @@ export async function GET(request: Request) {
   const predictionBlobs = blobs.filter((b) =>
     b.pathname.endsWith(`/predictions/${userId}.json`)
   );
+  const keyBlobs = blobs.filter((b) => b.pathname.endsWith("/predictions/key.json"));
 
-  const [races, predictionEntries] = await Promise.all([
+  const [races, predictionEntries, keyEntries] = await Promise.all([
     Promise.all(raceBlobs.map((b) => readBlobUrl(b.url))),
     Promise.all(
       predictionBlobs.map(async (b) => {
@@ -34,6 +35,14 @@ export async function GET(request: Request) {
         return [raceId, prediction] as const;
       })
     ),
+    Promise.all(
+      keyBlobs.map(async (b) => {
+        const key = await readBlobUrl(b.url);
+        // path: seasons/{seasonId}/races/{raceId}/predictions/key.json
+        const raceId = b.pathname.split("/")[3];
+        return [raceId, key] as const;
+      })
+    ),
   ]);
 
   return NextResponse.json({
@@ -41,5 +50,6 @@ export async function GET(request: Request) {
     racersById,
     races,
     predictions: Object.fromEntries(predictionEntries),
+    keys: Object.fromEntries(keyEntries),
   });
 }

@@ -52,3 +52,20 @@ export const PredictionSchema = z.object({
 });
 
 export type Prediction = z.infer<typeof PredictionSchema>;
+
+export const ScoreEntrySchema = z.object({
+  userId: z.string().uuid(),
+  gridPoints: z.number().int().min(0),
+  medal: z.enum(["gold", "silver", "bronze"]).nullable(),
+});
+
+export const RaceScoresSchema = z.object({
+  raceId: z.string().uuid(),
+  seasonId: z.string().uuid(),
+  raceTitle: z.string(),
+  raceDate: z.string(),
+  entries: z.array(ScoreEntrySchema),
+});
+
+export type ScoreEntry = z.infer<typeof ScoreEntrySchema>;
+export type RaceScores = z.infer<typeof RaceScoresSchema>;

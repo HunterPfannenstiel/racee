@@ -13,6 +13,7 @@ type InitData = {
   races: Race[];
   racersById: Record<string, Racer>;
   predictions: Record<string, Prediction>;
+  keys: Record<string, Prediction>;
 };
 
 export default function PredictPage() {
@@ -74,6 +75,7 @@ export default function PredictPage() {
               race={selectedRace}
               racersById={data.racersById}
               existingPrediction={data.predictions[selectedRace.id] ?? null}
+              existingKey={data.keys[selectedRace.id] ?? null}
               onSave={handlePredictionSave}
               onError={setError}
             />

@@ -31,7 +31,7 @@ export function SeasonSelector({ seasons, selectedSeasonId, onSelect }: Props) {
             <Card
               key={season.id}
               size="sm"
-              onClick={() => onSelect(season.id)}
+              onClick={() => { onSelect(season.id); setOpen(false); }}
               className={`cursor-pointer px-4 py-2 transition-colors hover:bg-muted ${
                 selectedSeasonId === season.id ? "ring-foreground" : ""
               }`}

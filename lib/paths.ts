@@ -12,3 +12,7 @@ export function predictionPath(seasonId: string, raceId: string, userId: string)
 export function keyPath(seasonId: string, raceId: string) {
   return `seasons/${seasonId}/races/${raceId}/predictions/key.json`;
 }
+
+export function scoresPath(seasonId: string, raceId: string) {
+  return `seasons/${seasonId}/races/${raceId}/scores.json`;
+}

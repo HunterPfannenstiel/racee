@@ -43,7 +43,7 @@ function RaceSection({ label, races, selectedRaceId, onSelect, defaultOpen = tru
             <Card
               key={race.id}
               size="sm"
-              onClick={() => onSelect(race.id)}
+              onClick={() => { onSelect(race.id); setOpen(false); }}
               className={`cursor-pointer px-4 py-2 transition-colors hover:bg-muted ${
                 selectedRaceId === race.id ? "ring-foreground" : ""
               }`}
@@ -92,7 +92,7 @@ export function RaceSelector({ races, selectedRaceId, onSelect }: Props) {
               label="Upcoming"
               races={upcoming}
               selectedRaceId={selectedRaceId}
-              onSelect={onSelect}
+              onSelect={(id) => { onSelect(id); setOpen(false); }}
               defaultOpen={true}
             />
           )}
@@ -101,7 +101,7 @@ export function RaceSelector({ races, selectedRaceId, onSelect }: Props) {
               label="Past"
               races={past}
               selectedRaceId={selectedRaceId}
-              onSelect={onSelect}
+              onSelect={(id) => { onSelect(id); setOpen(false); }}
               defaultOpen={false}
             />
           )}
