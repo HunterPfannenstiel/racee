@@ -1,4 +1,5 @@
-import { ScoreEntry, RaceScores } from "@/lib/schemas";
+import { ScoreEntry, UserSeasonScores, TeamSeasonScores } from "@/lib/schemas";
+import { Team } from "@/lib/schemas";
 
 const POINTS = [10, 7, 3] as const;
 const MULLIGAN_COUNT = 2;
@@ -36,25 +37,32 @@ export function assignMedals(entries: Omit<ScoreEntry, "medal">[]): ScoreEntry[]
   return sorted.map((entry, idx) => ({ ...entry, medal: medals[idx] }));
 }
 
-export function computeSeasonStandings(
-  raceScores: RaceScores[]
-): { userId: string; total: number; mulliganed: number }[] {
-  const pointsMap = new Map<string, number[]>();
+function applyMulligans(raceScores: { points: number }[]) {
+  const sorted = [...raceScores].sort((a, b) => a.points - b.points);
+  const mulliganed = raceScores.length > MULLIGAN_COUNT ? MULLIGAN_COUNT : 0;
+  const total = sorted.slice(mulliganed).reduce((sum, s) => sum + s.points, 0);
+  return { total, mulliganed };
+}
 
-  for (const race of raceScores) {
-    for (const entry of race.entries) {
-      const arr = pointsMap.get(entry.userId) ?? [];
-      arr.push(entry.gridPoints);
-      pointsMap.set(entry.userId, arr);
-    }
-  }
+export function computeTeamRaceScores(entries: ScoreEntry[], teams: Team[]) {
+  return teams
+    .filter((team) => team.memberIds.some((id) => entries.some((e) => e.userId === id)))
+    .map((team) => ({
+      teamId: team.id,
+      points: entries
+        .filter((e) => team.memberIds.includes(e.userId))
+        .reduce((sum, e) => sum + e.gridPoints, 0),
+    }));
+}
 
-  const standings = Array.from(pointsMap.entries()).map(([userId, scores]) => {
-    const sorted = [...scores].sort((a, b) => a - b);
-    const mulliganed = Math.min(MULLIGAN_COUNT, sorted.length);
-    const total = sorted.slice(mulliganed).reduce((sum, p) => sum + p, 0);
-    return { userId, total, mulliganed };
-  });
+export function computeSeasonStandings(individual: UserSeasonScores[]) {
+  return individual
+    .map(({ userId, raceScores }) => ({ userId, ...applyMulligans(raceScores) }))
+    .sort((a, b) => b.total - a.total);
+}
 
-  return standings.sort((a, b) => b.total - a.total);
+export function computeTeamSeasonStandings(teams: TeamSeasonScores[]) {
+  return teams
+    .map(({ teamId, raceScores }) => ({ teamId, ...applyMulligans(raceScores) }))
+    .sort((a, b) => b.total - a.total);
 }

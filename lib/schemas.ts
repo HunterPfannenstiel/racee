@@ -53,6 +53,33 @@ export const PredictionSchema = z.object({
 
 export type Prediction = z.infer<typeof PredictionSchema>;
 
+export const RaceScoreEntrySchema = z.object({
+  raceId: z.string().uuid(),
+  points: z.number().int().min(0),
+});
+
+export const UserSeasonScoresSchema = z.object({
+  userId: z.string().uuid(),
+  raceScores: z.array(RaceScoreEntrySchema),
+});
+
+export const TeamSeasonScoresSchema = z.object({
+  teamId: z.string().uuid(),
+  raceScores: z.array(RaceScoreEntrySchema),
+});
+
+export const SeasonStandingsSchema = z.object({
+  seasonId: z.string().uuid(),
+  gradedRaceIds: z.array(z.string().uuid()),
+  individual: z.array(UserSeasonScoresSchema),
+  teams: z.array(TeamSeasonScoresSchema),
+});
+
+export type RaceScoreEntry = z.infer<typeof RaceScoreEntrySchema>;
+export type UserSeasonScores = z.infer<typeof UserSeasonScoresSchema>;
+export type TeamSeasonScores = z.infer<typeof TeamSeasonScoresSchema>;
+export type SeasonStandings = z.infer<typeof SeasonStandingsSchema>;
+
 export const ScoreEntrySchema = z.object({
   userId: z.string().uuid(),
   gridPoints: z.number().int().min(0),
