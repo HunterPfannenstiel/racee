@@ -1,19 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { type Season, type Race } from "@/lib/schemas";
+import { type League, type Race } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
-import { SeasonPicker } from "@/components/ui/season-picker";
+import { LeaguePicker } from "@/components/ui/league-picker";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 
 type Props = {
-  seasons: Season[];
+  leagues: League[];
   races: Race[];
-  selectedSeasonId: string | null;
+  selectedLeagueId: string | null;
   selectedRaceId: string | null;
-  onSeasonSelect: (id: string) => void;
+  onLeagueSelect: (id: string) => void;
   onRaceSelect: (id: string) => void;
-  showSeasons?: boolean;
+  showLeagues?: boolean;
 };
 
 function formatDate(dateStr: string) {
@@ -44,13 +44,13 @@ function RaceItem({ race, selected, onSelect }: {
 }
 
 export function RacePicker({
-  seasons,
+  leagues,
   races,
-  selectedSeasonId,
+  selectedLeagueId,
   selectedRaceId,
-  onSeasonSelect,
+  onLeagueSelect,
   onRaceSelect,
-  showSeasons = true,
+  showLeagues = true,
 }: Props) {
   const [allOpen, setAllOpen] = useState(false);
 
@@ -68,8 +68,8 @@ export function RacePicker({
 
   return (
     <div className="space-y-4">
-      {showSeasons && (
-        <SeasonPicker seasons={seasons} selectedSeasonId={selectedSeasonId} onSelect={onSeasonSelect} />
+      {showLeagues && (
+        <LeaguePicker leagues={leagues} selectedLeagueId={selectedLeagueId} onSelect={onLeagueSelect} />
       )}
 
       {nextRace && (

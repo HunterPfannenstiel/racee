@@ -16,14 +16,14 @@ type Editor = {
 };
 
 type Props = {
-  seasonId: string;
+  leagueId: string;
   races: Race[];
   racers: Racer[];
   onRacesChange: (races: Race[]) => void;
   onError: (msg: string) => void;
 };
 
-export function RacesSection({ seasonId, races, racers, onRacesChange, onError }: Props) {
+export function RacesSection({ leagueId, races, racers, onRacesChange, onError }: Props) {
   const [editor, setEditor] = useState<Editor | null>(null);
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
 
@@ -49,7 +49,7 @@ export function RacesSection({ seasonId, races, racers, onRacesChange, onError }
     if (!editor || !editor.title.trim() || !editor.date) return;
     const race: Race = {
       id: editor.raceId,
-      seasonId,
+      leagueId,
       title: editor.title.trim(),
       date: editor.date,
       racerIds: editor.racerIds,

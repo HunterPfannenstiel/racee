@@ -1,0 +1,22 @@
+[
+  {
+    "id": "19c6fb85-fd47-442b-b5e1-2cc23d135ced",
+    "name": "Swamp Dwellers",
+    "memberIds": [
+      "e983a72e-ed1c-4153-aba5-f83b5f591a08",
+      "6d991872-a726-400b-bd70-d92ddf5cedc1",
+      "8738698b-ef07-4adb-8813-fb27649fa866"
+    ],
+    "color": "#6B8E23"
+  },
+  {
+    "id": "e1d072b2-b938-4fd8-bd1b-4ce7f9290c89",
+    "name": "Far Far Away",
+    "memberIds": [
+      "d9f26f95-c241-4991-8698-1e8ed034378b",
+      "34190f2a-74d6-4e46-9027-38b6386c00cd",
+      "ac7b214a-0b75-4f62-b0e3-db3d29ac5f05"
+    ],
+    "color": "#9B59B6"
+  }
+]

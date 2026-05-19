@@ -1,0 +1,181 @@
+{
+  "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
+  "gradedRaceIds": [
+    "5db851b3-5df4-4210-b34a-7778040d9126",
+    "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+    "4989ab0d-78f3-4ba4-90da-a208becef79f",
+    "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86"
+  ],
+  "individual": [
+    {
+      "userId": "34190f2a-74d6-4e46-9027-38b6386c00cd",
+      "raceScores": [
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "points": 211
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "points": 156
+        },
+        {
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "points": 189
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "points": 249
+        }
+      ]
+    },
+    {
+      "userId": "d9f26f95-c241-4991-8698-1e8ed034378b",
+      "raceScores": [
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "points": 149
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "points": 255
+        },
+        {
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "points": 255
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "points": 255
+        }
+      ]
+    },
+    {
+      "userId": "e983a72e-ed1c-4153-aba5-f83b5f591a08",
+      "raceScores": [
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "points": 139
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "points": 179
+        },
+        {
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "points": 199
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "points": 222
+        }
+      ]
+    },
+    {
+      "userId": "6d991872-a726-400b-bd70-d92ddf5cedc1",
+      "raceScores": [
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "points": 137
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "points": 160
+        },
+        {
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "points": 190
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "points": 200
+        }
+      ]
+    },
+    {
+      "userId": "8738698b-ef07-4adb-8813-fb27649fa866",
+      "raceScores": [
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "points": 101
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "points": 86
+        },
+        {
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "points": 169
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "points": 198
+        }
+      ]
+    },
+    {
+      "userId": "ac7b214a-0b75-4f62-b0e3-db3d29ac5f05",
+      "raceScores": [
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "points": 76
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "points": 6
+        },
+        {
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "points": 63
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "points": 127
+        }
+      ]
+    }
+  ],
+  "teams": [
+    {
+      "teamId": "19c6fb85-fd47-442b-b5e1-2cc23d135ced",
+      "raceScores": [
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "points": 377
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "points": 425
+        },
+        {
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "points": 558
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "points": 620
+        }
+      ]
+    },
+    {
+      "teamId": "e1d072b2-b938-4fd8-bd1b-4ce7f9290c89",
+      "raceScores": [
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "points": 436
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "points": 417
+        },
+        {
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "points": 507
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "points": 631
+        }
+      ]
+    }
+  ]
+}

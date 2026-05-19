@@ -1,32 +1,30 @@
-import { ScoreEntry, UserSeasonScores, TeamSeasonScores } from "@/lib/schemas";
+import { ScoreEntry, UserLeagueScores, TeamLeagueScores } from "@/lib/schemas";
 import { Team } from "@/lib/schemas";
 
-const POINTS = [10, 7, 3] as const;
-const MULLIGAN_COUNT = 2;
-
-export function computeGridPoints(userOrder: string[], keyOrder: string[]): number {
+export function computeGridPoints(userOrder: string[], keyOrder: string[], placementPoints: number[]): number {
   let total = 0;
   for (let keyPos = 0; keyPos < keyOrder.length; keyPos++) {
     const racerId = keyOrder[keyPos];
     const userPos = userOrder.indexOf(racerId);
     if (userPos === -1) continue;
     const diff = Math.abs(keyPos - userPos);
-    total += diff < POINTS.length ? POINTS[diff] : 0;
+    total += diff < placementPoints.length ? placementPoints[diff] : 0;
   }
   return total;
 }
 
 export function assignMedals(entries: Omit<ScoreEntry, "medal">[]): ScoreEntry[] {
-  const sorted = [...entries].sort((a, b) => b.gridPoints - a.gridPoints);
+  const total = (e: Omit<ScoreEntry, "medal">) => e.gridPoints + e.propPoints;
+  const sorted = [...entries].sort((a, b) => total(b) - total(a));
   const medals: ("gold" | "silver" | "bronze" | null)[] = new Array(sorted.length).fill(null);
   const podium = ["gold", "silver", "bronze"] as const;
 
   let podiumIdx = 0;
   let i = 0;
   while (i < sorted.length && podiumIdx < podium.length) {
-    const score = sorted[i].gridPoints;
+    const score = total(sorted[i]);
     let j = i;
-    while (j < sorted.length && sorted[j].gridPoints === score) {
+    while (j < sorted.length && total(sorted[j]) === score) {
       medals[j] = podium[podiumIdx];
       j++;
     }
@@ -37,9 +35,9 @@ export function assignMedals(entries: Omit<ScoreEntry, "medal">[]): ScoreEntry[]
   return sorted.map((entry, idx) => ({ ...entry, medal: medals[idx] }));
 }
 
-function applyMulligans(raceScores: { points: number }[]) {
+function applyMulligans(raceScores: { points: number }[], mulliganCount: number) {
   const sorted = [...raceScores].sort((a, b) => a.points - b.points);
-  const mulliganed = raceScores.length > MULLIGAN_COUNT ? MULLIGAN_COUNT : 0;
+  const mulliganed = raceScores.length > mulliganCount ? mulliganCount : 0;
   const total = sorted.slice(mulliganed).reduce((sum, s) => sum + s.points, 0);
   return { total, mulliganed };
 }
@@ -51,18 +49,18 @@ export function computeTeamRaceScores(entries: ScoreEntry[], teams: Team[]) {
       teamId: team.id,
       points: entries
         .filter((e) => team.memberIds.includes(e.userId))
-        .reduce((sum, e) => sum + e.gridPoints, 0),
+        .reduce((sum, e) => sum + e.gridPoints + e.propPoints, 0),
     }));
 }
 
-export function computeSeasonStandings(individual: UserSeasonScores[]) {
+export function computeSeasonStandings(individual: UserLeagueScores[], mulliganCount: number) {
   return individual
-    .map(({ userId, raceScores }) => ({ userId, ...applyMulligans(raceScores) }))
+    .map(({ userId, raceScores }) => ({ userId, ...applyMulligans(raceScores, mulliganCount) }))
     .sort((a, b) => b.total - a.total);
 }
 
-export function computeTeamSeasonStandings(teams: TeamSeasonScores[]) {
+export function computeTeamSeasonStandings(teams: TeamLeagueScores[], mulliganCount: number) {
   return teams
-    .map(({ teamId, raceScores }) => ({ teamId, ...applyMulligans(raceScores) }))
+    .map(({ teamId, raceScores }) => ({ teamId, ...applyMulligans(raceScores, mulliganCount) }))
     .sort((a, b) => b.total - a.total);
 }

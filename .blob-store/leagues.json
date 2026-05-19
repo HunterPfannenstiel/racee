@@ -1,0 +1,21 @@
+[
+  {
+    "id": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
+    "name": "Shrek's F1 2026",
+    "placementPoints": [
+      10,
+      7,
+      3
+    ],
+    "mulliganCount": 2,
+    "propPointValues": {
+      "driverOfDay": 5,
+      "lapsLed": 5,
+      "fastestPitStop": 5,
+      "fastestLap": 5,
+      "overAchiever": 5,
+      "underAchiever": 5,
+      "wrecker": 5
+    }
+  }
+]

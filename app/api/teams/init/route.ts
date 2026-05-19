@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { User, Season } from "@/lib/schemas";
+import { User, League } from "@/lib/schemas";
 import { blob } from "@/lib/blob";
-import { PARTICIPANTS_PATH, SEASONS_PATH } from "@/lib/paths";
+import { PARTICIPANTS_PATH, LEAGUES_PATH } from "@/lib/paths";
 
 export async function GET() {
-  const [participants, seasons] = await Promise.all([
+  const [participants, leagues] = await Promise.all([
     blob.read<{ users: User[] }>(PARTICIPANTS_PATH),
-    blob.read<Season[]>(SEASONS_PATH),
+    blob.read<League[]>(LEAGUES_PATH),
   ]);
   return NextResponse.json({
     users: participants?.users ?? [],
-    seasons: seasons ?? [],
+    leagues: leagues ?? [],
   });
 }

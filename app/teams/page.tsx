@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { type Season, type Team, type User } from "@/lib/schemas";
+import { type League, type Team, type User } from "@/lib/schemas";
 import { useUser } from "@/app/context/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,50 +10,51 @@ import { PageShell } from "@/components/ui/page-shell";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { SeasonPicker } from "@/components/ui/season-picker";
+import { LeaguePicker } from "@/components/ui/league-picker";
 
 export default function TeamsPage() {
   const { user } = useUser();
   const [users, setUsers] = useState<User[]>([]);
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+  const [leagues, setLeagues] = useState<League[]>([]);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loadingTeams, setLoadingTeams] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamColor, setNewTeamColor] = useState("#6b7280");
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/teams/init")
       .then((res) => res.json())
-      .then(({ users, seasons }: { users: User[]; seasons: Season[] }) => {
+      .then(({ users, leagues }: { users: User[]; leagues: League[] }) => {
         setUsers(users);
-        setSeasons(seasons);
-        if (seasons.length > 0) setSelectedSeasonId(seasons[0].id);
+        setLeagues(leagues);
+        if (leagues.length > 0) setSelectedLeagueId(leagues[0].id);
       })
       .catch(() => setError("Failed to load."));
   }, []);
 
   useEffect(() => {
-    if (!selectedSeasonId) return;
+    if (!selectedLeagueId) return;
     setLoadingTeams(true);
     setTeams([]);
-    fetch(`/api/seasons/${selectedSeasonId}/teams`)
+    fetch(`/api/leagues/${selectedLeagueId}/teams`)
       .then((res) => res.json())
       .then((data: Team[]) => setTeams(data))
       .catch(() => setError("Failed to load teams."))
       .finally(() => setLoadingTeams(false));
-  }, [selectedSeasonId]);
+  }, [selectedLeagueId]);
 
   async function joinTeam(teamId: string) {
-    if (!user || !selectedSeasonId) return;
+    if (!user || !selectedLeagueId) return;
     setSaving(teamId);
     setError(null);
     try {
       const res = await fetch("/api/teams/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seasonId: selectedSeasonId, userId: user.id, teamId }),
+        body: JSON.stringify({ leagueId: selectedLeagueId, userId: user.id, teamId }),
       });
       if (!res.ok) throw new Error();
       setTeams((prev) =>
@@ -74,12 +75,12 @@ export default function TeamsPage() {
 
   async function createTeam() {
     const name = newTeamName.trim();
-    if (!name || !selectedSeasonId) return;
+    if (!name || !selectedLeagueId) return;
     setSaving("create");
     setError(null);
     try {
-      const newTeam: Team = { id: crypto.randomUUID(), name, memberIds: [] };
-      const res = await fetch(`/api/seasons/${selectedSeasonId}/teams/${newTeam.id}`, {
+      const newTeam: Team = { id: crypto.randomUUID(), name, memberIds: [], color: newTeamColor };
+      const res = await fetch(`/api/leagues/${selectedLeagueId}/teams/${newTeam.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTeam),
@@ -87,6 +88,7 @@ export default function TeamsPage() {
       if (!res.ok) throw new Error();
       setTeams((prev) => [...prev, newTeam]);
       setNewTeamName("");
+      setNewTeamColor("#6b7280");
     } catch {
       setError("Failed to create team.");
     } finally {
@@ -109,10 +111,10 @@ export default function TeamsPage() {
         </Alert>
       )}
 
-      {seasons.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center">No seasons yet.</p>
+      {leagues.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center">No leagues yet.</p>
       ) : (
-        <SeasonPicker seasons={seasons} selectedSeasonId={selectedSeasonId} onSelect={setSelectedSeasonId} />
+        <LeaguePicker leagues={leagues} selectedLeagueId={selectedLeagueId} onSelect={setSelectedLeagueId} />
       )}
 
       {!user && (
@@ -125,7 +127,10 @@ export default function TeamsPage() {
             <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Your Team</h2>
           </CardHeader>
           <CardContent className="space-y-1">
-            <p className="font-semibold">{myTeam.name}</p>
+            <div className="flex items-center gap-2">
+              <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: myTeam.color ?? "#6b7280" }} />
+              <p className="font-semibold">{myTeam.name}</p>
+            </div>
             <ul className="space-y-0.5">
               {myTeam.memberIds.map((mid) => {
                 const u = users.find((u) => u.id === mid);
@@ -154,7 +159,9 @@ export default function TeamsPage() {
             <div key={team.id}>
               {i > 0 && <Separator className="mb-4" />}
               <div className="flex items-start justify-between gap-4">
-                <div className="space-y-0.5">
+                <div className="flex items-start gap-2">
+                  <div className="w-1 self-stretch rounded-full shrink-0 mt-0.5" style={{ backgroundColor: team.color ?? "#6b7280" }} />
+                  <div className="space-y-0.5">
                   <p className="text-sm font-semibold">{team.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {team.memberIds.length === 0
@@ -164,6 +171,7 @@ export default function TeamsPage() {
                           .filter(Boolean)
                           .join(", ")}
                   </p>
+                  </div>
                 </div>
                 {user && myTeam?.id !== team.id && (
                   <Button
@@ -184,13 +192,21 @@ export default function TeamsPage() {
         </CardContent>
       </Card>
 
-      {user && selectedSeasonId && (
+      {user && selectedLeagueId && (
         <Card>
           <CardHeader>
             <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">New Team</h2>
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
+              <input
+                type="color"
+                value={newTeamColor}
+                onChange={(e) => setNewTeamColor(e.target.value)}
+                disabled={!!saving}
+                className="w-9 h-9 rounded cursor-pointer border border-border bg-transparent p-0.5 shrink-0"
+                title="Team color"
+              />
               <Input
                 value={newTeamName}
                 onChange={(e) => setNewTeamName(e.target.value)}

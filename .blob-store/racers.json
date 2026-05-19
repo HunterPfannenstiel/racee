@@ -1,112 +1,134 @@
 [
   {
-    "id": "da8d9a73-98d4-4d9d-9a29-3eedb8787c00",
+    "id": "d74c2afb-dd77-4f07-a3a0-98e3743445db",
     "name": "Max Verstappen",
-    "team": "Red Bull Racing"
+    "team": "Red Bull Racing",
+    "teamColor": "#1E5BC6"
   },
   {
-    "id": "6a036191-8ff9-4bfc-b287-7954b581e470",
+    "id": "33c6bf1b-bbd5-4d5c-9e58-72cb94cf307f",
     "name": "Isack Hadjar",
-    "team": "Red Bull Racing"
+    "team": "Red Bull Racing",
+    "teamColor": "#1E5BC6"
   },
   {
-    "id": "2e9955cc-e88b-42f3-a883-116c98e81872",
+    "id": "64efd553-4a97-492d-9504-0269312a165b",
     "name": "George Russell",
-    "team": "Mercedes"
+    "team": "Mercedes",
+    "teamColor": "#00D2BE"
   },
   {
-    "id": "46b0c0ef-6745-4cce-9086-9e6612d38831",
+    "id": "7e6e2c4b-2985-4491-934b-b3aa42f80a28",
     "name": "Kimi Antonelli",
-    "team": "Mercedes"
+    "team": "Mercedes",
+    "teamColor": "#00D2BE"
   },
   {
-    "id": "5639d976-8039-4c36-8061-cda096ead8fc",
+    "id": "f04099e1-1d7a-4672-b355-a3cfc594015b",
     "name": "Charles Leclerc",
-    "team": "Ferrari"
+    "team": "Ferrari",
+    "teamColor": "#DC0000"
   },
   {
-    "id": "9ec704c3-5d06-4556-9760-d848c34886fe",
+    "id": "4d30469d-6d77-40a1-82b9-1427abe6e156",
     "name": "Lewis Hamilton",
-    "team": "Ferrari"
+    "team": "Ferrari",
+    "teamColor": "#DC0000"
   },
   {
-    "id": "8bb154d8-efea-4c5d-bd4b-966cceea4bdf",
+    "id": "b6b9ffb8-e758-43f4-a7cf-58cf7b00c0e5",
     "name": "Lando Norris",
-    "team": "McLaren"
+    "team": "McLaren",
+    "teamColor": "#FF8000"
   },
   {
-    "id": "2a45479a-dd1c-46b2-af4f-d2b4c901d820",
+    "id": "20364dff-cf53-4c99-8503-f0bf276cdbfb",
     "name": "Oscar Piastri",
-    "team": "McLaren"
+    "team": "McLaren",
+    "teamColor": "#FF8000"
   },
   {
-    "id": "5fbf67b2-dca7-47ef-9de3-6ab7120122f2",
+    "id": "efc2d9fb-f699-4af5-8d2b-2f35a5058acb",
     "name": "Fernando Alonso",
-    "team": "Aston Martin"
+    "team": "Aston Martin",
+    "teamColor": "#006F62"
   },
   {
-    "id": "3f3ba706-07ae-4846-a398-14be47ed90ed",
+    "id": "9857b713-7a89-446a-87cd-b17e56055f54",
     "name": "Lance Stroll",
-    "team": "Aston Martin"
+    "team": "Aston Martin",
+    "teamColor": "#006F62"
   },
   {
-    "id": "a24b5cb4-82a9-46e6-81bb-a0374165aa54",
+    "id": "a3678d59-8024-4322-884c-0a67a3d40af9",
     "name": "Alex Albon",
-    "team": "Williams"
+    "team": "Williams",
+    "teamColor": "#005AFF"
   },
   {
-    "id": "7574b124-768f-4093-9fe7-9118e09c52d7",
+    "id": "63e64e87-8fc1-422c-a846-2e0f2f89b6ed",
     "name": "Carlos Sainz Jr.",
-    "team": "Williams"
+    "team": "Williams",
+    "teamColor": "#005AFF"
   },
   {
-    "id": "ab1c78ae-a9c8-432f-b95f-494bfafb82b5",
+    "id": "82c1ecfc-1c62-4dc8-996e-676034651bae",
     "name": "Pierre Gasly",
-    "team": "Alpine"
+    "team": "Alpine",
+    "teamColor": "#0090FF"
   },
   {
-    "id": "f49ad4f0-8762-43e2-b04f-c5d0f5819a6d",
+    "id": "29e13467-f743-406a-b9ab-4cb10a4b9d92",
     "name": "Franco Colapinto",
-    "team": "Alpine"
+    "team": "Alpine",
+    "teamColor": "#0090FF"
   },
   {
-    "id": "caeaf2fc-9904-4c12-89b5-faffdbf98d31",
+    "id": "9b1f262a-aa81-4d00-b117-93e040acd204",
     "name": "Gabriel Bortoleto",
-    "team": "Audi"
+    "team": "Audi",
+    "teamColor": "#C00000"
   },
   {
-    "id": "6ec90e88-e27c-41f0-b727-3df6a3d8a200",
+    "id": "4603e44b-7a83-451e-874a-de8d7529437d",
     "name": "Nico Hulkenberg",
-    "team": "Audi"
+    "team": "Audi",
+    "teamColor": "#C00000"
   },
   {
-    "id": "1a1af6ae-26b1-441b-877b-71079bf66d3b",
+    "id": "4a0ac502-e0fd-4600-85dd-569e18017dcf",
     "name": "Esteban Ocon",
-    "team": "Haas"
+    "team": "Haas",
+    "teamColor": "#ABABAB"
   },
   {
-    "id": "e4e13a0f-79b9-4b6e-b960-c2a109041a3a",
+    "id": "6b6daa38-5756-4147-82ad-0ed2431a3344",
     "name": "Oliver Bearman",
-    "team": "Haas"
+    "team": "Haas",
+    "teamColor": "#ABABAB"
   },
   {
-    "id": "8c11a27c-beca-4150-a06f-aa291f36daf5",
+    "id": "6bc25d04-60ac-4fd8-8f0e-d875c32a1a1a",
     "name": "Liam Lawson",
-    "team": "Racing Bulls"
+    "team": "Racing Bulls",
+    "teamColor": "#2647D8"
   },
   {
-    "id": "40af127f-c405-4752-b787-187961e916b3",
+    "id": "cfb2fc91-046b-4085-8856-be4827960f77",
     "name": "Arvid Lindblad",
-    "team": "Racing Bulls"
+    "team": "Racing Bulls",
+    "teamColor": "#2647D8"
   },
   {
-    "id": "4c128ad1-b67f-4430-a169-e7c60d47e455",
+    "id": "57a4dc27-2284-4a86-9d57-da29fa6b4510",
     "name": "Sergio Perez",
-    "team": "Cadillac"
+    "team": "Cadillac",
+    "teamColor": "#333333"
   },
   {
-    "id": "048afe95-ada5-44b8-9c61-c490496355d7",
+    "id": "291b9ee4-27cc-41eb-a97b-d153c1d04144",
     "name": "Valtteri Bottas",
-    "team": "Cadillac"
+    "team": "Cadillac",
+    "teamColor": "#333333"
   }
 ]

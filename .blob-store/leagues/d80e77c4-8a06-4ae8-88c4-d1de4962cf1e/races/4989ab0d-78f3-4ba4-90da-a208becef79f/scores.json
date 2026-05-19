@@ -1,0 +1,44 @@
+{
+  "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+  "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
+  "raceTitle": "Japanese Grand Prix",
+  "raceDate": "2026-03-29",
+  "entries": [
+    {
+      "userId": "d9f26f95-c241-4991-8698-1e8ed034378b",
+      "gridPoints": 220,
+      "propPoints": 35,
+      "medal": "gold"
+    },
+    {
+      "userId": "e983a72e-ed1c-4153-aba5-f83b5f591a08",
+      "gridPoints": 169,
+      "propPoints": 30,
+      "medal": "silver"
+    },
+    {
+      "userId": "6d991872-a726-400b-bd70-d92ddf5cedc1",
+      "gridPoints": 170,
+      "propPoints": 20,
+      "medal": "bronze"
+    },
+    {
+      "userId": "34190f2a-74d6-4e46-9027-38b6386c00cd",
+      "gridPoints": 169,
+      "propPoints": 20,
+      "medal": null
+    },
+    {
+      "userId": "8738698b-ef07-4adb-8813-fb27649fa866",
+      "gridPoints": 144,
+      "propPoints": 25,
+      "medal": null
+    },
+    {
+      "userId": "ac7b214a-0b75-4f62-b0e3-db3d29ac5f05",
+      "gridPoints": 63,
+      "propPoints": 0,
+      "medal": null
+    }
+  ]
+}

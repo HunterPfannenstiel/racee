@@ -5,9 +5,9 @@ import { racesPath } from "@/lib/paths";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const seasonId = searchParams.get("seasonId");
-  if (!seasonId) return NextResponse.json({ error: "Missing seasonId" }, { status: 400 });
-  const races = await blob.read<Race[]>(racesPath(seasonId)) ?? [];
+  const leagueId = searchParams.get("leagueId");
+  if (!leagueId) return NextResponse.json({ error: "Missing leagueId" }, { status: 400 });
+  const races = await blob.read<Race[]>(racesPath(leagueId)) ?? [];
   return NextResponse.json(races);
 }
 
@@ -17,8 +17,8 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { id, seasonId } = parsed.data;
-  const path = racesPath(seasonId);
+  const { id, leagueId } = parsed.data;
+  const path = racesPath(leagueId);
   const current = await blob.read<Race[]>(path) ?? [];
   const updated = current.some(r => r.id === id)
     ? current.map(r => r.id === id ? parsed.data : r)
@@ -29,12 +29,12 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { id, seasonId } = await request.json();
-  if (!id || !seasonId) {
-    return NextResponse.json({ error: "Missing id or seasonId" }, { status: 400 });
+  const { id, leagueId } = await request.json();
+  if (!id || !leagueId) {
+    return NextResponse.json({ error: "Missing id or leagueId" }, { status: 400 });
   }
 
-  const path = racesPath(seasonId);
+  const path = racesPath(leagueId);
   const current = await blob.read<Race[]>(path) ?? [];
   await blob.write(path, current.filter(r => r.id !== id));
 

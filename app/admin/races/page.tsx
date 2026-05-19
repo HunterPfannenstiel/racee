@@ -2,38 +2,38 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { type Season, type Race, type Racer } from "@/lib/schemas";
+import { type League, type Race, type Racer } from "@/lib/schemas";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { SeasonPicker } from "@/components/ui/season-picker";
+import { LeaguePicker } from "@/components/ui/league-picker";
 import { RacesSection } from "./RacesSection";
 
 export default function AdminRacesPage() {
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+  const [leagues, setLeagues] = useState<League[]>([]);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [races, setRaces] = useState<Race[]>([]);
   const [racers, setRacers] = useState<Racer[]>([]);
-  const [loadingSeasons, setLoadingSeasons] = useState(true);
+  const [loadingLeagues, setLoadingLeagues] = useState(true);
   const [loadingRaces, setLoadingRaces] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/seasons")
+    fetch("/api/leagues")
       .then((r) => r.json())
-      .then((data: Season[]) => {
-        setSeasons(data);
-        if (data.length > 0) setSelectedSeasonId(data[0].id);
+      .then((data: League[]) => {
+        setLeagues(data);
+        if (data.length > 0) setSelectedLeagueId(data[0].id);
       })
-      .finally(() => setLoadingSeasons(false));
+      .finally(() => setLoadingLeagues(false));
   }, []);
 
   useEffect(() => {
-    if (!selectedSeasonId) return;
+    if (!selectedLeagueId) return;
     setLoadingRaces(true);
     Promise.all([
-      fetch(`/api/races?seasonId=${selectedSeasonId}`).then((r) => r.json()),
+      fetch(`/api/races?leagueId=${selectedLeagueId}`).then((r) => r.json()),
       fetch("/api/racers").then((r) => r.json()),
     ])
       .then(([fetchedRaces, fetchedRacers]) => {
@@ -42,11 +42,11 @@ export default function AdminRacesPage() {
       })
       .catch(() => setError("Failed to load race data."))
       .finally(() => setLoadingRaces(false));
-  }, [selectedSeasonId]);
+  }, [selectedLeagueId]);
 
-  function handleSeasonSelect(id: string) {
-    if (id === selectedSeasonId) return;
-    setSelectedSeasonId(id);
+  function handleLeagueSelect(id: string) {
+    if (id === selectedLeagueId) return;
+    setSelectedLeagueId(id);
     setRaces([]);
   }
 
@@ -65,27 +65,27 @@ export default function AdminRacesPage() {
         </Alert>
       )}
 
-      {loadingSeasons ? (
+      {loadingLeagues ? (
         <div className="flex items-center gap-3 text-muted-foreground">
           <Spinner className="w-4 h-4" />
           <span className="text-xs tracking-widest uppercase">Loading</span>
         </div>
-      ) : seasons.length === 0 ? (
+      ) : leagues.length === 0 ? (
         <p className="text-xs tracking-widest uppercase text-muted-foreground">
-          No seasons yet. <Link href="/admin/seasons" className="text-primary hover:underline">Create one first.</Link>
+          No leagues yet. <Link href="/admin/leagues" className="text-primary hover:underline">Create one first.</Link>
         </p>
       ) : (
         <div className="space-y-6">
-          <SeasonPicker seasons={seasons} selectedSeasonId={selectedSeasonId} onSelect={handleSeasonSelect} />
+          <LeaguePicker leagues={leagues} selectedLeagueId={selectedLeagueId} onSelect={handleLeagueSelect} />
 
           {loadingRaces ? (
             <div className="flex items-center gap-3 text-muted-foreground">
               <Spinner className="w-4 h-4" />
               <span className="text-xs tracking-widest uppercase">Loading</span>
             </div>
-          ) : selectedSeasonId && (
+          ) : selectedLeagueId && (
             <RacesSection
-              seasonId={selectedSeasonId}
+              leagueId={selectedLeagueId}
               races={races}
               racers={racers}
               onRacesChange={setRaces}

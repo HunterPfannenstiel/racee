@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { type Season, type Racer, type Race } from "@/lib/schemas";
+import { type League, type Racer, type Race } from "@/lib/schemas";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/ui/page-shell";
-import { SeasonsSection } from "@/app/admin/seasons/SeasonsSection";
+import { LeaguesSection } from "@/app/admin/leagues/LeaguesSection";
 import { DriversSection } from "@/app/admin/drivers/DriversSection";
 import { RacesSection } from "./RacesSection";
 
-type InitData = { seasons: Season[]; racers: Racer[]; races: Race[] };
+type InitData = { leagues: League[]; racers: Racer[]; races: Race[] };
 
 export default function CreatePage() {
-  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [leagues, setLeagues] = useState<League[]>([]);
   const [racers, setRacers] = useState<Racer[]>([]);
   const [races, setRaces] = useState<Race[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export default function CreatePage() {
     fetch("/api/create/init")
       .then((res) => res.json())
       .then((data: InitData) => {
-        setSeasons(data.seasons);
+        setLeagues(data.leagues);
         setRacers(data.racers);
         setRaces(data.races);
       });
@@ -38,12 +38,12 @@ export default function CreatePage() {
         </Alert>
       )}
 
-      <SeasonsSection seasons={seasons} onSeasonsChange={setSeasons} onError={setError} />
+      <LeaguesSection leagues={leagues} onLeaguesChange={setLeagues} onError={setError} />
 
       <DriversSection racers={racers} onRacersChange={setRacers} onError={setError} />
 
       <RacesSection
-        seasons={seasons}
+        leagues={leagues}
         races={races}
         racers={racers}
         onRacesChange={setRaces}

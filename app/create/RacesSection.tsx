@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { type Race, type Racer, type Season } from "@/lib/schemas";
+import { type Race, type Racer, type League } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -19,42 +19,42 @@ type Editor = {
   raceId: string;
   title: string;
   date: string;
-  seasonId: string;
+  leagueId: string;
   racerIds: string[];
 };
 
 type Props = {
-  seasons: Season[];
+  leagues: League[];
   races: Race[];
   racers: Racer[];
   onRacesChange: (races: Race[]) => void;
   onError: (msg: string) => void;
 };
 
-export function RacesSection({ seasons, races, racers, onRacesChange, onError }: Props) {
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+export function RacesSection({ leagues, races, racers, onRacesChange, onError }: Props) {
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
 
   const busy = loadingOp !== null;
 
   useEffect(() => {
-    if (seasons.length === 0) return;
-    if (selectedSeasonId === null) {
-      setSelectedSeasonId(seasons[0].id);
-    } else if (!seasons.some((s) => s.id === selectedSeasonId)) {
-      setSelectedSeasonId(seasons[0].id);
+    if (leagues.length === 0) return;
+    if (selectedLeagueId === null) {
+      setSelectedLeagueId(leagues[0].id);
+    } else if (!leagues.some((s) => s.id === selectedLeagueId)) {
+      setSelectedLeagueId(leagues[0].id);
       setEditor(null);
     }
-  }, [seasons]);
+  }, [leagues]);
 
-  const seasonRaces = races.filter((r) => r.seasonId === selectedSeasonId);
+  const leagueRaces = races.filter((r) => r.leagueId === selectedLeagueId);
 
   function openEditor(race?: Race) {
     if (race) {
-      setEditor({ raceId: race.id, title: race.title, date: race.date, seasonId: race.seasonId, racerIds: race.racerIds });
+      setEditor({ raceId: race.id, title: race.title, date: race.date, leagueId: race.leagueId, racerIds: race.racerIds });
     } else {
-      setEditor({ raceId: crypto.randomUUID(), title: "", date: "", seasonId: selectedSeasonId!, racerIds: [] });
+      setEditor({ raceId: crypto.randomUUID(), title: "", date: "", leagueId: selectedLeagueId!, racerIds: [] });
     }
   }
 
@@ -70,7 +70,7 @@ export function RacesSection({ seasons, races, racers, onRacesChange, onError }:
     if (!editor || !editor.title.trim() || !editor.date) return;
     const race: Race = {
       id: editor.raceId,
-      seasonId: editor.seasonId,
+      leagueId: editor.leagueId,
       title: editor.title.trim(),
       date: editor.date,
       racerIds: editor.racerIds,
@@ -119,23 +119,23 @@ export function RacesSection({ seasons, races, racers, onRacesChange, onError }:
       </CardHeader>
       <CardContent className="space-y-3">
         <Select
-          value={selectedSeasonId ?? ""}
-          onValueChange={(v) => { setSelectedSeasonId(v); setEditor(null); }}
+          value={selectedLeagueId ?? ""}
+          onValueChange={(v) => { setSelectedLeagueId(v); setEditor(null); }}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a season" />
+            <SelectValue placeholder="Select a league" />
           </SelectTrigger>
           <SelectContent>
-            {seasons.map((s) => (
+            {leagues.map((s) => (
               <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {selectedSeasonId !== null && (
+        {selectedLeagueId !== null && (
           <>
             <ul className="space-y-1">
-              {seasonRaces.map((race) => (
+              {leagueRaces.map((race) => (
                 <li key={race.id} className="flex items-center justify-between py-1.5">
                   <div>
                     <p className="text-sm font-medium">{race.title}</p>
@@ -152,7 +152,7 @@ export function RacesSection({ seasons, races, racers, onRacesChange, onError }:
 
             {editor === null ? (
               <>
-                {seasonRaces.length > 0 && <Separator />}
+                {leagueRaces.length > 0 && <Separator />}
                 <Button variant="outline" onClick={() => openEditor()} disabled={busy}>
                   Create new race
                 </Button>

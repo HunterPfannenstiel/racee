@@ -2,69 +2,73 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { type Season, type Race, type Racer, type SeasonStandings } from "@/lib/schemas";
+import { type League, type Race, type Racer, type LeagueStandings } from "@/lib/schemas";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { SeasonPicker } from "@/components/ui/season-picker";
+import { LeaguePicker } from "@/components/ui/league-picker";
 
 type ViewInitData = {
   races: Race[];
-  standings: SeasonStandings | null;
+  standings: LeagueStandings | null;
 };
 
 export default function AdminResultsPage() {
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+  const [leagues, setLeagues] = useState<League[]>([]);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [races, setRaces] = useState<Race[]>([]);
   const [racersById, setRacersById] = useState<Record<string, Racer>>({});
   const [gradedRaceIds, setGradedRaceIds] = useState<Set<string>>(new Set());
-  const [loadingSeasons, setLoadingSeasons] = useState(true);
+  const [keyDates, setKeyDates] = useState<Record<string, string | null>>({});
+  const [loadingLeagues, setLoadingLeagues] = useState(true);
   const [loadingRaces, setLoadingRaces] = useState(false);
   const [recalculating, setRecalculating] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/seasons")
+    fetch("/api/leagues")
       .then((r) => r.json())
-      .then((data: Season[]) => {
-        setSeasons(data);
-        if (data.length > 0) setSelectedSeasonId(data[0].id);
+      .then((data: League[]) => {
+        setLeagues(data);
+        if (data.length > 0) setSelectedLeagueId(data[0].id);
       })
-      .finally(() => setLoadingSeasons(false));
+      .finally(() => setLoadingLeagues(false));
   }, []);
 
   useEffect(() => {
-    if (!selectedSeasonId) return;
+    if (!selectedLeagueId) return;
     setLoadingRaces(true);
     Promise.all([
-      fetch(`/api/view/${selectedSeasonId}/init`).then((r) => r.json() as Promise<ViewInitData>),
+      fetch(`/api/view/${selectedLeagueId}/init`).then((r) => r.json() as Promise<ViewInitData>),
       fetch("/api/racers").then((r) => r.json() as Promise<Racer[]>),
+      fetch(`/api/races/key?leagueId=${selectedLeagueId}`).then((r) => r.json() as Promise<Record<string, string | null>>),
     ])
-      .then(([viewData, racerList]) => {
+      .then(([viewData, racerList, dates]) => {
         setRaces(viewData.races);
         setGradedRaceIds(new Set(viewData.standings?.gradedRaceIds ?? []));
         setRacersById(Object.fromEntries(racerList.map((r) => [r.id, r])));
+        setKeyDates(dates);
       })
       .catch(() => setError("Failed to load data."))
       .finally(() => setLoadingRaces(false));
-  }, [selectedSeasonId]);
+  }, [selectedLeagueId]);
 
-  function handleSeasonSelect(id: string) {
-    if (id === selectedSeasonId) return;
-    setSelectedSeasonId(id);
+  function handleLeagueSelect(id: string) {
+    if (id === selectedLeagueId) return;
+    setSelectedLeagueId(id);
     setRaces([]);
     setGradedRaceIds(new Set());
+    setKeyDates({});
   }
 
   async function handleRecalculate(raceId: string) {
     setRecalculating(raceId);
     setError(null);
     try {
-      const res = await fetch(`/api/seasons/${selectedSeasonId}/recalculate`, {
+      const res = await fetch(`/api/leagues/${selectedLeagueId}/recalculate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ raceId }),
@@ -92,19 +96,19 @@ export default function AdminResultsPage() {
         </Alert>
       )}
 
-      {loadingSeasons ? (
+      {loadingLeagues ? (
         <div className="flex items-center gap-3 text-muted-foreground">
           <Spinner className="w-4 h-4" />
           <span className="text-xs tracking-widest uppercase">Loading</span>
         </div>
-      ) : seasons.length === 0 ? (
+      ) : leagues.length === 0 ? (
         <p className="text-xs tracking-widest uppercase text-muted-foreground">
-          No seasons yet.{" "}
-          <Link href="/admin/seasons" className="text-primary hover:underline">Create one first.</Link>
+          No leagues yet.{" "}
+          <Link href="/admin/leagues" className="text-primary hover:underline">Create one first.</Link>
         </p>
       ) : (
         <div className="space-y-6">
-          <SeasonPicker seasons={seasons} selectedSeasonId={selectedSeasonId} onSelect={handleSeasonSelect} />
+          <LeaguePicker leagues={leagues} selectedLeagueId={selectedLeagueId} onSelect={handleLeagueSelect} />
 
           {loadingRaces ? (
             <div className="flex items-center gap-3 text-muted-foreground">
@@ -142,21 +146,34 @@ export default function AdminResultsPage() {
                             <div className="flex-1">
                               <p className="text-sm font-medium">{race.title}</p>
                               <p className="text-xs text-muted-foreground">{race.date}</p>
+                              {isGraded && keyDates[race.id] && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Set {new Date(Number(keyDates[race.id]!)).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                                </p>
+                              )}
                             </div>
                             {isGraded ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={recalculating !== null}
-                                onClick={() => handleRecalculate(race.id)}
-                                className="w-full"
-                              >
-                                {isRecalculating && <Spinner className="size-3 mr-1" />}
-                                Recalculate
-                              </Button>
+                              <div className="flex gap-1.5">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={recalculating !== null}
+                                  onClick={() => handleRecalculate(race.id)}
+                                  className="flex-1"
+                                >
+                                  {isRecalculating && <Spinner className="size-3 mr-1" />}
+                                  Recalculate
+                                </Button>
+                                <Link
+                                  href={`/admin/results/${selectedLeagueId}/${race.id}`}
+                                  className="inline-flex items-center justify-center h-7 px-2.5 text-[0.8rem] font-medium rounded-[min(var(--radius-md),12px)] border border-border bg-background hover:bg-muted hover:text-foreground transition-colors shrink-0"
+                                >
+                                  Edit
+                                </Link>
+                              </div>
                             ) : (
                               <Link
-                                href={`/admin/results/${selectedSeasonId}/${race.id}`}
+                                href={`/admin/results/${selectedLeagueId}/${race.id}`}
                                 className="inline-flex items-center justify-center w-full h-8 px-3 text-xs font-medium rounded-sm border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
                               >
                                 Set Result

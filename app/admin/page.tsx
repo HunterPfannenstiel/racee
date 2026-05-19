@@ -4,10 +4,10 @@ import { CalendarIcon, FlagIcon, UserIcon, UsersIcon, KeyRoundIcon } from "lucid
 
 const CARDS = [
   {
-    href: "/admin/seasons",
+    href: "/admin/leagues",
     icon: CalendarIcon,
-    title: "Seasons",
-    description: "Create and manage race seasons.",
+    title: "Leagues",
+    description: "Create and manage race leagues.",
   },
   {
     href: "/admin/races",

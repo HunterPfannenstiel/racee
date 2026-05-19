@@ -14,63 +14,31 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { type Race, type Racer } from "@/lib/schemas";
+import { type Race, type Racer, type PropName } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { RacerAvatar } from "@/components/RacerAvatar";
-import { GripVerticalIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import { SortableRacerRow } from "@/components/SortableRacerRow";
+import { PropGrader } from "./PropGrader";
 
 type Props = {
   race: Race;
   racersById: Record<string, Racer>;
+  existingPropKey: Partial<Record<PropName, string[] | null>>;
   onSave: () => void;
   onCancel: () => void;
   onError: (msg: string) => void;
 };
 
-function SortableRow({ racerId, index, racer, disabled }: {
-  racerId: string;
-  index: number;
-  racer: Racer;
-  disabled: boolean;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: racerId });
-  return (
-    <li
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cn("flex items-center gap-3 py-1 rounded-sm select-none", isDragging ? "opacity-40" : "")}
-    >
-      <button
-        {...listeners}
-        {...attributes}
-        disabled={disabled}
-        className="touch-none p-1 -ml-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
-        aria-label={`Drag to reorder ${racer.name}`}
-      >
-        <GripVerticalIcon className="size-4" />
-      </button>
-      <span className="w-7 shrink-0 text-right text-xs font-mono font-semibold text-muted-foreground tabular-nums">
-        P{index + 1}
-      </span>
-      <RacerAvatar name={racer.name} image={racer.image} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{racer.name}</p>
-        <p className="text-xs text-muted-foreground truncate">{racer.team}</p>
-      </div>
-    </li>
-  );
-}
-
-export function KeyEditor({ race, racersById, onSave, onCancel, onError }: Props) {
+export function KeyEditor({ race, racersById, existingPropKey, onSave, onCancel, onError }: Props) {
   const [orderedIds, setOrderedIds] = useState<string[]>(race.racerIds);
+  const [propResults, setPropResults] = useState<Partial<Record<PropName, string[] | null>>>(existingPropKey);
   const [saving, setSaving] = useState(false);
+
+  const racers = race.racerIds.map((id) => racersById[id]).filter((r): r is Racer => !!r);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -90,10 +58,19 @@ export function KeyEditor({ race, racersById, onSave, onCancel, onError }: Props
   async function handleSave() {
     setSaving(true);
     try {
+      const propKey = {
+        driverOfDay:    propResults.driverOfDay    ?? null,
+        lapsLed:        propResults.lapsLed        ?? null,
+        fastestPitStop: propResults.fastestPitStop ?? null,
+        fastestLap:     propResults.fastestLap     ?? null,
+        overAchiever:   propResults.overAchiever   ?? null,
+        underAchiever:  propResults.underAchiever  ?? null,
+        wrecker:        propResults.wrecker        ?? null,
+      };
       const res = await fetch("/api/races/key", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seasonId: race.seasonId, raceId: race.id, racerIds: orderedIds }),
+        body: JSON.stringify({ leagueId: race.leagueId, raceId: race.id, racerIds: orderedIds, propKey }),
       });
       if (!res.ok) { onError("Failed to save result."); return; }
       onSave();
@@ -115,11 +92,21 @@ export function KeyEditor({ race, racersById, onSave, onCancel, onError }: Props
             {orderedIds.map((id, index) => {
               const racer = racersById[id];
               if (!racer) return null;
-              return <SortableRow key={id} racerId={id} index={index} racer={racer} disabled={saving} />;
+              return <SortableRacerRow key={id} racerId={id} index={index} racer={racer} disabled={saving} />;
             })}
           </ul>
         </SortableContext>
       </DndContext>
+
+      <Separator />
+
+      <PropGrader
+        racers={racers}
+        propResults={propResults}
+        onChange={setPropResults}
+        disabled={saving}
+      />
+
       <div className="flex gap-2">
         <Button onClick={handleSave} disabled={saving}>
           {saving && <Spinner className="w-3 h-3 mr-1" />}

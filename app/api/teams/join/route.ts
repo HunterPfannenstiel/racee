@@ -9,8 +9,8 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { seasonId, userId, teamId } = parsed.data;
-  const teams = (await blob.read<Team[]>(teamsPath(seasonId))) ?? [];
+  const { leagueId, userId, teamId } = parsed.data;
+  const teams = (await blob.read<Team[]>(teamsPath(leagueId))) ?? [];
   const updated = teams.map((t) => ({
     ...t,
     memberIds:
@@ -18,6 +18,6 @@ export async function POST(request: Request) {
         ? [...t.memberIds.filter((id) => id !== userId), userId]
         : t.memberIds.filter((id) => id !== userId),
   }));
-  await blob.write(teamsPath(seasonId), updated);
+  await blob.write(teamsPath(leagueId), updated);
   return NextResponse.json({ ok: true });
 }

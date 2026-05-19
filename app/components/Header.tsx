@@ -63,6 +63,13 @@ export default function Header() {
               </button>
               {open && (
                 <div className="absolute right-0 mt-1 w-32 rounded-md border border-border bg-card shadow-md z-50">
+                  <Link
+                    href={`/profile/${user.id}`}
+                    onClick={() => setOpen(false)}
+                    className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md"
+                  >
+                    Profile
+                  </Link>
                   <button
                     onClick={() => { clearUser(); setOpen(false); }}
                     className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md"
