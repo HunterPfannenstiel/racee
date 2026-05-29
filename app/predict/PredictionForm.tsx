@@ -50,14 +50,14 @@ function formatTimestamp(iso: string) {
 export function PredictionForm({ race, racersById, existingPrediction, existingSubmittedAt, existingPropPicks, onPredictionSave, onError }: Props) {
   const { user } = useUser();
   const [orderedRacerIds, setOrderedRacerIds] = useState<string[]>(
-    existingPrediction ?? race.racerIds
+    existingPrediction ?? race.startingGrid
   );
   const [propPicks, setPropPicks] = useState<Partial<Record<PropName, string>>>(existingPropPicks);
   const [submittedAt, setSubmittedAt] = useState<string | null>(existingSubmittedAt);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const racers = race.racerIds.map((id) => racersById[id]).filter((r): r is Racer => !!r);
+  const racers = race.startingGrid.map((id) => racersById[id]).filter((r): r is Racer => !!r);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -137,6 +137,7 @@ export function PredictionForm({ race, racersById, existingPrediction, existingS
                   index={index}
                   racer={racer}
                   disabled={saving}
+                  startingGridPosition={race.startingGrid.indexOf(racerId)}
                 />
               );
             })}

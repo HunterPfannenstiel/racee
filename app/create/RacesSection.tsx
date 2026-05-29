@@ -20,7 +20,7 @@ type Editor = {
   title: string;
   date: string;
   leagueId: string;
-  racerIds: string[];
+  startingGrid: string[];
 };
 
 type Props = {
@@ -52,18 +52,18 @@ export function RacesSection({ leagues, races, racers, onRacesChange, onError }:
 
   function openEditor(race?: Race) {
     if (race) {
-      setEditor({ raceId: race.id, title: race.title, date: race.date, leagueId: race.leagueId, racerIds: race.racerIds });
+      setEditor({ raceId: race.id, title: race.title, date: race.date, leagueId: race.leagueId, startingGrid: race.startingGrid });
     } else {
-      setEditor({ raceId: crypto.randomUUID(), title: "", date: "", leagueId: selectedLeagueId!, racerIds: [] });
+      setEditor({ raceId: crypto.randomUUID(), title: "", date: "", leagueId: selectedLeagueId!, startingGrid: [] });
     }
   }
 
   function toggleRacerId(racerId: string) {
     if (!editor) return;
-    const racerIds = editor.racerIds.includes(racerId)
-      ? editor.racerIds.filter((id) => id !== racerId)
-      : [...editor.racerIds, racerId];
-    setEditor({ ...editor, racerIds });
+    const startingGrid = editor.startingGrid.includes(racerId)
+      ? editor.startingGrid.filter((id) => id !== racerId)
+      : [...editor.startingGrid, racerId];
+    setEditor({ ...editor, startingGrid });
   }
 
   async function commitRace() {
@@ -73,7 +73,7 @@ export function RacesSection({ leagues, races, racers, onRacesChange, onError }:
       leagueId: editor.leagueId,
       title: editor.title.trim(),
       date: editor.date,
-      racerIds: editor.racerIds,
+      startingGrid: editor.startingGrid,
     };
     setLoadingOp("save");
     try {
@@ -168,11 +168,11 @@ export function RacesSection({ leagues, races, racers, onRacesChange, onError }:
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        const allSelected = racers.every((r) => editor.racerIds.includes(r.id));
-                        setEditor({ ...editor, racerIds: allSelected ? [] : racers.map((r) => r.id) });
+                        const allSelected = racers.every((r) => editor.startingGrid.includes(r.id));
+                        setEditor({ ...editor, startingGrid: allSelected ? [] : racers.map((r) => r.id) });
                       }}
                     >
-                      {racers.every((r) => editor.racerIds.includes(r.id)) ? "Deselect all" : "Select all"}
+                      {racers.every((r) => editor.startingGrid.includes(r.id)) ? "Deselect all" : "Select all"}
                     </Button>
                   </div>
                   <ul className="space-y-1 max-h-48 overflow-y-auto">
@@ -181,7 +181,7 @@ export function RacesSection({ leagues, races, racers, onRacesChange, onError }:
                         <input
                           type="checkbox"
                           id={racer.id}
-                          checked={editor.racerIds.includes(racer.id)}
+                          checked={editor.startingGrid.includes(racer.id)}
                           onChange={() => toggleRacerId(racer.id)}
                         />
                         <label htmlFor={racer.id} className="text-sm">

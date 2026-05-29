@@ -7,7 +7,6 @@ import { PageShell } from "@/components/ui/page-shell";
 import { LeaguePicker } from "@/components/ui/league-picker";
 import { RaceSelect } from "@/components/ui/race-select";
 import { Spinner } from "@/components/ui/spinner";
-import { PodiumSection } from "./PodiumSection";
 import { PicksGrid } from "./PicksGrid";
 import { PropChips } from "./PropChips";
 
@@ -126,22 +125,12 @@ export default function ProfilePage() {
                   </ul>
                 </div>
               )}
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-                <div className="lg:w-80 shrink-0">
-                  <PodiumSection
-                    top3={raceData.prediction.slice(0, 3)}
-                    racersById={racersById}
-                    driverPoints={driverPoints}
-                  />
-                </div>
-                <div className="flex-1">
-                  <PicksGrid
-                    rest={raceData.prediction.slice(3)}
-                    racersById={racersById}
-                    driverPoints={driverPoints}
-                  />
-                </div>
-              </div>
+              <PicksGrid
+                prediction={raceData.prediction}
+                racersById={racersById}
+                keyOrder={raceData.key}
+                driverPoints={driverPoints}
+              />
               <PropChips
                 propPicks={raceData.propPicks}
                 propKey={raceData.propKey}

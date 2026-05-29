@@ -1,6 +1,6 @@
-import type { BlobStore } from "./interface";
-import { LocalBlobStore } from "./local";
-import { SupabaseBlobStore } from "./supabase";
+import type { BlobStore } from "./interface.ts";
+import { LocalBlobStore } from "./local.ts";
+import { SupabaseBlobStore } from "./supabase.ts";
 
 export const blob: BlobStore =
   process.env.USE_LOCAL_BLOB === "true"

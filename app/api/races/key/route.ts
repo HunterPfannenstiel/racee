@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   if (raceId) {
     const predictions = await blob.read<PredictionsFile>(predictionsPath(leagueId, raceId));
-    return NextResponse.json({ keySetAt: predictions?.keySetAt ?? null, propKey: predictions?.propKey ?? null });
+    return NextResponse.json({ key: predictions?.key ?? null, keySetAt: predictions?.keySetAt ?? null, propKey: predictions?.propKey ?? null });
   }
 
   const standings = await blob.read<LeagueStandings>(standingsPath(leagueId));

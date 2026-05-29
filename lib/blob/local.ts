@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import type { BlobStore } from "./interface";
+import type { BlobStore } from "./interface.ts";
 
 export class LocalBlobStore implements BlobStore {
   private base = path.join(process.cwd(), ".blob-store");

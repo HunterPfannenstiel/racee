@@ -1,34 +1,53 @@
 import { type Racer } from "@/lib/schemas";
-import { Card } from "@/components/ui/card";
 import { RacerAvatar } from "@/components/RacerAvatar";
+import { cn } from "@/lib/utils";
 
 type Props = {
-  rest: string[];
+  prediction: string[];
   racersById: Record<string, Racer>;
+  keyOrder: string[] | null;
   driverPoints: Record<string, number> | null;
 };
 
-export function PicksGrid({ rest, racersById, driverPoints }: Props) {
+export function PicksGrid({ prediction, racersById, keyOrder, driverPoints }: Props) {
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {rest.map((racerId, i) => {
-        const position = i + 4;
+    <ul className="space-y-1">
+      {prediction.map((racerId, i) => {
         const racer = racersById[racerId];
+        const predictedPos = i + 1;
+        const actualIdx = keyOrder?.indexOf(racerId) ?? -1;
+        const actualPos = actualIdx >= 0 ? actualIdx + 1 : null;
+        const delta = actualPos !== null ? predictedPos - actualPos : null;
         const points = driverPoints?.[racerId];
+
         return (
-          <Card key={racerId} size="sm" className="flex flex-row items-center gap-3 px-3 py-2">
-            <span className="text-xs font-mono text-muted-foreground w-6 shrink-0">P{position}</span>
+          <li key={racerId} className="flex items-center gap-3 py-1">
+            <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: racer?.teamColor ?? "#6b7280" }} />
             <RacerAvatar name={racer?.name ?? "?"} image={racer?.image} className="w-8 h-8 shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold truncate">{racer?.name ?? "Unknown"}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{racer?.name ?? "Unknown"}</p>
               <p className="text-xs text-muted-foreground truncate">{racer?.team ?? ""}</p>
             </div>
+            <div className="flex items-center gap-2 shrink-0 text-xs font-mono tabular-nums">
+              <span className="text-muted-foreground">P{predictedPos}</span>
+              <span className="text-muted-foreground">→</span>
+              <span className="font-semibold text-foreground">{actualPos !== null ? `P${actualPos}` : "—"}</span>
+              {delta !== null && delta !== 0 && (
+                <span className={cn("w-6 font-semibold",
+                  delta > 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
+                )}>
+                  {delta > 0 ? `+${delta}` : delta}
+                </span>
+              )}
+            </div>
             {points !== undefined && (
-              <span className="text-xs font-mono tabular-nums text-green-600 dark:text-green-400 shrink-0">{points}</span>
+              <span className="text-xs font-mono tabular-nums text-green-600 dark:text-green-400 shrink-0">
+                {points}pts
+              </span>
             )}
-          </Card>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }

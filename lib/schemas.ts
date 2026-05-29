@@ -75,7 +75,7 @@ export const RaceSchema = z.object({
   leagueId: z.string().uuid(),
   title: z.string().min(1),
   date: z.string().min(1),
-  racerIds: z.array(z.string().uuid()),
+  startingGrid: z.array(z.string().uuid()),
 });
 
 export type League = z.infer<typeof LeagueSchema>;

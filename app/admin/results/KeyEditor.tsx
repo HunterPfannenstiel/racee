@@ -27,18 +27,19 @@ import { PropGrader } from "./PropGrader";
 type Props = {
   race: Race;
   racersById: Record<string, Racer>;
+  existingKey: string[] | null;
   existingPropKey: Partial<Record<PropName, string[] | null>>;
   onSave: () => void;
   onCancel: () => void;
   onError: (msg: string) => void;
 };
 
-export function KeyEditor({ race, racersById, existingPropKey, onSave, onCancel, onError }: Props) {
-  const [orderedIds, setOrderedIds] = useState<string[]>(race.racerIds);
+export function KeyEditor({ race, racersById, existingKey, existingPropKey, onSave, onCancel, onError }: Props) {
+  const [orderedIds, setOrderedIds] = useState<string[]>(existingKey ?? race.startingGrid);
   const [propResults, setPropResults] = useState<Partial<Record<PropName, string[] | null>>>(existingPropKey);
   const [saving, setSaving] = useState(false);
 
-  const racers = race.racerIds.map((id) => racersById[id]).filter((r): r is Racer => !!r);
+  const racers = race.startingGrid.map((id) => racersById[id]).filter((r): r is Racer => !!r);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),

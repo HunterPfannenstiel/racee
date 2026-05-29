@@ -1,18 +1,40 @@
 "use client";
 
 import { useState } from "react";
+import {
+  DndContext,
+  closestCenter,
+  MouseSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 import { type Race, type Racer } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { SortableRacerRow } from "@/components/SortableRacerRow";
 
 type Editor = {
   raceId: string;
   title: string;
   date: string;
-  racerIds: string[];
+  startingGrid: string[];
+};
+
+type GridEditor = {
+  raceId: string;
+  order: string[];
 };
 
 type Props = {
@@ -25,24 +47,48 @@ type Props = {
 
 export function RacesSection({ leagueId, races, racers, onRacesChange, onError }: Props) {
   const [editor, setEditor] = useState<Editor | null>(null);
+  const [gridEditor, setGridEditor] = useState<GridEditor | null>(null);
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
 
   const busy = loadingOp !== null;
+  const racersById = Object.fromEntries(racers.map((r) => [r.id, r]));
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleGridDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id || !gridEditor) return;
+    setGridEditor((g) => {
+      if (!g) return g;
+      const oldIndex = g.order.indexOf(active.id as string);
+      const newIndex = g.order.indexOf(over.id as string);
+      return { ...g, order: arrayMove(g.order, oldIndex, newIndex) };
+    });
+  }
 
   function openEditor(race?: Race) {
+    setGridEditor(null);
     if (race) {
-      setEditor({ raceId: race.id, title: race.title, date: race.date, racerIds: race.racerIds });
+      setEditor({ raceId: race.id, title: race.title, date: race.date, startingGrid: race.startingGrid });
     } else {
-      setEditor({ raceId: crypto.randomUUID(), title: "", date: "", racerIds: [] });
+      setEditor({ raceId: crypto.randomUUID(), title: "", date: "", startingGrid: [] });
     }
+  }
+
+  function openGridEditor(race: Race) {
+    setEditor(null);
+    setGridEditor({ raceId: race.id, order: [...race.startingGrid] });
   }
 
   function toggleRacerId(racerId: string) {
     if (!editor) return;
-    const racerIds = editor.racerIds.includes(racerId)
-      ? editor.racerIds.filter((id) => id !== racerId)
-      : [...editor.racerIds, racerId];
-    setEditor({ ...editor, racerIds });
+    const startingGrid = editor.startingGrid.includes(racerId)
+      ? editor.startingGrid.filter((id) => id !== racerId)
+      : [...editor.startingGrid, racerId];
+    setEditor({ ...editor, startingGrid });
   }
 
   async function commitRace() {
@@ -52,7 +98,7 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
       leagueId,
       title: editor.title.trim(),
       date: editor.date,
-      racerIds: editor.racerIds,
+      startingGrid: editor.startingGrid,
     };
     setLoadingOp("save");
     try {
@@ -69,6 +115,28 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
       setEditor(null);
     } catch {
       onError("Failed to save race.");
+    } finally {
+      setLoadingOp(null);
+    }
+  }
+
+  async function commitGrid() {
+    if (!gridEditor) return;
+    const race = races.find((r) => r.id === gridEditor.raceId);
+    if (!race) return;
+    const updated: Race = { ...race, startingGrid: gridEditor.order };
+    setLoadingOp("grid-save");
+    try {
+      const res = await fetch("/api/races", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+      if (!res.ok) { onError("Failed to save starting grid."); return; }
+      onRacesChange(races.map((r) => (r.id === updated.id ? updated : r)));
+      setGridEditor(null);
+    } catch {
+      onError("Failed to save starting grid.");
     } finally {
       setLoadingOp(null);
     }
@@ -92,6 +160,7 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
   }
 
   const sorted = [...races].sort((a, b) => a.date.localeCompare(b.date));
+  const gridRace = gridEditor ? races.find((r) => r.id === gridEditor.raceId) : null;
 
   return (
     <Card>
@@ -108,6 +177,7 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
               </div>
               <div className="flex gap-1 items-center shrink-0">
                 {loadingOp === `remove-${race.id}` && <Spinner className="w-3 h-3" />}
+                <Button variant="ghost" size="sm" onClick={() => openGridEditor(race)} disabled={busy}>Starting Grid</Button>
                 <Button variant="ghost" size="sm" onClick={() => openEditor(race)} disabled={busy}>Edit</Button>
                 <Button variant="ghost" size="sm" onClick={() => handleRemove(race)} disabled={busy}>Remove</Button>
               </div>
@@ -115,7 +185,31 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
           ))}
         </ul>
 
-        {editor === null ? (
+        {gridEditor && gridRace ? (
+          <div className="bg-muted/50 rounded-sm p-3 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {gridRace.title} — Starting Grid
+            </p>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGridDragEnd}>
+              <SortableContext items={gridEditor.order} strategy={verticalListSortingStrategy}>
+                <ul className="space-y-1 max-h-[32rem] overflow-y-auto">
+                  {gridEditor.order.map((id, index) => {
+                    const racer = racersById[id];
+                    if (!racer) return null;
+                    return <SortableRacerRow key={id} racerId={id} index={index} racer={racer} disabled={busy} />;
+                  })}
+                </ul>
+              </SortableContext>
+            </DndContext>
+            <div className="flex gap-2 items-center">
+              <Button onClick={commitGrid} disabled={busy}>
+                {loadingOp === "grid-save" && <Spinner className="w-3 h-3 mr-1" />}
+                Save
+              </Button>
+              <Button variant="ghost" onClick={() => setGridEditor(null)} disabled={busy}>Cancel</Button>
+            </div>
+          </div>
+        ) : editor === null ? (
           <>
             {races.length > 0 && <Separator />}
             <Button variant="outline" onClick={() => openEditor()} disabled={busy}>
@@ -143,11 +237,11 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    const allSelected = racers.every((r) => editor.racerIds.includes(r.id));
-                    setEditor({ ...editor, racerIds: allSelected ? [] : racers.map((r) => r.id) });
+                    const allSelected = racers.every((r) => editor.startingGrid.includes(r.id));
+                    setEditor({ ...editor, startingGrid: allSelected ? [] : racers.map((r) => r.id) });
                   }}
                 >
-                  {racers.every((r) => editor.racerIds.includes(r.id)) ? "Deselect all" : "Select all"}
+                  {racers.every((r) => editor.startingGrid.includes(r.id)) ? "Deselect all" : "Select all"}
                 </Button>
               </div>
               <ul className="space-y-1 max-h-48 overflow-y-auto">
@@ -156,7 +250,7 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
                     <input
                       type="checkbox"
                       id={`driver-${racer.id}`}
-                      checked={editor.racerIds.includes(racer.id)}
+                      checked={editor.startingGrid.includes(racer.id)}
                       onChange={() => toggleRacerId(racer.id)}
                     />
                     <label htmlFor={`driver-${racer.id}`} className="text-sm cursor-pointer">

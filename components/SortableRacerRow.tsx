@@ -12,9 +12,10 @@ type Props = {
   index: number;
   racer: Racer;
   disabled: boolean;
+  startingGridPosition?: number;
 };
 
-export function SortableRacerRow({ racerId, index, racer, disabled }: Props) {
+export function SortableRacerRow({ racerId, index, racer, disabled, startingGridPosition }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: racerId });
 
   return (
@@ -36,6 +37,18 @@ export function SortableRacerRow({ racerId, index, racer, disabled }: Props) {
       <span className="w-7 shrink-0 text-right text-xs font-mono font-semibold text-muted-foreground tabular-nums">
         P{index + 1}
       </span>
+      {startingGridPosition !== undefined && (() => {
+        const delta = startingGridPosition - index;
+        return (
+          <span className={cn("w-8 shrink-0 text-xs font-mono tabular-nums",
+            delta > 0 ? "text-green-600 dark:text-green-400" :
+            delta < 0 ? "text-red-500 dark:text-red-400" :
+            "text-muted-foreground"
+          )}>
+            SG{startingGridPosition + 1}
+          </span>
+        );
+      })()}
       <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: racer.teamColor ?? "#6b7280" }} />
       <RacerAvatar name={racer.name} image={racer.image} />
       <div className="flex-1 min-w-0">

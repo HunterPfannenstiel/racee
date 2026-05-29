@@ -15,6 +15,7 @@ export default function SetResultPage() {
   const router = useRouter();
   const [race, setRace] = useState<Race | null>(null);
   const [racersById, setRacersById] = useState<Record<string, Racer>>({});
+  const [existingKey, setExistingKey] = useState<string[] | null>(null);
   const [keySetAt, setKeySetAt] = useState<string | null>(null);
   const [existingPropKey, setExistingPropKey] = useState<Partial<Record<PropName, string[] | null>>>({});
   const [loading, setLoading] = useState(true);
@@ -24,12 +25,13 @@ export default function SetResultPage() {
     Promise.all([
       fetch(`/api/races?leagueId=${leagueId}`).then((r) => r.json() as Promise<Race[]>),
       fetch("/api/racers").then((r) => r.json() as Promise<Racer[]>),
-      fetch(`/api/races/key?leagueId=${leagueId}&raceId=${raceId}`).then((r) => r.json() as Promise<{ keySetAt: string | null; propKey: Partial<Record<PropName, string[] | null>> | null }>),
+      fetch(`/api/races/key?leagueId=${leagueId}&raceId=${raceId}`).then((r) => r.json() as Promise<{ key: string[] | null; keySetAt: string | null; propKey: Partial<Record<PropName, string[] | null>> | null }>),
     ])
       .then(([races, racerList, keyMeta]) => {
         const found = races.find((r) => r.id === raceId) ?? null;
         setRace(found);
         setRacersById(Object.fromEntries(racerList.map((r) => [r.id, r])));
+        setExistingKey(keyMeta.key);
         setKeySetAt(keyMeta.keySetAt);
         setExistingPropKey(keyMeta.propKey ?? {});
       })
@@ -69,6 +71,7 @@ export default function SetResultPage() {
           <KeyEditor
             race={race}
             racersById={racersById}
+            existingKey={existingKey}
             existingPropKey={existingPropKey}
             onSave={() => router.push("/admin/results")}
             onCancel={() => router.push("/admin/results")}
