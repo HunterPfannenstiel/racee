@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -47,6 +47,18 @@ function formatTimestamp(iso: string) {
     .format(new Date(iso));
 }
 
+function formatCountdown(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (days > 0) return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
 export function PredictionForm({ race, racersById, existingPrediction, existingSubmittedAt, existingPropPicks, onPredictionSave, onError }: Props) {
   const { user } = useUser();
   const [orderedRacerIds, setOrderedRacerIds] = useState<string[]>(
@@ -56,6 +68,30 @@ export function PredictionForm({ race, racersById, existingPrediction, existingS
   const [submittedAt, setSubmittedAt] = useState<string | null>(existingSubmittedAt);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [isLocked, setIsLocked] = useState(() =>
+    !!race.lockTime && Date.now() >= new Date(race.lockTime).getTime()
+  );
+  const [countdown, setCountdown] = useState<string | null>(() => {
+    if (!race.lockTime) return null;
+    const ms = new Date(race.lockTime).getTime() - Date.now();
+    return ms > 0 ? formatCountdown(ms) : null;
+  });
+
+  useEffect(() => {
+    if (!race.lockTime) return;
+    function tick() {
+      const ms = new Date(race.lockTime!).getTime() - Date.now();
+      if (ms <= 0) {
+        setIsLocked(true);
+        setCountdown(null);
+      } else {
+        setCountdown(formatCountdown(ms));
+      }
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [race.lockTime]);
 
   const racers = race.startingGrid.map((id) => racersById[id]).filter((r): r is Racer => !!r);
 
@@ -104,6 +140,11 @@ export function PredictionForm({ race, racersById, existingPrediction, existingS
             {formatDate(race.date)}
           </p>
           <h2 className="text-lg font-bold tracking-tight text-foreground">{race.title}</h2>
+          {isLocked ? (
+            <p className="text-xs font-medium text-red-600">Submissions closed</p>
+          ) : countdown !== null ? (
+            <p className="text-xs text-muted-foreground">Locks in {countdown}</p>
+          ) : null}
         </div>
         {existingPrediction ? (
           <div className="flex flex-col items-end gap-0.5 shrink-0">
@@ -136,7 +177,7 @@ export function PredictionForm({ race, racersById, existingPrediction, existingS
                   racerId={racerId}
                   index={index}
                   racer={racer}
-                  disabled={saving}
+                  disabled={saving || isLocked}
                   startingGridPosition={race.startingGrid.indexOf(racerId)}
                 />
               );
@@ -151,10 +192,10 @@ export function PredictionForm({ race, racersById, existingPrediction, existingS
         racers={racers}
         propPicks={propPicks}
         onChange={setPropPicks}
-        disabled={saving}
+        disabled={saving || isLocked}
       />
 
-      <Button onClick={savePrediction} disabled={saving || saved}>
+      <Button onClick={savePrediction} disabled={saving || saved || isLocked}>
         {saving && <Spinner className="w-3 h-3 mr-1" />}
         {saved ? <><CheckIcon className="w-3 h-3 mr-1" />Saved</> : "Save prediction"}
       </Button>

@@ -75,6 +75,7 @@ export const RaceSchema = z.object({
   leagueId: z.string().uuid(),
   title: z.string().min(1),
   date: z.string().min(1),
+  lockTime: z.string().datetime().optional(),
   startingGrid: z.array(z.string().uuid()),
 });
 

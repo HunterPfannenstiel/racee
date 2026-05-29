@@ -154,6 +154,7 @@
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Monaco Grand Prix",
     "date": "2026-06-07",
+    "lockTime": "2026-05-29T17:09:00.000Z",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
       "33c6bf1b-bbd5-4d5c-9e58-72cb94cf307f",

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { blob } from "@/lib/blob";
-import { predictionsPath } from "@/lib/paths";
-import { PredictionMutationSchema, PredictionsFile } from "@/lib/schemas";
+import { predictionsPath, racesPath } from "@/lib/paths";
+import { PredictionMutationSchema, PredictionsFile, RacesFileSchema } from "@/lib/schemas";
 
 export async function POST(request: Request) {
   const parsed = PredictionMutationSchema.safeParse(await request.json());
@@ -10,6 +10,15 @@ export async function POST(request: Request) {
   }
 
   const { leagueId, raceId, userId, racerIds, propPicks } = parsed.data;
+
+  const races = RacesFileSchema.safeParse(await blob.read(racesPath(leagueId)));
+  if (races.success) {
+    const race = races.data.find((r) => r.id === raceId);
+    if (race?.lockTime && Date.now() >= new Date(race.lockTime).getTime()) {
+      return NextResponse.json({ error: "Race submissions are closed." }, { status: 423 });
+    }
+  }
+
   const path = predictionsPath(leagueId, raceId);
 
   const emptyPropKey = { driverOfDay: null, lapsLed: null, fastestPitStop: null, fastestLap: null, overAchiever: null, underAchiever: null, wrecker: null };

@@ -29,8 +29,15 @@ type Editor = {
   raceId: string;
   title: string;
   date: string;
+  lockTime: string;
   startingGrid: string[];
 };
+
+function isoToDatetimeLocal(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 type GridEditor = {
   raceId: string;
@@ -72,9 +79,9 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
   function openEditor(race?: Race) {
     setGridEditor(null);
     if (race) {
-      setEditor({ raceId: race.id, title: race.title, date: race.date, startingGrid: race.startingGrid });
+      setEditor({ raceId: race.id, title: race.title, date: race.date, lockTime: race.lockTime ? isoToDatetimeLocal(race.lockTime) : "", startingGrid: race.startingGrid });
     } else {
-      setEditor({ raceId: crypto.randomUUID(), title: "", date: "", startingGrid: [] });
+      setEditor({ raceId: crypto.randomUUID(), title: "", date: "", lockTime: "", startingGrid: [] });
     }
   }
 
@@ -98,6 +105,7 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
       leagueId,
       title: editor.title.trim(),
       date: editor.date,
+      lockTime: editor.lockTime ? new Date(editor.lockTime).toISOString() : undefined,
       startingGrid: editor.startingGrid,
     };
     setLoadingOp("save");
@@ -173,7 +181,14 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
             <li key={race.id} className="flex items-center justify-between py-1.5">
               <div>
                 <p className="text-sm font-medium">{race.title}</p>
-                <p className="text-xs text-muted-foreground">{race.date}</p>
+                <p className="text-xs text-muted-foreground">
+                  {race.date}
+                  {race.lockTime && (
+                    <span className="ml-2 text-amber-600">
+                      locks {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(race.lockTime))}
+                    </span>
+                  )}
+                </p>
               </div>
               <div className="flex gap-1 items-center shrink-0">
                 {loadingOp === `remove-${race.id}` && <Spinner className="w-3 h-3" />}
@@ -230,6 +245,15 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
               onChange={(e) => setEditor({ ...editor, date: e.target.value })}
               autoComplete="off"
             />
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Lock time (optional)</p>
+              <Input
+                type="datetime-local"
+                value={editor.lockTime}
+                onChange={(e) => setEditor({ ...editor, lockTime: e.target.value })}
+                autoComplete="off"
+              />
+            </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Drivers</p>
