@@ -42,6 +42,13 @@ function applyMulligans(raceScores: { points: number }[], mulliganCount: number)
   return { total, mulliganed };
 }
 
+export function getMulliganedRaceIds(raceScores: { raceId: string; points: number }[], mulliganCount: number): Set<string> {
+  if (raceScores.length <= mulliganCount) return new Set();
+  return new Set(
+    [...raceScores].sort((a, b) => a.points - b.points).slice(0, mulliganCount).map((r) => r.raceId)
+  );
+}
+
 export function computeTeamRaceScores(entries: ScoreEntry[], teams: Team[]) {
   return teams
     .filter((team) => team.memberIds.some((id) => entries.some((e) => e.userId === id)))

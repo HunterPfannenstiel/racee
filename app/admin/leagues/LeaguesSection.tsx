@@ -11,7 +11,6 @@ import { PlacementPointsEditor } from "./PlacementPointsEditor";
 
 type Props = {
   leagues: League[];
-  racerCount: number;
   onLeaguesChange: (leagues: League[]) => void;
   onError: (msg: string) => void;
 };
@@ -22,11 +21,11 @@ const emptyPropPointValues: PropPointValues = {
 };
 const emptyPlacementPoints: PlacementPoints = [];
 
-export function LeaguesSection({ leagues, racerCount, onLeaguesChange, onError }: Props) {
+export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
   const [newLeagueName, setNewLeagueName] = useState("");
   const [newPlacementPoints, setNewPlacementPoints] = useState<PlacementPoints>(emptyPlacementPoints);
   const [newMulliganCount, setNewMulliganCount] = useState(0);
-  const [newScoringDepth, setNewScoringDepth] = useState(racerCount);
+  const [newScoringDepth, setNewScoringDepth] = useState<number | undefined>(undefined);
   const [newPropPointValues, setNewPropPointValues] = useState<PropPointValues>(emptyPropPointValues);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingLeagueId, setEditingLeagueId] = useState<string | null>(null);
@@ -60,7 +59,7 @@ export function LeaguesSection({ leagues, racerCount, onLeaguesChange, onError }
 
   async function handleAdd() {
     const name = newLeagueName.trim();
-    if (!name) return;
+    if (!name || newScoringDepth === undefined) return;
     const newLeagues = [
       ...leagues,
       { id: crypto.randomUUID(), name, placementPoints: newPlacementPoints, mulliganCount: newMulliganCount, scoringDepth: newScoringDepth, propPointValues: newPropPointValues },
@@ -69,7 +68,7 @@ export function LeaguesSection({ leagues, racerCount, onLeaguesChange, onError }
       setNewLeagueName("");
       setNewPlacementPoints(emptyPlacementPoints);
       setNewMulliganCount(0);
-      setNewScoringDepth(racerCount);
+      setNewScoringDepth(undefined);
       setNewPropPointValues(emptyPropPointValues);
       setIsAddingNew(false);
     }
@@ -108,7 +107,7 @@ export function LeaguesSection({ leagues, racerCount, onLeaguesChange, onError }
     setNewLeagueName("");
     setNewPlacementPoints(emptyPlacementPoints);
     setNewMulliganCount(0);
-    setNewScoringDepth(racerCount);
+    setNewScoringDepth(undefined);
     setNewPropPointValues(emptyPropPointValues);
   }
 
@@ -179,8 +178,8 @@ export function LeaguesSection({ leagues, racerCount, onLeaguesChange, onError }
                 type="number"
                 min={1}
                 className="w-16 text-right"
-                value={newScoringDepth}
-                onChange={(e) => setNewScoringDepth(Math.max(1, parseInt(e.target.value) || 1))}
+                value={newScoringDepth ?? ""}
+                onChange={(e) => setNewScoringDepth(e.target.value === "" ? undefined : Math.max(1, parseInt(e.target.value)))}
                 disabled={busy}
               />
             </div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { blob } from "@/lib/blob";
 import { Race, League, LeagueStandings, Team, User } from "@/lib/schemas";
 import { standingsPath, racesPath, LEAGUES_PATH, PARTICIPANTS_PATH, teamsPath } from "@/lib/paths";
+import { computeSeasonStandings, computeTeamSeasonStandings } from "@/lib/scoring";
 
 export async function GET(
   _request: Request,
@@ -18,12 +19,30 @@ export async function GET(
   ]);
 
   const league = leagues.find(s => s.id === leagueId) ?? null;
+  const mulliganCount = league?.mulliganCount ?? 0;
+
+  const driverRows = standings
+    ? computeSeasonStandings(standings.individual, mulliganCount).map(({ userId, total }) => ({
+        userId,
+        total,
+        raceScores: standings.individual.find(u => u.userId === userId)!.raceScores,
+      }))
+    : [];
+
+  const constructorRows = standings
+    ? computeTeamSeasonStandings(standings.teams, mulliganCount).map(({ teamId, total }) => ({
+        teamId,
+        total,
+        raceScores: standings.teams.find(t => t.teamId === teamId)!.raceScores,
+      }))
+    : [];
 
   return NextResponse.json({
     league,
     races: races.sort((a, b) => a.date.localeCompare(b.date)),
-    standings,
     usersById: Object.fromEntries(participants.users.map(u => [u.id, u])),
     teams,
+    driverRows,
+    constructorRows,
   });
 }
