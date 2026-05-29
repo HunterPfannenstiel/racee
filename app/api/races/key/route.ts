@@ -59,6 +59,7 @@ export async function PUT(request: Request) {
     propKey,
     propPointValues: league.propPointValues,
     placementPoints: league.placementPoints,
+    scoringDepth: league.scoringDepth,
     existingStandings, teams,
   });
 

@@ -1,9 +1,9 @@
 import { ScoreEntry, UserLeagueScores, TeamLeagueScores } from "@/lib/schemas";
 import { Team } from "@/lib/schemas";
 
-export function computeGridPoints(userOrder: string[], keyOrder: string[], placementPoints: number[]): number {
+export function computeGridPoints(userOrder: string[], keyOrder: string[], placementPoints: number[], scoringDepth: number): number {
   let total = 0;
-  for (let keyPos = 0; keyPos < keyOrder.length; keyPos++) {
+  for (let keyPos = 0; keyPos < Math.min(keyOrder.length, scoringDepth); keyPos++) {
     const racerId = keyOrder[keyPos];
     const userPos = userOrder.indexOf(racerId);
     if (userPos === -1) continue;

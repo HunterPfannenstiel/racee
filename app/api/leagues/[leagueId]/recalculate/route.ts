@@ -44,6 +44,7 @@ export async function POST(
     propKey: predictionsFile.propKey ?? emptyPropKey,
     propPointValues: league.propPointValues,
     placementPoints: league.placementPoints,
+    scoringDepth: league.scoringDepth,
     existingStandings, teams,
   });
 

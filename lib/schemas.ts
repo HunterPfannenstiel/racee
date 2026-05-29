@@ -59,6 +59,7 @@ export const LeagueSchema = z.object({
   name: z.string().min(1),
   placementPoints: PlacementPointsSchema,
   mulliganCount: z.number().int().min(0),
+  scoringDepth: z.number().int().min(1),
   propPointValues: PropPointValuesSchema,
 });
 

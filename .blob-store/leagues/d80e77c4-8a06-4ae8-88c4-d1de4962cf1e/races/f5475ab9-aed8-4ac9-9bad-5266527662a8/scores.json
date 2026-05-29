@@ -6,31 +6,31 @@
   "entries": [
     {
       "userId": "d9f26f95-c241-4991-8698-1e8ed034378b",
-      "gridPoints": 220,
+      "gridPoints": 170,
       "propPoints": 35,
       "medal": "gold"
     },
     {
       "userId": "e983a72e-ed1c-4153-aba5-f83b5f591a08",
-      "gridPoints": 159,
+      "gridPoints": 125,
       "propPoints": 20,
       "medal": "silver"
     },
     {
       "userId": "6d991872-a726-400b-bd70-d92ddf5cedc1",
-      "gridPoints": 145,
+      "gridPoints": 105,
       "propPoints": 15,
       "medal": "bronze"
     },
     {
       "userId": "34190f2a-74d6-4e46-9027-38b6386c00cd",
-      "gridPoints": 146,
+      "gridPoints": 106,
       "propPoints": 10,
       "medal": null
     },
     {
       "userId": "8738698b-ef07-4adb-8813-fb27649fa866",
-      "gridPoints": 76,
+      "gridPoints": 70,
       "propPoints": 10,
       "medal": null
     },

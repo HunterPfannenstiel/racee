@@ -21,19 +21,16 @@ export function SortableRacerRow({ racerId, index, racer, disabled, startingGrid
   return (
     <li
       ref={setNodeRef}
+      {...(disabled ? {} : listeners)}
+      {...attributes}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cn("flex items-center gap-3 py-1 rounded-sm select-none", isDragging ? "opacity-40 z-10" : "opacity-100")}
+      className={cn(
+        "flex items-center gap-3 py-1 rounded-sm select-none touch-none",
+        isDragging ? "opacity-40 z-10" : "opacity-100",
+        disabled ? "cursor-not-allowed opacity-40" : "cursor-grab active:cursor-grabbing"
+      )}
     >
-      <button
-        {...listeners}
-        {...attributes}
-        disabled={disabled}
-        tabIndex={0}
-        className="touch-none p-1 -ml-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
-        aria-label={`Drag to reorder ${racer.name}`}
-      >
-        <GripVerticalIcon className="size-4" />
-      </button>
+      <GripVerticalIcon className="size-5 p-0.5 shrink-0 text-muted-foreground" />
       <span className="w-7 shrink-0 text-right text-xs font-mono font-semibold text-muted-foreground tabular-nums">
         P{index + 1}
       </span>

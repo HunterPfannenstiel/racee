@@ -38,7 +38,7 @@ export default function CreatePage() {
         </Alert>
       )}
 
-      <LeaguesSection leagues={leagues} onLeaguesChange={setLeagues} onError={setError} />
+      <LeaguesSection leagues={leagues} racerCount={racers.length} onLeaguesChange={setLeagues} onError={setError} />
 
       <DriversSection racers={racers} onRacersChange={setRacers} onError={setError} />
 

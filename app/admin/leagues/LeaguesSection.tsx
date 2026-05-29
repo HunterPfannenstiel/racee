@@ -11,6 +11,7 @@ import { PlacementPointsEditor } from "./PlacementPointsEditor";
 
 type Props = {
   leagues: League[];
+  racerCount: number;
   onLeaguesChange: (leagues: League[]) => void;
   onError: (msg: string) => void;
 };
@@ -21,16 +22,18 @@ const emptyPropPointValues: PropPointValues = {
 };
 const emptyPlacementPoints: PlacementPoints = [];
 
-export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
+export function LeaguesSection({ leagues, racerCount, onLeaguesChange, onError }: Props) {
   const [newLeagueName, setNewLeagueName] = useState("");
   const [newPlacementPoints, setNewPlacementPoints] = useState<PlacementPoints>(emptyPlacementPoints);
   const [newMulliganCount, setNewMulliganCount] = useState(0);
+  const [newScoringDepth, setNewScoringDepth] = useState(racerCount);
   const [newPropPointValues, setNewPropPointValues] = useState<PropPointValues>(emptyPropPointValues);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingLeagueId, setEditingLeagueId] = useState<string | null>(null);
   const [editLeagueName, setEditLeagueName] = useState("");
   const [editPlacementPoints, setEditPlacementPoints] = useState<PlacementPoints>(emptyPlacementPoints);
   const [editMulliganCount, setEditMulliganCount] = useState(0);
+  const [editScoringDepth, setEditScoringDepth] = useState(1);
   const [editPropPointValues, setEditPropPointValues] = useState<PropPointValues>(emptyPropPointValues);
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
 
@@ -60,12 +63,13 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
     if (!name) return;
     const newLeagues = [
       ...leagues,
-      { id: crypto.randomUUID(), name, placementPoints: newPlacementPoints, mulliganCount: newMulliganCount, propPointValues: newPropPointValues },
+      { id: crypto.randomUUID(), name, placementPoints: newPlacementPoints, mulliganCount: newMulliganCount, scoringDepth: newScoringDepth, propPointValues: newPropPointValues },
     ];
     if (await save(newLeagues, "add")) {
       setNewLeagueName("");
       setNewPlacementPoints(emptyPlacementPoints);
       setNewMulliganCount(0);
+      setNewScoringDepth(racerCount);
       setNewPropPointValues(emptyPropPointValues);
       setIsAddingNew(false);
     }
@@ -78,6 +82,7 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
     setEditLeagueName(league.name);
     setEditPlacementPoints(league.placementPoints);
     setEditMulliganCount(league.mulliganCount);
+    setEditScoringDepth(league.scoringDepth);
     setEditPropPointValues(league.propPointValues);
   }
 
@@ -86,7 +91,7 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
     if (!name || !editingLeagueId) return;
     const newLeagues = leagues.map((s) =>
       s.id === editingLeagueId
-        ? { ...s, name, placementPoints: editPlacementPoints, mulliganCount: editMulliganCount, propPointValues: editPropPointValues }
+        ? { ...s, name, placementPoints: editPlacementPoints, mulliganCount: editMulliganCount, scoringDepth: editScoringDepth, propPointValues: editPropPointValues }
         : s
     );
     if (await save(newLeagues, "save")) setEditingLeagueId(null);
@@ -103,6 +108,7 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
     setNewLeagueName("");
     setNewPlacementPoints(emptyPlacementPoints);
     setNewMulliganCount(0);
+    setNewScoringDepth(racerCount);
     setNewPropPointValues(emptyPropPointValues);
   }
 
@@ -167,6 +173,17 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
                 disabled={busy}
               />
             </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Scoring depth</span>
+              <Input
+                type="number"
+                min={1}
+                className="w-16 text-right"
+                value={newScoringDepth}
+                onChange={(e) => setNewScoringDepth(Math.max(1, parseInt(e.target.value) || 1))}
+                disabled={busy}
+              />
+            </div>
             <PropPointValuesEditor values={newPropPointValues} onChange={setNewPropPointValues} disabled={busy} />
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleAdd} disabled={busy || !newLeagueName.trim()}>
@@ -201,6 +218,17 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
                 className="w-16 text-right"
                 value={editMulliganCount}
                 onChange={(e) => setEditMulliganCount(Math.max(0, parseInt(e.target.value) || 0))}
+                disabled={busy}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Scoring depth</span>
+              <Input
+                type="number"
+                min={1}
+                className="w-16 text-right"
+                value={editScoringDepth}
+                onChange={(e) => setEditScoringDepth(Math.max(1, parseInt(e.target.value) || 1))}
                 disabled={busy}
               />
             </div>

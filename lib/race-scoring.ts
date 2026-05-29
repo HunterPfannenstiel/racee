@@ -26,6 +26,7 @@ export async function scoreRaceAndUpdateStandings({
   propKey,
   propPointValues,
   placementPoints,
+  scoringDepth,
   existingStandings,
   teams,
 }: {
@@ -38,12 +39,13 @@ export async function scoreRaceAndUpdateStandings({
   propKey: PropKey;
   propPointValues: PropPointValues;
   placementPoints: PlacementPoints;
+  scoringDepth: number;
   existingStandings: LeagueStandings | null;
   teams: Team[];
 }) {
   const rawEntries = Object.entries(predictions).map(([userId, racerIds]) => ({
     userId,
-    gridPoints: computeGridPoints(racerIds, keyOrder, placementPoints),
+    gridPoints: computeGridPoints(racerIds, keyOrder, placementPoints, scoringDepth),
     propPoints: computePropPoints(propPicks[userId] ?? {}, propKey, propPointValues),
   }));
   const entries = assignMedals(rawEntries);
