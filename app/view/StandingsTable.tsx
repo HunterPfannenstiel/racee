@@ -89,7 +89,7 @@ export function StandingsTable({ rows, races, nameHeader, stages }: StandingsTab
                 <TooltipTrigger asChild>
                   <span className="cursor-default border-b border-dashed border-muted-foreground/50">Total</span>
                 </TooltipTrigger>
-                <TooltipContent>grid - mulligans + props</TooltipContent>
+                <TooltipContent>grid + props - mulligans</TooltipContent>
               </Tooltip>
             </StickyCell>
             {races.map((race) => {
@@ -106,10 +106,10 @@ export function StandingsTable({ rows, races, nameHeader, stages }: StandingsTab
                 </>
               );
             })}
-            <SummaryHeaderCell label="Grid" tooltip="no mulligans, no props" />
-            <SummaryHeaderCell label="Net" tooltip="grid after mulligans" />
+            <SummaryHeaderCell label="Grid" tooltip="all grid points (no props, no mulligans)" />
+            <SummaryHeaderCell label="-Mul" tooltip="grid - mulligans (no props)" />
             <SummaryHeaderCell label="Props" tooltip="all prop points" />
-            <SummaryHeaderCell label="Gross" tooltip="grid + props, no mulligans" />
+            <SummaryHeaderCell label="Gross" tooltip="grid + props (no mulligans)" />
             <SummaryHeaderCell label="S.Rank" tooltip="rank by Gross" />
             <SummaryHeaderCell label="Gap" tooltip="leader's Total minus your Total" />
           </tr>
