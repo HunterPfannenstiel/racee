@@ -14,6 +14,7 @@ export type StandingsRowData = {
   raceScores: Record<string, number>;
   mulliganedRaceIds: Set<string>;
   linkTo?: string;
+  raceLinks?: Record<string, string>;
 };
 
 type StandingsRowProps = {
@@ -78,7 +79,7 @@ export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, 
         const mulliganed = row.mulliganedRaceIds.has(race.id);
         return (
           <>
-            <RaceCell key={race.id} points={points} mulliganed={mulliganed} />
+            <RaceCell key={race.id} points={points} mulliganed={mulliganed} href={row.raceLinks?.[race.id]} />
             {stageLastRaceIds.has(race.id) && (
               <>
                 <StageCell value={stageTotalsByRaceId[race.id] ?? 0} rank={false} />

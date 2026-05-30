@@ -1,11 +1,14 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 type RaceCellProps = {
   points: number | null;
   mulliganed: boolean;
+  href?: string;
 };
 
-export function RaceCell({ points, mulliganed }: RaceCellProps) {
+export function RaceCell({ points, mulliganed, href }: RaceCellProps) {
+  const content = points === null ? "—" : points;
   return (
     <td
       className={cn(
@@ -14,7 +17,11 @@ export function RaceCell({ points, mulliganed }: RaceCellProps) {
         mulliganed && "text-muted-foreground line-through"
       )}
     >
-      {points === null ? "—" : points}
+      {href ? (
+        <Link href={href} className="hover:text-primary transition-colors">
+          {content}
+        </Link>
+      ) : content}
     </td>
   );
 }

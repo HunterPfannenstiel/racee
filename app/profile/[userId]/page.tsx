@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { type League, type Race, type Racer, type PropKey, type PropPointValues } from "@/lib/schemas";
 import { PageShell } from "@/components/ui/page-shell";
 import { LeaguePicker } from "@/components/ui/league-picker";
@@ -41,6 +41,9 @@ function computeDriverPoints(
 
 export default function ProfilePage() {
   const { userId } = useParams<{ userId: string }>();
+  const searchParams = useSearchParams();
+  const paramLeagueId = searchParams.get("leagueId");
+  const paramRaceId = searchParams.get("raceId");
 
   const [leagues, setLeagues] = useState<League[] | null>(null);
   const [racersById, setRacersById] = useState<Record<string, Racer>>({});
@@ -71,6 +74,16 @@ export default function ProfilePage() {
       .then((r) => r.json() as Promise<Race[]>)
       .then((rs) => { setRaces(rs); setLoadingRaces(false); });
   }, [selectedLeagueId]);
+
+  useEffect(() => {
+    if (!leagues || !paramLeagueId) return;
+    if (leagues.some((l) => l.id === paramLeagueId)) setSelectedLeagueId(paramLeagueId);
+  }, [leagues, paramLeagueId]);
+
+  useEffect(() => {
+    if (!races || !paramRaceId) return;
+    if (races.some((r) => r.id === paramRaceId)) setSelectedRaceId(paramRaceId);
+  }, [races, paramRaceId]);
 
   useEffect(() => {
     if (!selectedLeagueId || !selectedRaceId) return;

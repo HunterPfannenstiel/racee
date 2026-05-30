@@ -40,6 +40,9 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.gridPoints + r.propPoints])),
     mulliganedRaceIds: getMulliganedRaceIds(raceScores, mulliganCount),
     linkTo: `/profile/${userId}`,
+    raceLinks: Object.fromEntries(
+      raceScores.map((r) => [r.raceId, `/profile/${userId}?leagueId=${league.id}&raceId=${r.raceId}`])
+    ),
   }));
 
   const mappedConstructorRows: StandingsRowData[] = constructorRows.map(({ teamId, total, rawTotal, propTotal, raceScores }) => ({
