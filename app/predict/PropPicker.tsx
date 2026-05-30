@@ -40,7 +40,7 @@ export function PropPicker({ racers, propPicks, onChange, disabled }: Props) {
                 value={search[prop]}
                 onChange={(e) => setSearch((s) => ({ ...s, [prop]: e.target.value }))}
                 disabled={disabled}
-                className="h-7 text-xs flex-1"
+                className="h-7 text-xs flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -51,7 +51,7 @@ export function PropPicker({ racers, propPicks, onChange, disabled }: Props) {
                   disabled={disabled}
                   style={selected === opt.id && opt.color ? { backgroundColor: opt.color } : undefined}
                   className={cn(
-                    "rounded-sm border px-2.5 py-1 text-xs font-medium transition-colors",
+                    "rounded-sm border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
                     selected === opt.id
                       ? "text-white border-transparent"
                       : "hover:border-foreground text-muted-foreground hover:text-foreground"

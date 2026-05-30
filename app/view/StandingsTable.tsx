@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { type Race } from "@/lib/schemas";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StickyCell } from "./StickyCell";
@@ -95,15 +96,15 @@ export function StandingsTable({ rows, races, nameHeader, stages }: StandingsTab
             {races.map((race) => {
               const stageIdx = stageData.findIndex((s) => s.lastRaceId === race.id);
               return (
-                <>
-                  <RaceHeaderCell key={race.id} label={race.label ?? race.title} />
+                <Fragment key={race.id}>
+                  <RaceHeaderCell label={race.label ?? race.title} />
                   {stageLastRaceIds.has(race.id) && (
                     <>
                       <StageHeaderCell label={`S${stageIdx + 1}`} tooltip={`Stage ${stageIdx + 1} total points`} />
                       <StageHeaderCell label="Rank" tooltip={`Rank among all players for Stage ${stageIdx + 1}`} />
                     </>
                   )}
-                </>
+                </Fragment>
               );
             })}
             <SummaryHeaderCell label="Grid" tooltip="all grid points (no props, no mulligans)" />
