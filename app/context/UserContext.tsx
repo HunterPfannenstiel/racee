@@ -1,34 +1,25 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext } from "react";
+import { useSession } from "@/server/auth/auth-client";
 import { type User } from "@/lib/schemas";
 
 type UserContextValue = {
   user: User | null;
-  setUser: (user: User) => void;
-  clearUser: () => void;
+  isAdmin: boolean;
 };
 
-const UserContext = createContext<UserContextValue>({ user: null, setUser: () => {}, clearUser: () => {} });
+const UserContext = createContext<UserContextValue>({ user: null, isAdmin: false });
 
 export function UserContextProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUserState] = useState<User | null>(null);
+  const { data: session } = useSession();
 
-  useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (stored) setUserState(JSON.parse(stored));
-  }, []);
+  const user: User | null = session?.user
+    ? { id: session.user.id, name: session.user.name }
+    : null;
 
-  function setUser(user: User) {
-    localStorage.setItem("user", JSON.stringify(user));
-    setUserState(user);
-  }
+  const isAdmin = session?.user?.isAdmin ?? false;
 
-  function clearUser() {
-    localStorage.removeItem("user");
-    setUserState(null);
-  }
-
-  return <UserContext.Provider value={{ user, setUser, clearUser }}>{children}</UserContext.Provider>;
+  return <UserContext.Provider value={{ user, isAdmin }}>{children}</UserContext.Provider>;
 }
 
 export function useUser() {

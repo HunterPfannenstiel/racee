@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { PageShell } from "@/components/ui/page-shell";
 import { CalendarIcon, FlagIcon, UserIcon, UsersIcon, KeyRoundIcon } from "lucide-react";
+import { getSession } from "@/server/auth/server";
 
 const CARDS = [
   {
@@ -35,7 +37,9 @@ const CARDS = [
   },
 ];
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  const session = await getSession();
+  if (!session?.user.isAdmin) redirect("/");
   return (
     <PageShell title="Admin">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

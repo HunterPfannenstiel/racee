@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "@/server/auth/auth-client";
 import { useUser } from "@/app/context/UserContext";
 import { cn } from "@/lib/utils";
 
@@ -10,22 +11,13 @@ const NAV = [
   { href: "/predict", label: "Predict" },
   { href: "/view",    label: "Standings" },
   { href: "/teams",   label: "Teams" },
-  { href: "/admin",   label: "Admin" },
 ];
 
 export default function Header() {
-  const { user, clearUser } = useUser();
+  const { user, isAdmin } = useUser();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
 
   return (
     <header className="border-b-2 border-primary bg-card">
@@ -50,6 +42,19 @@ export default function Header() {
               {label}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={cn(
+                "px-3 py-1.5 text-sm font-medium rounded-sm transition-colors",
+                pathname.startsWith("/admin")
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="relative text-sm font-medium" ref={ref}>
@@ -71,7 +76,7 @@ export default function Header() {
                     Profile
                   </Link>
                   <button
-                    onClick={() => { clearUser(); setOpen(false); }}
+                    onClick={() => { signOut(); setOpen(false); }}
                     className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md"
                   >
                     Sign out

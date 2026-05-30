@@ -32,7 +32,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
 
   const mappedDriverRows: StandingsRowData[] = driverRows.map(({ userId, total, rawTotal, propTotal, raceScores }) => ({
     id: userId,
-    label: usersById[userId]?.name ?? userId,
+    label: usersById[userId]?.name ?? "Unknown User",
     color: userTeamColor[userId] ?? "#6b7280",
     total,
     rawTotal,

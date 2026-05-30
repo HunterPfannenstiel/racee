@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 export const UserSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string().min(1),
 });
 
 export const TeamSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
-  memberIds: z.array(z.string().uuid()),
+  memberIds: z.array(z.string()),
   color: z.string().optional(),
 });
 
@@ -20,7 +20,7 @@ export const LeagueTeamsSchema = z.array(TeamSchema);
 
 export const TeamJoinSchema = z.object({
   leagueId: z.string().uuid(),
-  userId: z.string().uuid(),
+  userId: z.string(),
   teamId: z.string().uuid(),
 });
 
@@ -103,10 +103,10 @@ export type PropKey = z.infer<typeof PropKeySchema>;
 export const PredictionsFileSchema = z.object({
   key: z.array(z.string().uuid()).nullable(),
   keySetAt: z.string().nullable().default(null),
-  predictions: z.record(z.string().uuid(), z.array(z.string().uuid())),
-  submittedAt: z.record(z.string().uuid(), z.string()).optional(),
+  predictions: z.record(z.string(), z.array(z.string().uuid())),
+  submittedAt: z.record(z.string(), z.string()).optional(),
   propKey: PropKeySchema,
-  propPicks: z.record(z.string().uuid(), z.object({
+  propPicks: z.record(z.string(), z.object({
     driverOfDay: z.string().optional(),
     lapsLed: z.string().optional(),
     fastestPitStop: z.string().optional(),
@@ -121,7 +121,7 @@ export type PredictionsFile = z.infer<typeof PredictionsFileSchema>;
 export const PredictionMutationSchema = z.object({
   leagueId: z.string().uuid(),
   raceId: z.string().uuid(),
-  userId: z.string().uuid(),
+  userId: z.string(),
   racerIds: z.array(z.string().uuid()),
   propPicks: z.record(PropNameSchema, z.string()).optional(),
 });
@@ -142,7 +142,7 @@ export const RaceScoreEntrySchema = z.object({
 });
 
 export const UserLeagueScoresSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string(),
   raceScores: z.array(RaceScoreEntrySchema),
 });
 
@@ -164,7 +164,7 @@ export type TeamLeagueScores = z.infer<typeof TeamLeagueScoresSchema>;
 export type LeagueStandings = z.infer<typeof LeagueStandingsSchema>;
 
 export const ScoreEntrySchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string(),
   gridPoints: z.number().int().min(0),
   propPoints: z.number().int().min(0),
   medal: z.enum(["gold", "silver", "bronze"]).nullable(),

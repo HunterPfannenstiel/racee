@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { blob } from "@/lib/blob";
-import { Race, League, LeagueStandings, Team, User } from "@/lib/schemas";
-import { standingsPath, racesPath, LEAGUES_PATH, PARTICIPANTS_PATH, teamsPath } from "@/lib/paths";
+import { Race, League, LeagueStandings, Team } from "@/lib/schemas";
+import { standingsPath, racesPath, LEAGUES_PATH, teamsPath } from "@/lib/paths";
 import { computeSeasonStandings, computeTeamSeasonStandings } from "@/lib/scoring";
+import { getUsersByIds } from "@/server/repositories/user";
 
 export async function GET(
   _request: Request,
@@ -10,10 +11,9 @@ export async function GET(
 ) {
   const { leagueId } = await params;
 
-  const [races, standings, participants, leagues, teams] = await Promise.all([
+  const [races, standings, leagues, teams] = await Promise.all([
     blob.read<Race[]>(racesPath(leagueId)).then(r => r ?? []),
     blob.read<LeagueStandings>(standingsPath(leagueId)),
-    blob.read<{ users: User[] }>(PARTICIPANTS_PATH).then(r => r ?? { users: [] }),
     blob.read<League[]>(LEAGUES_PATH).then(r => r ?? []),
     blob.read<Team[]>(teamsPath(leagueId)).then(r => r ?? []),
   ]);
@@ -56,10 +56,14 @@ export async function GET(
     });
   }
 
+  const userIds = standings?.individual.map(u => u.userId) ?? [];
+  const users = await getUsersByIds(userIds);
+  const usersById = Object.fromEntries(users.map(u => [u.id, u]));
+
   return NextResponse.json({
     league,
     races: sortedRaces,
-    usersById: Object.fromEntries(participants.users.map(u => [u.id, u])),
+    usersById,
     teams,
     driverRows,
     constructorRows,

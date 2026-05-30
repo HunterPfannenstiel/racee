@@ -4,7 +4,8 @@
     "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
     "4989ab0d-78f3-4ba4-90da-a208becef79f",
     "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-    "5db851b3-5df4-4210-b34a-7778040d9126"
+    "5db851b3-5df4-4210-b34a-7778040d9126",
+    "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05"
   ],
   "individual": [
     {
@@ -154,6 +155,16 @@
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
           "gridPoints": 62,
           "propPoints": 0
+        }
+      ]
+    },
+    {
+      "userId": "I9a3e5YFCKhzmxz9r0bwJlFiV2A6FSfx",
+      "raceScores": [
+        {
+          "raceId": "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05",
+          "gridPoints": 164,
+          "propPoints": 35
         }
       ]
     }
