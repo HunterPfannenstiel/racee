@@ -72,7 +72,7 @@ export async function scoreRaceAndUpdateStandings({
   const updatedIndividual = [...stripped.individual];
   for (const entry of entries) {
     const idx = updatedIndividual.findIndex((u) => u.userId === entry.userId);
-    const newScore = { raceId, points: entry.gridPoints + entry.propPoints };
+    const newScore = { raceId, gridPoints: entry.gridPoints, propPoints: entry.propPoints };
     if (idx >= 0) {
       updatedIndividual[idx] = { ...updatedIndividual[idx], raceScores: [...updatedIndividual[idx].raceScores, newScore] };
     } else {
@@ -83,7 +83,7 @@ export async function scoreRaceAndUpdateStandings({
   const updatedTeams = [...stripped.teams];
   for (const teamScore of teamRaceScores) {
     const idx = updatedTeams.findIndex((t) => t.teamId === teamScore.teamId);
-    const newScore = { raceId, points: teamScore.points };
+    const newScore = { raceId, gridPoints: teamScore.gridPoints, propPoints: teamScore.propPoints };
     if (idx >= 0) {
       updatedTeams[idx] = { ...updatedTeams[idx], raceScores: [...updatedTeams[idx].raceScores, newScore] };
     } else {

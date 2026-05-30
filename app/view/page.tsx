@@ -6,8 +6,8 @@ import { PageShell } from "@/components/ui/page-shell";
 import { LeaguePicker } from "@/components/ui/league-picker";
 import { StandingsGrid } from "./StandingsGrid";
 
-type DriverRow = { userId: string; total: number; raceScores: RaceScoreEntry[] };
-type ConstructorRow = { teamId: string; total: number; raceScores: RaceScoreEntry[] };
+type DriverRow = { userId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
+type ConstructorRow = { teamId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
 
 type LeagueData = {
   league: League | null;
@@ -16,6 +16,7 @@ type LeagueData = {
   teams: Team[];
   driverRows: DriverRow[];
   constructorRows: ConstructorRow[];
+  stages: string[][];
 };
 
 export default function ViewPage() {
@@ -71,6 +72,7 @@ export default function ViewPage() {
               teams={data.teams}
               driverRows={data.driverRows}
               constructorRows={data.constructorRows}
+              stages={data.stages}
             />
           ) : data && (
             <p className="text-xs tracking-widest uppercase text-muted-foreground">No scores yet.</p>

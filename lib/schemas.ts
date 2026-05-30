@@ -60,6 +60,7 @@ export const LeagueSchema = z.object({
   placementPoints: PlacementPointsSchema,
   mulliganCount: z.number().int().min(0),
   scoringDepth: z.number().int().min(1),
+  stageCount: z.number().int().min(0).optional(),
   propPointValues: PropPointValuesSchema,
 });
 
@@ -136,7 +137,8 @@ export type KeyMutation = z.infer<typeof KeyMutationSchema>;
 
 export const RaceScoreEntrySchema = z.object({
   raceId: z.string().uuid(),
-  points: z.number().int().min(0),
+  gridPoints: z.number().int().min(0),
+  propPoints: z.number().int().min(0),
 });
 
 export const UserLeagueScoresSchema = z.object({

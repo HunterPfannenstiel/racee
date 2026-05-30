@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { type League, type Race, type Racer, type LeagueStandings } from "@/lib/schemas";
+import { type League, type Race, type Racer } from "@/lib/schemas";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { LeaguePicker } from "@/components/ui/league-picker";
 
 type ViewInitData = {
   races: Race[];
-  standings: LeagueStandings | null;
+  gradedRaceIds: string[];
 };
 
 export default function AdminResultsPage() {
@@ -48,7 +48,7 @@ export default function AdminResultsPage() {
     ])
       .then(([viewData, racerList, dates]) => {
         setRaces(viewData.races);
-        setGradedRaceIds(new Set(viewData.standings?.gradedRaceIds ?? []));
+        setGradedRaceIds(new Set(viewData.gradedRaceIds));
         setRacersById(Object.fromEntries(racerList.map((r) => [r.id, r])));
         setKeyDates(dates);
       })

@@ -9,6 +9,7 @@
     ],
     "mulliganCount": 2,
     "scoringDepth": 17,
+    "stageCount": 4,
     "propPointValues": {
       "driverOfDay": 5,
       "lapsLed": 5,

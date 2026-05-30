@@ -25,6 +25,7 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
   const [newLeagueName, setNewLeagueName] = useState("");
   const [newPlacementPoints, setNewPlacementPoints] = useState<PlacementPoints>(emptyPlacementPoints);
   const [newMulliganCount, setNewMulliganCount] = useState(0);
+  const [newStageCount, setNewStageCount] = useState(0);
   const [newScoringDepth, setNewScoringDepth] = useState<number | undefined>(undefined);
   const [newPropPointValues, setNewPropPointValues] = useState<PropPointValues>(emptyPropPointValues);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -32,6 +33,7 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
   const [editLeagueName, setEditLeagueName] = useState("");
   const [editPlacementPoints, setEditPlacementPoints] = useState<PlacementPoints>(emptyPlacementPoints);
   const [editMulliganCount, setEditMulliganCount] = useState(0);
+  const [editStageCount, setEditStageCount] = useState(0);
   const [editScoringDepth, setEditScoringDepth] = useState(1);
   const [editPropPointValues, setEditPropPointValues] = useState<PropPointValues>(emptyPropPointValues);
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
@@ -62,12 +64,13 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
     if (!name || newScoringDepth === undefined) return;
     const newLeagues = [
       ...leagues,
-      { id: crypto.randomUUID(), name, placementPoints: newPlacementPoints, mulliganCount: newMulliganCount, scoringDepth: newScoringDepth, propPointValues: newPropPointValues },
+      { id: crypto.randomUUID(), name, placementPoints: newPlacementPoints, mulliganCount: newMulliganCount, stageCount: newStageCount, scoringDepth: newScoringDepth, propPointValues: newPropPointValues },
     ];
     if (await save(newLeagues, "add")) {
       setNewLeagueName("");
       setNewPlacementPoints(emptyPlacementPoints);
       setNewMulliganCount(0);
+      setNewStageCount(0);
       setNewScoringDepth(undefined);
       setNewPropPointValues(emptyPropPointValues);
       setIsAddingNew(false);
@@ -81,6 +84,7 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
     setEditLeagueName(league.name);
     setEditPlacementPoints(league.placementPoints);
     setEditMulliganCount(league.mulliganCount);
+    setEditStageCount(league.stageCount ?? 0);
     setEditScoringDepth(league.scoringDepth);
     setEditPropPointValues(league.propPointValues);
   }
@@ -90,7 +94,7 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
     if (!name || !editingLeagueId) return;
     const newLeagues = leagues.map((s) =>
       s.id === editingLeagueId
-        ? { ...s, name, placementPoints: editPlacementPoints, mulliganCount: editMulliganCount, scoringDepth: editScoringDepth, propPointValues: editPropPointValues }
+        ? { ...s, name, placementPoints: editPlacementPoints, mulliganCount: editMulliganCount, stageCount: editStageCount, scoringDepth: editScoringDepth, propPointValues: editPropPointValues }
         : s
     );
     if (await save(newLeagues, "save")) setEditingLeagueId(null);
@@ -173,6 +177,17 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
               />
             </div>
             <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Stages</span>
+              <Input
+                type="number"
+                min={0}
+                className="w-16 text-right"
+                value={newStageCount}
+                onChange={(e) => setNewStageCount(Math.max(0, parseInt(e.target.value) || 0))}
+                disabled={busy}
+              />
+            </div>
+            <div className="flex items-center gap-2">
               <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Scoring depth</span>
               <Input
                 type="number"
@@ -217,6 +232,17 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
                 className="w-16 text-right"
                 value={editMulliganCount}
                 onChange={(e) => setEditMulliganCount(Math.max(0, parseInt(e.target.value) || 0))}
+                disabled={busy}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Stages</span>
+              <Input
+                type="number"
+                min={0}
+                className="w-16 text-right"
+                value={editStageCount}
+                onChange={(e) => setEditStageCount(Math.max(0, parseInt(e.target.value) || 0))}
                 disabled={busy}
               />
             </div>

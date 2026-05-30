@@ -35,29 +35,32 @@ export function assignMedals(entries: Omit<ScoreEntry, "medal">[]): ScoreEntry[]
   return sorted.map((entry, idx) => ({ ...entry, medal: medals[idx] }));
 }
 
-function applyMulligans(raceScores: { points: number }[], mulliganCount: number) {
-  const sorted = [...raceScores].sort((a, b) => a.points - b.points);
+function applyMulligans(raceScores: { gridPoints: number; propPoints: number }[], mulliganCount: number) {
+  const combined = (s: { gridPoints: number; propPoints: number }) => s.gridPoints + s.propPoints;
+  const sorted = [...raceScores].sort((a, b) => combined(a) - combined(b));
   const mulliganed = raceScores.length > mulliganCount ? mulliganCount : 0;
-  const total = sorted.slice(mulliganed).reduce((sum, s) => sum + s.points, 0);
+  const total = sorted.slice(mulliganed).reduce((sum, s) => sum + combined(s), 0);
   return { total, mulliganed };
 }
 
-export function getMulliganedRaceIds(raceScores: { raceId: string; points: number }[], mulliganCount: number): Set<string> {
+export function getMulliganedRaceIds(raceScores: { raceId: string; gridPoints: number; propPoints: number }[], mulliganCount: number): Set<string> {
   if (raceScores.length <= mulliganCount) return new Set();
   return new Set(
-    [...raceScores].sort((a, b) => a.points - b.points).slice(0, mulliganCount).map((r) => r.raceId)
+    [...raceScores].sort((a, b) => (a.gridPoints + a.propPoints) - (b.gridPoints + b.propPoints)).slice(0, mulliganCount).map((r) => r.raceId)
   );
 }
 
 export function computeTeamRaceScores(entries: ScoreEntry[], teams: Team[]) {
   return teams
     .filter((team) => team.memberIds.some((id) => entries.some((e) => e.userId === id)))
-    .map((team) => ({
-      teamId: team.id,
-      points: entries
-        .filter((e) => team.memberIds.includes(e.userId))
-        .reduce((sum, e) => sum + e.gridPoints + e.propPoints, 0),
-    }));
+    .map((team) => {
+      const members = entries.filter((e) => team.memberIds.includes(e.userId));
+      return {
+        teamId: team.id,
+        gridPoints: members.reduce((sum, e) => sum + e.gridPoints, 0),
+        propPoints: members.reduce((sum, e) => sum + e.propPoints, 0),
+      };
+    });
 }
 
 export function computeSeasonStandings(individual: UserLeagueScores[], mulliganCount: number) {

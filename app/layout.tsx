@@ -3,6 +3,7 @@ import { Space_Grotesk, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { UserContextProvider } from "@/app/context/UserContext";
 import Header from "@/app/components/Header";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -30,10 +31,12 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <UserContextProvider>
-          <Header />
-          {children}
-        </UserContextProvider>
+        <TooltipProvider>
+          <UserContextProvider>
+            <Header />
+            {children}
+          </UserContextProvider>
+        </TooltipProvider>
       </body>
     </html>
   );

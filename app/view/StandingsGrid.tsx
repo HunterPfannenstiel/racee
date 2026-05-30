@@ -8,8 +8,8 @@ import { type StandingsRowData } from "./StandingsRow";
 
 type Tab = "drivers" | "constructors";
 
-type DriverRow = { userId: string; total: number; raceScores: RaceScoreEntry[] };
-type ConstructorRow = { teamId: string; total: number; raceScores: RaceScoreEntry[] };
+type DriverRow = { userId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
+type ConstructorRow = { teamId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
 
 type StandingsGridProps = {
   league: League;
@@ -18,9 +18,10 @@ type StandingsGridProps = {
   teams: Team[];
   driverRows: DriverRow[];
   constructorRows: ConstructorRow[];
+  stages: string[][];
 };
 
-export function StandingsGrid({ league, races, usersById, teams, driverRows, constructorRows }: StandingsGridProps) {
+export function StandingsGrid({ league, races, usersById, teams, driverRows, constructorRows, stages }: StandingsGridProps) {
   const [tab, setTab] = useState<Tab>("drivers");
 
   const mulliganCount = league.mulliganCount;
@@ -29,22 +30,26 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     teams.flatMap((t) => t.memberIds.map((uid) => [uid, t.color ?? "#6b7280"]))
   );
 
-  const mappedDriverRows: StandingsRowData[] = driverRows.map(({ userId, total, raceScores }) => ({
+  const mappedDriverRows: StandingsRowData[] = driverRows.map(({ userId, total, rawTotal, propTotal, raceScores }) => ({
     id: userId,
     label: usersById[userId]?.name ?? userId,
     color: userTeamColor[userId] ?? "#6b7280",
     total,
-    raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.points])),
+    rawTotal,
+    propTotal,
+    raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.gridPoints + r.propPoints])),
     mulliganedRaceIds: getMulliganedRaceIds(raceScores, mulliganCount),
     linkTo: `/profile/${userId}`,
   }));
 
-  const mappedConstructorRows: StandingsRowData[] = constructorRows.map(({ teamId, total, raceScores }) => ({
+  const mappedConstructorRows: StandingsRowData[] = constructorRows.map(({ teamId, total, rawTotal, propTotal, raceScores }) => ({
     id: teamId,
     label: teamsById[teamId]?.name ?? teamId,
     color: teamsById[teamId]?.color ?? "#6b7280",
     total,
-    raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.points])),
+    rawTotal,
+    propTotal,
+    raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.gridPoints + r.propPoints])),
     mulliganedRaceIds: getMulliganedRaceIds(raceScores, mulliganCount),
   }));
 
@@ -72,6 +77,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
         rows={rows}
         races={races}
         nameHeader={tab === "drivers" ? "Driver" : "Team"}
+        stages={stages}
       />
     </div>
   );

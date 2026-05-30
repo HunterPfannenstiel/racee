@@ -12,19 +12,23 @@
       "raceScores": [
         {
           "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
-          "points": 185
+          "gridPoints": 150,
+          "propPoints": 35
         },
         {
           "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
-          "points": 145
+          "gridPoints": 125,
+          "propPoints": 20
         },
         {
           "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "points": 116
+          "gridPoints": 106,
+          "propPoints": 10
         },
         {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "points": 161
+          "gridPoints": 146,
+          "propPoints": 15
         }
       ]
     },
@@ -33,19 +37,23 @@
       "raceScores": [
         {
           "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
-          "points": 186
+          "gridPoints": 151,
+          "propPoints": 35
         },
         {
           "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
-          "points": 205
+          "gridPoints": 170,
+          "propPoints": 35
         },
         {
           "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "points": 205
+          "gridPoints": 170,
+          "propPoints": 35
         },
         {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "points": 125
+          "gridPoints": 90,
+          "propPoints": 35
         }
       ]
     },
@@ -54,19 +62,23 @@
       "raceScores": [
         {
           "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
-          "points": 156
+          "gridPoints": 136,
+          "propPoints": 20
         },
         {
           "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
-          "points": 162
+          "gridPoints": 132,
+          "propPoints": 30
         },
         {
           "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "points": 145
+          "gridPoints": 125,
+          "propPoints": 20
         },
         {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "points": 115
+          "gridPoints": 95,
+          "propPoints": 20
         }
       ]
     },
@@ -75,19 +87,23 @@
       "raceScores": [
         {
           "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
-          "points": 139
+          "gridPoints": 129,
+          "propPoints": 10
         },
         {
           "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
-          "points": 149
+          "gridPoints": 129,
+          "propPoints": 20
         },
         {
           "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "points": 120
+          "gridPoints": 105,
+          "propPoints": 15
         },
         {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "points": 100
+          "gridPoints": 95,
+          "propPoints": 5
         }
       ]
     },
@@ -96,19 +112,23 @@
       "raceScores": [
         {
           "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
-          "points": 134
+          "gridPoints": 119,
+          "propPoints": 15
         },
         {
           "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
-          "points": 141
+          "gridPoints": 116,
+          "propPoints": 25
         },
         {
           "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "points": 80
+          "gridPoints": 70,
+          "propPoints": 10
         },
         {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "points": 77
+          "gridPoints": 77,
+          "propPoints": 0
         }
       ]
     },
@@ -117,19 +137,23 @@
       "raceScores": [
         {
           "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
-          "points": 101
+          "gridPoints": 101,
+          "propPoints": 0
         },
         {
           "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
-          "points": 43
+          "gridPoints": 43,
+          "propPoints": 0
         },
         {
           "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "points": 6
+          "gridPoints": 6,
+          "propPoints": 0
         },
         {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "points": 62
+          "gridPoints": 62,
+          "propPoints": 0
         }
       ]
     }
@@ -140,19 +164,23 @@
       "raceScores": [
         {
           "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
-          "points": 429
+          "gridPoints": 384,
+          "propPoints": 45
         },
         {
           "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
-          "points": 452
+          "gridPoints": 377,
+          "propPoints": 75
         },
         {
           "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "points": 345
+          "gridPoints": 300,
+          "propPoints": 45
         },
         {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "points": 292
+          "gridPoints": 267,
+          "propPoints": 25
         }
       ]
     },
@@ -161,19 +189,23 @@
       "raceScores": [
         {
           "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
-          "points": 472
+          "gridPoints": 402,
+          "propPoints": 70
         },
         {
           "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
-          "points": 393
+          "gridPoints": 338,
+          "propPoints": 55
         },
         {
           "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "points": 327
+          "gridPoints": 282,
+          "propPoints": 45
         },
         {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "points": 348
+          "gridPoints": 298,
+          "propPoints": 50
         }
       ]
     }

@@ -20,29 +20,50 @@ export async function GET(
 
   const league = leagues.find(s => s.id === leagueId) ?? null;
   const mulliganCount = league?.mulliganCount ?? 0;
+  const stageCount = league?.stageCount ?? 0;
 
   const driverRows = standings
-    ? computeSeasonStandings(standings.individual, mulliganCount).map(({ userId, total }) => ({
-        userId,
-        total,
-        raceScores: standings.individual.find(u => u.userId === userId)!.raceScores,
-      }))
+    ? computeSeasonStandings(standings.individual, mulliganCount).map(({ userId, total }) => {
+        const raceScores = standings.individual.find(u => u.userId === userId)!.raceScores;
+        return {
+          userId,
+          total,
+          rawTotal: raceScores.reduce((sum, r) => sum + r.gridPoints, 0),
+          propTotal: raceScores.reduce((sum, r) => sum + r.propPoints, 0),
+          raceScores,
+        };
+      })
     : [];
 
   const constructorRows = standings
-    ? computeTeamSeasonStandings(standings.teams, mulliganCount).map(({ teamId, total }) => ({
-        teamId,
-        total,
-        raceScores: standings.teams.find(t => t.teamId === teamId)!.raceScores,
-      }))
+    ? computeTeamSeasonStandings(standings.teams, mulliganCount).map(({ teamId, total }) => {
+        const raceScores = standings.teams.find(t => t.teamId === teamId)!.raceScores;
+        return {
+          teamId,
+          total,
+          rawTotal: raceScores.reduce((sum, r) => sum + r.gridPoints, 0),
+          propTotal: raceScores.reduce((sum, r) => sum + r.propPoints, 0),
+          raceScores,
+        };
+      })
     : [];
+
+  const sortedRaces = races.sort((a, b) => a.date.localeCompare(b.date));
+  const stages: string[][] = Array.from({ length: stageCount }, () => []);
+  if (stageCount > 0) {
+    sortedRaces.forEach((race, i) => {
+      stages[Math.floor(i * stageCount / sortedRaces.length)].push(race.id);
+    });
+  }
 
   return NextResponse.json({
     league,
-    races: races.sort((a, b) => a.date.localeCompare(b.date)),
+    races: sortedRaces,
     usersById: Object.fromEntries(participants.users.map(u => [u.id, u])),
     teams,
     driverRows,
     constructorRows,
+    gradedRaceIds: standings?.gradedRaceIds ?? [],
+    stages,
   });
 }
