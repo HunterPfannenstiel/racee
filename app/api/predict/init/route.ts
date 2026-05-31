@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { blob } from "@/lib/blob";
-import { LEAGUES_PATH, RACERS_PATH, racesPath, predictionsPath } from "@/lib/paths";
-import { League, Racer, Race, PredictionsFile } from "@/lib/schemas";
+import * as leagueRepository from "@/server/repositories/league";
+import * as racerRepository from "@/server/repositories/racer";
+import * as raceRepository from "@/server/repositories/race";
+import * as predictionRepository from "@/server/repositories/prediction";
+
+const emptyPropKey = { driverOfDay: null, lapsLed: null, fastestPitStop: null, fastestLap: null, overAchiever: null, underAchiever: null, wrecker: null };
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -9,26 +12,23 @@ export async function GET(request: Request) {
   if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
 
   const [leagues, racersList] = await Promise.all([
-    blob.read<League[]>(LEAGUES_PATH).then(r => r ?? []),
-    blob.read<Racer[]>(RACERS_PATH).then(r => r ?? []),
+    leagueRepository.getAll(),
+    racerRepository.getAll(),
   ]);
 
-  const racesPerLeague = await Promise.all(
-    leagues.map(s => blob.read<Race[]>(racesPath(s.id)).then(r => r ?? []))
-  );
+  const racesPerLeague = await Promise.all(leagues.map((l) => raceRepository.getForLeague(l.id)));
   const races = racesPerLeague.flat();
 
   const predictionEntries = await Promise.all(
-    races.map(async race => {
-      const file = await blob.read<PredictionsFile>(predictionsPath(race.leagueId, race.id));
-      const emptyPropKey = { driverOfDay: null, lapsLed: null, fastestPitStop: null, fastestLap: null, overAchiever: null, underAchiever: null, wrecker: null };
+    races.map(async (race) => {
+      const file = await predictionRepository.getForRace(race.leagueId, race.id);
       return [race.id, file ?? { key: null, keySetAt: null, predictions: {}, propKey: emptyPropKey, propPicks: {} }] as const;
-    })
+    }),
   );
 
   return NextResponse.json({
     leagues,
-    racersById: Object.fromEntries(racersList.map(r => [r.id, r])),
+    racersById: Object.fromEntries(racersList.map((r) => [r.id, r])),
     races,
     predictions: Object.fromEntries(predictionEntries),
   });

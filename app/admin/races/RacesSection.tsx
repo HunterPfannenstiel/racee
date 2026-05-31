@@ -108,18 +108,14 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
       lockTime: editor.lockTime ? new Date(editor.lockTime).toISOString() : undefined,
       startingGrid: editor.startingGrid,
     };
+    const isNew = !races.some((r) => r.id === race.id);
     setLoadingOp("save");
     try {
-      const res = await fetch("/api/races", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(race),
-      });
+      const res = isNew
+        ? await fetch("/api/races", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(race) })
+        : await fetch(`/api/races/${race.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(race) });
       if (!res.ok) { onError("Failed to save race."); return; }
-      const newRaces = races.some((r) => r.id === race.id)
-        ? races.map((r) => (r.id === race.id ? race : r))
-        : [...races, race];
-      onRacesChange(newRaces);
+      onRacesChange(isNew ? [...races, race] : races.map((r) => (r.id === race.id ? race : r)));
       setEditor(null);
     } catch {
       onError("Failed to save race.");
@@ -132,16 +128,15 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
     if (!gridEditor) return;
     const race = races.find((r) => r.id === gridEditor.raceId);
     if (!race) return;
-    const updated: Race = { ...race, startingGrid: gridEditor.order };
     setLoadingOp("grid-save");
     try {
-      const res = await fetch("/api/races", {
-        method: "PUT",
+      const res = await fetch(`/api/races/${race.id}/grid`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
+        body: JSON.stringify({ leagueId, startingGrid: gridEditor.order }),
       });
       if (!res.ok) { onError("Failed to save starting grid."); return; }
-      onRacesChange(races.map((r) => (r.id === updated.id ? updated : r)));
+      onRacesChange(races.map((r) => (r.id === race.id ? { ...r, startingGrid: gridEditor.order } : r)));
       setGridEditor(null);
     } catch {
       onError("Failed to save starting grid.");
@@ -153,10 +148,10 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
   async function handleRemove(race: Race) {
     setLoadingOp(`remove-${race.id}`);
     try {
-      const res = await fetch("/api/races", {
+      const res = await fetch(`/api/races/${race.id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(race),
+        body: JSON.stringify({ leagueId }),
       });
       if (!res.ok) { onError("Failed to delete race."); return; }
       onRacesChange(races.filter((r) => r.id !== race.id));

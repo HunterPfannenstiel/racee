@@ -1,30 +1,30 @@
 import { NextResponse } from "next/server";
-import { blob } from "@/lib/blob";
-import { Race, League, LeagueStandings, Team } from "@/lib/schemas";
-import { standingsPath, racesPath, LEAGUES_PATH, teamsPath } from "@/lib/paths";
-import { computeSeasonStandings, computeTeamSeasonStandings } from "@/lib/scoring";
+import * as leagueRepository from "@/server/repositories/league";
+import * as raceRepository from "@/server/repositories/race";
+import * as teamRepository from "@/server/repositories/team";
+import * as standingRepository from "@/server/repositories/standing";
 import { getUsersByIds } from "@/server/repositories/user";
+import { computeSeasonStandings, computeTeamSeasonStandings } from "@/lib/scoring";
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ leagueId: string }> }
+  { params }: { params: Promise<{ leagueId: string }> },
 ) {
   const { leagueId } = await params;
 
-  const [races, standings, leagues, teams] = await Promise.all([
-    blob.read<Race[]>(racesPath(leagueId)).then(r => r ?? []),
-    blob.read<LeagueStandings>(standingsPath(leagueId)),
-    blob.read<League[]>(LEAGUES_PATH).then(r => r ?? []),
-    blob.read<Team[]>(teamsPath(leagueId)).then(r => r ?? []),
+  const [races, standings, league, teams] = await Promise.all([
+    raceRepository.getForLeague(leagueId),
+    standingRepository.get(leagueId),
+    leagueRepository.getById(leagueId),
+    teamRepository.getForLeague(leagueId),
   ]);
 
-  const league = leagues.find(s => s.id === leagueId) ?? null;
   const mulliganCount = league?.mulliganCount ?? 0;
   const stageCount = league?.stageCount ?? 0;
 
   const driverRows = standings
     ? computeSeasonStandings(standings.individual, mulliganCount).map(({ userId, total }) => {
-        const raceScores = standings.individual.find(u => u.userId === userId)!.raceScores;
+        const raceScores = standings.individual.find((u) => u.userId === userId)!.raceScores;
         return {
           userId,
           total,
@@ -37,7 +37,7 @@ export async function GET(
 
   const constructorRows = standings
     ? computeTeamSeasonStandings(standings.teams, mulliganCount).map(({ teamId, total }) => {
-        const raceScores = standings.teams.find(t => t.teamId === teamId)!.raceScores;
+        const raceScores = standings.teams.find((t) => t.teamId === teamId)!.raceScores;
         return {
           teamId,
           total,
@@ -52,13 +52,13 @@ export async function GET(
   const stages: string[][] = Array.from({ length: stageCount }, () => []);
   if (stageCount > 0) {
     sortedRaces.forEach((race, i) => {
-      stages[Math.floor(i * stageCount / sortedRaces.length)].push(race.id);
+      stages[Math.floor((i * stageCount) / sortedRaces.length)].push(race.id);
     });
   }
 
-  const userIds = standings?.individual.map(u => u.userId) ?? [];
+  const userIds = standings?.individual.map((u) => u.userId) ?? [];
   const users = await getUsersByIds(userIds);
-  const usersById = Object.fromEntries(users.map(u => [u.id, u]));
+  const usersById = Object.fromEntries(users.map((u) => [u.id, u]));
 
   return NextResponse.json({
     league,

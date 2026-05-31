@@ -1,6 +1,6 @@
 import { Race, RaceScores, LeagueStandings, Team, PropKey, PropPointValues, PlacementPoints } from "@/lib/schemas";
-import { blob } from "@/lib/blob";
-import { scoresPath, standingsPath } from "@/lib/paths";
+import * as standingRepository from "@/server/repositories/standing";
+import * as scoreRepository from "@/server/repositories/score";
 import { computeGridPoints, assignMedals, computeTeamRaceScores } from "@/lib/scoring";
 
 function computePropPoints(
@@ -99,7 +99,7 @@ export async function scoreRaceAndUpdateStandings({
   };
 
   await Promise.all([
-    blob.write(scoresPath(leagueId, raceId), raceScores),
-    blob.write(standingsPath(leagueId), newStandings),
+    scoreRepository.save(leagueId, raceId, raceScores),
+    standingRepository.save(leagueId, newStandings),
   ]);
 }

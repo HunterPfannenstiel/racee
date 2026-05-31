@@ -18,42 +18,52 @@ type Props = {
 export function TeamsSection({ leagueId, teams, usersById, onTeamsChange, onError }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editColor, setEditColor] = useState("");
+  const [newTeamName, setNewTeamName] = useState("");
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
 
   const busy = loadingOp !== null;
 
-  async function handleRename(team: Team) {
-    const name = editName.trim();
-    if (!name || name === team.name) { setEditingId(null); return; }
-    setLoadingOp(`rename-${team.id}`);
+  async function handleCreate() {
+    const name = newTeamName.trim();
+    if (!name) return;
+    const team = { id: crypto.randomUUID(), name };
+    setLoadingOp("create");
     try {
-      const res = await fetch(`/api/leagues/${leagueId}/teams/${team.id}`, {
-        method: "PUT",
+      const res = await fetch(`/api/leagues/${leagueId}/teams`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...team, name }),
+        body: JSON.stringify(team),
       });
-      if (!res.ok) { onError("Failed to rename team."); return; }
-      onTeamsChange(teams.map((t) => t.id === team.id ? { ...t, name } : t));
-      setEditingId(null);
+      if (!res.ok) { onError("Failed to create team."); return; }
+      onTeamsChange([...teams, { ...team, memberIds: [] }]);
+      setNewTeamName("");
     } catch {
-      onError("Failed to rename team.");
+      onError("Failed to create team.");
     } finally {
       setLoadingOp(null);
     }
   }
 
-  async function handleColorChange(team: Team, color: string) {
-    setLoadingOp(`color-${team.id}`);
+  async function handleSave(team: Team) {
+    const name = editName.trim();
+    if (!name) { setEditingId(null); return; }
+    const patch: { name?: string; color?: string } = {};
+    if (name !== team.name) patch.name = name;
+    if (editColor !== (team.color ?? "#6b7280")) patch.color = editColor;
+    if (Object.keys(patch).length === 0) { setEditingId(null); return; }
+    setLoadingOp(`save-${team.id}`);
     try {
       const res = await fetch(`/api/leagues/${leagueId}/teams/${team.id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...team, color }),
+        body: JSON.stringify(patch),
       });
-      if (!res.ok) { onError("Failed to save team color."); return; }
-      onTeamsChange(teams.map((t) => t.id === team.id ? { ...t, color } : t));
+      if (!res.ok) { onError("Failed to save team."); return; }
+      onTeamsChange(teams.map((t) => t.id === team.id ? { ...t, ...patch } : t));
+      setEditingId(null);
     } catch {
-      onError("Failed to save team color.");
+      onError("Failed to save team.");
     } finally {
       setLoadingOp(null);
     }
@@ -85,15 +95,22 @@ export function TeamsSection({ leagueId, teams, usersById, onTeamsChange, onErro
             <div key={team.id} className="py-2">
               {editingId === team.id ? (
                 <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={editColor}
+                    onChange={(e) => setEditColor(e.target.value)}
+                    className="w-7 h-7 rounded cursor-pointer border border-border bg-transparent p-0.5"
+                    title="Team color"
+                  />
                   <Input
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleRename(team)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSave(team)}
                     autoFocus
                     className="h-7 text-sm"
                   />
-                  <Button size="sm" onClick={() => handleRename(team)} disabled={busy}>
-                    {loadingOp === `rename-${team.id}` && <Spinner className="w-3 h-3 mr-1" />}
+                  <Button size="sm" onClick={() => handleSave(team)} disabled={busy}>
+                    {loadingOp === `save-${team.id}` && <Spinner className="w-3 h-3 mr-1" />}
                     Save
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} disabled={busy}>
@@ -103,13 +120,9 @@ export function TeamsSection({ leagueId, teams, usersById, onTeamsChange, onErro
               ) : (
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={team.color ?? "#6b7280"}
-                      onChange={(e) => handleColorChange(team, e.target.value)}
-                      disabled={busy}
-                      className="w-5 h-5 rounded-full cursor-pointer border-0 bg-transparent p-0 disabled:opacity-50"
-                      title="Team color"
+                    <div
+                      className="w-4 h-4 rounded-full border border-border/50 opacity-60 shrink-0"
+                      style={{ backgroundColor: team.color ?? "#6b7280" }}
                     />
                     <div>
                       <p className="text-sm font-medium">{team.name}</p>
@@ -121,8 +134,8 @@ export function TeamsSection({ leagueId, teams, usersById, onTeamsChange, onErro
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0 items-center">
-                    {(loadingOp === `delete-${team.id}` || loadingOp === `color-${team.id}`) && <Spinner className="w-3 h-3" />}
-                    <Button variant="ghost" size="sm" onClick={() => { setEditingId(team.id); setEditName(team.name); }} disabled={busy}>Rename</Button>
+                    {loadingOp === `delete-${team.id}` && <Spinner className="w-3 h-3" />}
+                    <Button variant="ghost" size="sm" onClick={() => { setEditingId(team.id); setEditName(team.name); setEditColor(team.color ?? "#6b7280"); }} disabled={busy}>Edit</Button>
                     <Button variant="ghost" size="sm" onClick={() => handleDelete(team.id)} disabled={busy}>Delete</Button>
                   </div>
                 </div>
@@ -130,6 +143,19 @@ export function TeamsSection({ leagueId, teams, usersById, onTeamsChange, onErro
             </div>
           ))
         )}
+        <div className="flex gap-2 pt-2">
+          <Input
+            value={newTeamName}
+            onChange={(e) => setNewTeamName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            placeholder="New team name"
+            disabled={busy}
+          />
+          <Button variant="outline" onClick={handleCreate} disabled={busy || !newTeamName.trim()}>
+            {loadingOp === "create" && <Spinner className="w-3 h-3 mr-1" />}
+            Add
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

@@ -22,11 +22,11 @@ export default function AdminTeamsPage() {
   useEffect(() => {
     Promise.all([
       fetch("/api/leagues").then((r) => r.json() as Promise<League[]>),
-      fetch("/api/participants").then((r) => r.json() as Promise<{ users: User[] }>),
+      fetch("/api/users").then((r) => r.json() as Promise<User[]>),
     ])
-      .then(([leagueList, participants]) => {
+      .then(([leagueList, users]) => {
         setLeagues(leagueList);
-        setUsersById(Object.fromEntries(participants.users.map((u) => [u.id, u])));
+        setUsersById(Object.fromEntries(users.map((u) => [u.id, u])));
         if (leagueList.length > 0) setSelectedLeagueId(leagueList[0].id);
       })
       .finally(() => setLoadingLeagues(false));

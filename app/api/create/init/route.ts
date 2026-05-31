@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
-import { blob } from "@/lib/blob";
-import { LEAGUES_PATH, RACERS_PATH, racesPath } from "@/lib/paths";
-import { League, Race } from "@/lib/schemas";
+import * as leagueRepository from "@/server/repositories/league";
+import * as racerRepository from "@/server/repositories/racer";
+import * as raceRepository from "@/server/repositories/race";
 
 export async function GET() {
-  const [leagues, racers] = await Promise.all([
-    blob.read<League[]>(LEAGUES_PATH).then(r => r ?? []),
-    blob.read(RACERS_PATH).then(r => r ?? []),
+  const leagues = await leagueRepository.getAll();
+  const [racers, racesPerLeague] = await Promise.all([
+    racerRepository.getAll(),
+    Promise.all(leagues.map((l) => raceRepository.getForLeague(l.id))),
   ]);
-
-  const racesPerLeague = await Promise.all(
-    leagues.map(s => blob.read<Race[]>(racesPath(s.id)).then(r => r ?? []))
-  );
 
   return NextResponse.json({ leagues, racers, races: racesPerLeague.flat() });
 }

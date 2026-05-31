@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { PredictionsFile, Race, LeagueStandings, Team, League } from "@/lib/schemas";
-import { blob } from "@/lib/blob";
-import { predictionsPath, racesPath, standingsPath, teamsPath, LEAGUES_PATH } from "@/lib/paths";
+import * as leagueRepository from "@/server/repositories/league";
+import * as raceRepository from "@/server/repositories/race";
+import * as teamRepository from "@/server/repositories/team";
+import * as predictionRepository from "@/server/repositories/prediction";
+import * as standingRepository from "@/server/repositories/standing";
 import { scoreRaceAndUpdateStandings } from "@/lib/race-scoring";
 
 const BodySchema = z.object({ raceId: z.string().uuid() });
 
-const emptyPropKey = { driverOfDay: null, lapsLed: null, fastestPitStop: null, fastestLap: null, overAchiever: null, underAchiever: null, wrecker: null };
-
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ leagueId: string }> }
+  { params }: { params: Promise<{ leagueId: string }> },
 ) {
   const { leagueId } = await params;
   const body = BodySchema.safeParse(await request.json());
@@ -21,31 +21,33 @@ export async function POST(
 
   const { raceId } = body.data;
 
-  const [predictionsFile, races, existingStandings, teams, leagues] = await Promise.all([
-    blob.read<PredictionsFile>(predictionsPath(leagueId, raceId)),
-    blob.read<Race[]>(racesPath(leagueId)),
-    blob.read<LeagueStandings>(standingsPath(leagueId)),
-    blob.read<Team[]>(teamsPath(leagueId)).then(r => r ?? []),
-    blob.read<League[]>(LEAGUES_PATH).then(r => r ?? []),
+  const [predictionsFile, races, existingStandings, teams, league] = await Promise.all([
+    predictionRepository.getForRace(leagueId, raceId),
+    raceRepository.getForLeague(leagueId),
+    standingRepository.get(leagueId),
+    teamRepository.getForLeague(leagueId),
+    leagueRepository.getById(leagueId),
   ]);
 
   if (!predictionsFile?.key) return NextResponse.json({ error: "No key found for this race" }, { status: 404 });
 
-  const race = races?.find(r => r.id === raceId);
+  const race = races.find((r) => r.id === raceId);
   if (!race) return NextResponse.json({ error: "Race not found" }, { status: 404 });
-
-  const league = leagues.find(l => l.id === leagueId);
   if (!league) return NextResponse.json({ error: "League not found" }, { status: 404 });
 
   await scoreRaceAndUpdateStandings({
-    leagueId, raceId, keyOrder: predictionsFile.key, race,
+    leagueId,
+    raceId,
+    keyOrder: predictionsFile.key,
+    race,
     predictions: predictionsFile.predictions,
     propPicks: predictionsFile.propPicks ?? {},
-    propKey: predictionsFile.propKey ?? emptyPropKey,
+    propKey: predictionsFile.propKey,
     propPointValues: league.propPointValues,
     placementPoints: league.placementPoints,
     scoringDepth: league.scoringDepth,
-    existingStandings, teams,
+    existingStandings,
+    teams,
   });
 
   return NextResponse.json({ ok: true });

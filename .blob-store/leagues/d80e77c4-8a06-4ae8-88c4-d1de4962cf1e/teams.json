@@ -1,13 +1,13 @@
 [
   {
     "id": "19c6fb85-fd47-442b-b5e1-2cc23d135ced",
-    "name": "Swamp Dwellers",
+    "name": "Swamp Dwells",
     "memberIds": [
       "e983a72e-ed1c-4153-aba5-f83b5f591a08",
       "6d991872-a726-400b-bd70-d92ddf5cedc1",
       "8738698b-ef07-4adb-8813-fb27649fa866"
     ],
-    "color": "#6B8E23"
+    "color": "#2b248f"
   },
   {
     "id": "e1d072b2-b938-4fd8-bd1b-4ce7f9290c89",
@@ -18,5 +18,13 @@
       "ac7b214a-0b75-4f62-b0e3-db3d29ac5f05"
     ],
     "color": "#9B59B6"
+  },
+  {
+    "id": "85021ae6-ad54-4826-b0d8-46087fed363a",
+    "name": "Cyanide",
+    "memberIds": [
+      "I9a3e5YFCKhzmxz9r0bwJlFiV2A6FSfx"
+    ],
+    "color": "#6880b1"
   }
 ]

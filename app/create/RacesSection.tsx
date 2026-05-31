@@ -75,18 +75,14 @@ export function RacesSection({ leagues, races, racers, onRacesChange, onError }:
       date: editor.date,
       startingGrid: editor.startingGrid,
     };
+    const isNew = !races.some((r) => r.id === race.id);
     setLoadingOp("save");
     try {
-      const res = await fetch("/api/races", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(race),
-      });
+      const res = isNew
+        ? await fetch("/api/races", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(race) })
+        : await fetch(`/api/races/${race.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(race) });
       if (!res.ok) { onError("Failed to save race."); return; }
-      const newRaces = races.some((r) => r.id === race.id)
-        ? races.map((r) => (r.id === race.id ? race : r))
-        : [...races, race];
-      onRacesChange(newRaces);
+      onRacesChange(isNew ? [...races, race] : races.map((r) => (r.id === race.id ? race : r)));
       setEditor(null);
     } catch {
       onError("Failed to save race.");
@@ -98,10 +94,10 @@ export function RacesSection({ leagues, races, racers, onRacesChange, onError }:
   async function handleRemove(race: Race) {
     setLoadingOp(`remove-${race.id}`);
     try {
-      const res = await fetch("/api/races", {
+      const res = await fetch(`/api/races/${race.id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(race),
+        body: JSON.stringify({ leagueId: race.leagueId }),
       });
       if (!res.ok) { onError("Failed to delete race."); return; }
       onRacesChange(races.filter((r) => r.id !== race.id));

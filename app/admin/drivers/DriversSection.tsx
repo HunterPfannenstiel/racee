@@ -25,31 +25,26 @@ export function DriversSection({ racers, onRacersChange, onError }: Props) {
 
   const busy = loadingOp !== null;
 
-  async function save(newRacers: Racer[], op: string): Promise<boolean> {
-    setLoadingOp(op);
-    try {
-      const res = await fetch("/api/racers", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newRacers),
-      });
-      if (!res.ok) { onError("Failed to save drivers."); return false; }
-      onRacersChange(newRacers);
-      return true;
-    } catch {
-      onError("Failed to save drivers.");
-      return false;
-    } finally {
-      setLoadingOp(null);
-    }
-  }
-
   async function handleAdd() {
     const name = newRacer.name.trim();
     const team = newRacer.team.trim();
     if (!name || !team) return;
-    const newRacers = [...racers, { id: crypto.randomUUID(), name, team, image: newRacer.image || undefined, teamColor: newRacer.teamColor || undefined }];
-    if (await save(newRacers, "add")) setNewRacer({ name: "", team: "", image: "", teamColor: "" });
+    const racer: Racer = { id: crypto.randomUUID(), name, team, image: newRacer.image || undefined, teamColor: newRacer.teamColor || undefined };
+    setLoadingOp("add");
+    try {
+      const res = await fetch("/api/racers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(racer),
+      });
+      if (!res.ok) { onError("Failed to save drivers."); return; }
+      onRacersChange([...racers, racer]);
+      setNewRacer({ name: "", team: "", image: "", teamColor: "" });
+    } catch {
+      onError("Failed to save drivers.");
+    } finally {
+      setLoadingOp(null);
+    }
   }
 
   function startEdit(racer: Racer) {
@@ -58,13 +53,35 @@ export function DriversSection({ racers, onRacersChange, onError }: Props) {
   }
 
   async function commitEdit(id: string) {
-    const newRacers = racers.map((r) => (r.id === id ? { ...r, ...editDraft, image: editDraft.image || undefined, teamColor: editDraft.teamColor || undefined } : r));
-    if (await save(newRacers, `save-${id}`)) setEditingRacerId(null);
+    const data = { name: editDraft.name, team: editDraft.team, image: editDraft.image || undefined, teamColor: editDraft.teamColor || undefined };
+    setLoadingOp(`save-${id}`);
+    try {
+      const res = await fetch(`/api/racers/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) { onError("Failed to save drivers."); return; }
+      onRacersChange(racers.map((r) => (r.id === id ? { ...r, ...data } : r)));
+      setEditingRacerId(null);
+    } catch {
+      onError("Failed to save drivers.");
+    } finally {
+      setLoadingOp(null);
+    }
   }
 
   async function handleRemove(id: string) {
-    const newRacers = racers.filter((r) => r.id !== id);
-    await save(newRacers, `remove-${id}`);
+    setLoadingOp(`remove-${id}`);
+    try {
+      const res = await fetch(`/api/racers/${id}`, { method: "DELETE" });
+      if (!res.ok) { onError("Failed to save drivers."); return; }
+      onRacersChange(racers.filter((r) => r.id !== id));
+    } catch {
+      onError("Failed to save drivers.");
+    } finally {
+      setLoadingOp(null);
+    }
   }
 
   return (

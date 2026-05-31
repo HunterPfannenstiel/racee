@@ -40,33 +40,19 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
 
   const busy = loadingOp !== null;
 
-  async function save(newLeagues: League[], op: string): Promise<boolean> {
-    setLoadingOp(op);
-    try {
-      const res = await fetch("/api/leagues", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newLeagues),
-      });
-      if (!res.ok) { onError("Failed to save league."); return false; }
-      onLeaguesChange(newLeagues);
-      return true;
-    } catch {
-      onError("Failed to save league.");
-      return false;
-    } finally {
-      setLoadingOp(null);
-    }
-  }
-
   async function handleAdd() {
     const name = newLeagueName.trim();
     if (!name || newScoringDepth === undefined) return;
-    const newLeagues = [
-      ...leagues,
-      { id: crypto.randomUUID(), name, placementPoints: newPlacementPoints, mulliganCount: newMulliganCount, stageCount: newStageCount, scoringDepth: newScoringDepth, propPointValues: newPropPointValues },
-    ];
-    if (await save(newLeagues, "add")) {
+    const league: League = { id: crypto.randomUUID(), name, placementPoints: newPlacementPoints, mulliganCount: newMulliganCount, stageCount: newStageCount, scoringDepth: newScoringDepth, propPointValues: newPropPointValues };
+    setLoadingOp("add");
+    try {
+      const res = await fetch("/api/leagues", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(league),
+      });
+      if (!res.ok) { onError("Failed to save league."); return; }
+      onLeaguesChange([...leagues, league]);
       setNewLeagueName("");
       setNewPlacementPoints(emptyPlacementPoints);
       setNewMulliganCount(0);
@@ -74,6 +60,10 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
       setNewScoringDepth(undefined);
       setNewPropPointValues(emptyPropPointValues);
       setIsAddingNew(false);
+    } catch {
+      onError("Failed to save league.");
+    } finally {
+      setLoadingOp(null);
     }
   }
 
@@ -92,18 +82,37 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
   async function handleUpdate() {
     const name = editLeagueName.trim();
     if (!name || !editingLeagueId) return;
-    const newLeagues = leagues.map((s) =>
-      s.id === editingLeagueId
-        ? { ...s, name, placementPoints: editPlacementPoints, mulliganCount: editMulliganCount, stageCount: editStageCount, scoringDepth: editScoringDepth, propPointValues: editPropPointValues }
-        : s
-    );
-    if (await save(newLeagues, "save")) setEditingLeagueId(null);
+    const patch = { name, placementPoints: editPlacementPoints, mulliganCount: editMulliganCount, stageCount: editStageCount, scoringDepth: editScoringDepth, propPointValues: editPropPointValues };
+    setLoadingOp("save");
+    try {
+      const res = await fetch(`/api/leagues/${editingLeagueId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) { onError("Failed to save league."); return; }
+      onLeaguesChange(leagues.map((s) => s.id === editingLeagueId ? { ...s, ...patch } : s));
+      setEditingLeagueId(null);
+    } catch {
+      onError("Failed to save league.");
+    } finally {
+      setLoadingOp(null);
+    }
   }
 
   async function handleRemove() {
     if (!editingLeagueId) return;
-    const newLeagues = leagues.filter((s) => s.id !== editingLeagueId);
-    if (await save(newLeagues, "delete")) setEditingLeagueId(null);
+    setLoadingOp("delete");
+    try {
+      const res = await fetch(`/api/leagues/${editingLeagueId}`, { method: "DELETE" });
+      if (!res.ok) { onError("Failed to delete league."); return; }
+      onLeaguesChange(leagues.filter((s) => s.id !== editingLeagueId));
+      setEditingLeagueId(null);
+    } catch {
+      onError("Failed to delete league.");
+    } finally {
+      setLoadingOp(null);
+    }
   }
 
   function cancelAdd() {

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { KeyMutationSchema, PredictionsFile, Race, LeagueStandings, Team, League } from "@/lib/schemas";
-import { blob } from "@/lib/blob";
-import { predictionsPath, racesPath, standingsPath, teamsPath, LEAGUES_PATH } from "@/lib/paths";
+import { KeyMutationSchema } from "@/lib/schemas";
+import * as leagueRepository from "@/server/repositories/league";
+import * as raceRepository from "@/server/repositories/race";
+import * as teamRepository from "@/server/repositories/team";
+import * as predictionRepository from "@/server/repositories/prediction";
+import * as standingRepository from "@/server/repositories/standing";
 import { scoreRaceAndUpdateStandings } from "@/lib/race-scoring";
 
 export async function GET(request: Request) {
@@ -11,17 +14,21 @@ export async function GET(request: Request) {
   if (!leagueId) return NextResponse.json({ error: "Missing leagueId" }, { status: 400 });
 
   if (raceId) {
-    const predictions = await blob.read<PredictionsFile>(predictionsPath(leagueId, raceId));
-    return NextResponse.json({ key: predictions?.key ?? null, keySetAt: predictions?.keySetAt ?? null, propKey: predictions?.propKey ?? null });
+    const predictions = await predictionRepository.getForRace(leagueId, raceId);
+    return NextResponse.json({
+      key: predictions?.key ?? null,
+      keySetAt: predictions?.keySetAt ?? null,
+      propKey: predictions?.propKey ?? null,
+    });
   }
 
-  const standings = await blob.read<LeagueStandings>(standingsPath(leagueId));
+  const standings = await standingRepository.get(leagueId);
   const gradedIds = standings?.gradedRaceIds ?? [];
   const entries = await Promise.all(
     gradedIds.map(async (id) => {
-      const predictions = await blob.read<PredictionsFile>(predictionsPath(leagueId, id));
+      const predictions = await predictionRepository.getForRace(leagueId, id);
       return [id, predictions?.keySetAt ?? null] as [string, string | null];
-    })
+    }),
   );
   return NextResponse.json(Object.fromEntries(entries));
 }
@@ -34,33 +41,33 @@ export async function PUT(request: Request) {
 
   const { leagueId, raceId, racerIds: keyOrder, propKey } = parsed.data;
 
-  const [predictionsFile, races, existingStandings, teams, leagues] = await Promise.all([
-    blob.read<PredictionsFile>(predictionsPath(leagueId, raceId)),
-    blob.read<Race[]>(racesPath(leagueId)),
-    blob.read<LeagueStandings>(standingsPath(leagueId)),
-    blob.read<Team[]>(teamsPath(leagueId)).then(r => r ?? []),
-    blob.read<League[]>(LEAGUES_PATH).then(r => r ?? []),
+  const [predictionsFile, races, existingStandings, teams, league] = await Promise.all([
+    predictionRepository.getForRace(leagueId, raceId),
+    raceRepository.getForLeague(leagueId),
+    standingRepository.get(leagueId),
+    teamRepository.getForLeague(leagueId),
+    leagueRepository.getById(leagueId),
   ]);
 
-  const race = races?.find(r => r.id === raceId);
+  const race = races.find((r) => r.id === raceId);
   if (!race) return NextResponse.json({ error: "Race not found" }, { status: 404 });
-
-  const league = leagues.find(l => l.id === leagueId);
   if (!league) return NextResponse.json({ error: "League not found" }, { status: 404 });
 
-  const emptyPropKey = { driverOfDay: null, lapsLed: null, fastestPitStop: null, fastestLap: null, overAchiever: null, underAchiever: null, wrecker: null };
-  const current = predictionsFile ?? { key: null, keySetAt: null, predictions: {}, propKey: emptyPropKey, propPicks: {} };
-  await blob.write(predictionsPath(leagueId, raceId), { ...current, key: keyOrder, keySetAt: Date.now().toString(), propKey });
+  await predictionRepository.setKey(leagueId, raceId, keyOrder, propKey);
 
   await scoreRaceAndUpdateStandings({
-    leagueId, raceId, keyOrder, race,
-    predictions: current.predictions,
-    propPicks: current.propPicks ?? {},
+    leagueId,
+    raceId,
+    keyOrder,
+    race,
+    predictions: predictionsFile?.predictions ?? {},
+    propPicks: predictionsFile?.propPicks ?? {},
     propKey,
     propPointValues: league.propPointValues,
     placementPoints: league.placementPoints,
     scoringDepth: league.scoringDepth,
-    existingStandings, teams,
+    existingStandings,
+    teams,
   });
 
   return NextResponse.json({ ok: true });
