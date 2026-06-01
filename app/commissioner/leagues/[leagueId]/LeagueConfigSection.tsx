@@ -21,7 +21,7 @@ export function LeagueConfigSection({ leagueId, league, onLeagueChange, onError 
   const [placementPoints, setPlacementPoints] = useState<PlacementPoints>(league.placementPoints);
   const [mulliganCount, setMulliganCount] = useState(league.mulliganCount);
   const [stageCount, setStageCount] = useState(league.stageCount ?? 0);
-  const [scoringDepth, setScoringDepth] = useState(league.scoringDepth);
+  const [scoringDepth, setScoringDepth] = useState<number | undefined>(league.scoringDepth);
   const [propPointValues, setPropPointValues] = useState<PropPointValues>(league.propPointValues);
   const [saving, setSaving] = useState(false);
 
@@ -87,8 +87,8 @@ export function LeagueConfigSection({ leagueId, league, onLeagueChange, onError 
             type="number"
             min={1}
             className="w-16 text-right"
-            value={scoringDepth}
-            onChange={(e) => setScoringDepth(Math.max(1, parseInt(e.target.value) || 1))}
+            value={scoringDepth ?? ""}
+            onChange={(e) => setScoringDepth(e.target.value === "" ? undefined : Math.max(1, parseInt(e.target.value)))}
             disabled={saving}
           />
         </div>

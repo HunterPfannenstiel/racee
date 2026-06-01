@@ -17,9 +17,10 @@ export class LeagueService {
     name: string;
     placementPoints: number[];
     mulliganCount: number;
-    scoringDepth: number;
+    scoringDepth?: number;
     stageCount?: number;
     propPointValues: PropPointValues;
+    motorsportId: string;
   }): Promise<League> {
     const league = new League(data);
     await this.leagues.save(league);
@@ -45,7 +46,7 @@ export class LeagueService {
     name: string;
     placementPoints: number[];
     mulliganCount: number;
-    scoringDepth: number;
+    scoringDepth?: number;
     stageCount: number;
     propPointValues: PropPointValues;
   }>): Promise<void> {

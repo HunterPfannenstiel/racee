@@ -70,6 +70,7 @@ export default function SetResultPage() {
           )}
           <KeyEditor
             race={race}
+            leagueId={leagueId}
             racersById={racersById}
             existingKey={existingKey}
             existingPropKey={existingPropKey}

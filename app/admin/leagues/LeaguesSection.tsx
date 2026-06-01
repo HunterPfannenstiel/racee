@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { HelpCircle } from "lucide-react";
 import { type League, type PropPointValues, type PlacementPoints } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PropPointValuesEditor } from "./PropPointValuesEditor";
 import { PlacementPointsEditor } from "./PlacementPointsEditor";
 
 type Props = {
   leagues: League[];
+  motorsportId: string | null;
   onLeaguesChange: (leagues: League[]) => void;
   onError: (msg: string) => void;
 };
@@ -21,7 +24,7 @@ const emptyPropPointValues: PropPointValues = {
 };
 const emptyPlacementPoints: PlacementPoints = [];
 
-export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
+export function LeaguesSection({ leagues, motorsportId, onLeaguesChange, onError }: Props) {
   const [newLeagueName, setNewLeagueName] = useState("");
   const [newPlacementPoints, setNewPlacementPoints] = useState<PlacementPoints>(emptyPlacementPoints);
   const [newMulliganCount, setNewMulliganCount] = useState(0);
@@ -34,7 +37,7 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
   const [editPlacementPoints, setEditPlacementPoints] = useState<PlacementPoints>(emptyPlacementPoints);
   const [editMulliganCount, setEditMulliganCount] = useState(0);
   const [editStageCount, setEditStageCount] = useState(0);
-  const [editScoringDepth, setEditScoringDepth] = useState(1);
+  const [editScoringDepth, setEditScoringDepth] = useState<number | undefined>(undefined);
   const [editPropPointValues, setEditPropPointValues] = useState<PropPointValues>(emptyPropPointValues);
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
 
@@ -42,8 +45,8 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
 
   async function handleAdd() {
     const name = newLeagueName.trim();
-    if (!name || newScoringDepth === undefined) return;
-    const league: League = { id: crypto.randomUUID(), name, placementPoints: newPlacementPoints, mulliganCount: newMulliganCount, stageCount: newStageCount, scoringDepth: newScoringDepth, propPointValues: newPropPointValues };
+    if (!name || !motorsportId) return;
+    const league: League = { id: crypto.randomUUID(), name, motorsportId, placementPoints: newPlacementPoints, mulliganCount: newMulliganCount, stageCount: newStageCount, scoringDepth: newScoringDepth, propPointValues: newPropPointValues };
     setLoadingOp("add");
     try {
       const res = await fetch("/api/leagues", {
@@ -124,163 +127,196 @@ export function LeaguesSection({ leagues, onLeaguesChange, onError }: Props) {
     setNewPropPointValues(emptyPropPointValues);
   }
 
+  const addDisabled = busy || !newLeagueName.trim() || !motorsportId;
+
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Leagues</h2>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-2">
-            {leagues.map((s) => (
-              <button
-                key={s.id}
-                className={`rounded-sm border p-3 text-sm font-medium text-left transition-colors ${
-                  editingLeagueId === s.id
-                    ? "border-primary text-primary"
-                    : "hover:border-foreground"
-                }`}
-                onClick={() => selectLeague(s)}
-                disabled={busy}
-              >
-                {s.name}
-              </button>
-            ))}
-            {!isAddingNew && (
-              <button
-                className="rounded-sm border border-dashed p-3 text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
-                onClick={() => { setIsAddingNew(true); setEditingLeagueId(null); }}
-                disabled={busy}
-              >
-                +
-              </button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {isAddingNew && (
+    <TooltipProvider>
+      <div className="space-y-4">
         <Card>
           <CardHeader>
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">New League</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Leagues</h2>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              value={newLeagueName}
-              onChange={(e) => setNewLeagueName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-              placeholder="League name"
-              autoFocus
-              disabled={busy}
-            />
-            <PlacementPointsEditor value={newPlacementPoints} onChange={setNewPlacementPoints} disabled={busy} />
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Mulligans</span>
-              <Input
-                type="number"
-                min={0}
-                className="w-16 text-right"
-                value={newMulliganCount}
-                onChange={(e) => setNewMulliganCount(Math.max(0, parseInt(e.target.value) || 0))}
-                disabled={busy}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Stages</span>
-              <Input
-                type="number"
-                min={0}
-                className="w-16 text-right"
-                value={newStageCount}
-                onChange={(e) => setNewStageCount(Math.max(0, parseInt(e.target.value) || 0))}
-                disabled={busy}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Scoring depth</span>
-              <Input
-                type="number"
-                min={1}
-                className="w-16 text-right"
-                value={newScoringDepth ?? ""}
-                onChange={(e) => setNewScoringDepth(e.target.value === "" ? undefined : Math.max(1, parseInt(e.target.value)))}
-                disabled={busy}
-              />
-            </div>
-            <PropPointValuesEditor values={newPropPointValues} onChange={setNewPropPointValues} disabled={busy} />
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleAdd} disabled={busy || !newLeagueName.trim()}>
-                {loadingOp === "add" && <Spinner className="w-3 h-3 mr-1" />}
-                Add
-              </Button>
-              <Button variant="ghost" onClick={cancelAdd} disabled={busy}>Cancel</Button>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-2">
+              {leagues.map((s) => (
+                <button
+                  key={s.id}
+                  className={`rounded-sm border p-3 text-sm font-medium text-left transition-colors ${
+                    editingLeagueId === s.id
+                      ? "border-primary text-primary"
+                      : "hover:border-foreground"
+                  }`}
+                  onClick={() => selectLeague(s)}
+                  disabled={busy}
+                >
+                  {s.name}
+                </button>
+              ))}
+              {!isAddingNew && (
+                <button
+                  className="rounded-sm border border-dashed p-3 text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                  onClick={() => { setIsAddingNew(true); setEditingLeagueId(null); }}
+                  disabled={busy}
+                >
+                  +
+                </button>
+              )}
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {editingLeagueId !== null && (
-        <Card>
-          <CardHeader>
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Edit League</h2>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              value={editLeagueName}
-              onChange={(e) => setEditLeagueName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleUpdate()}
-              autoFocus
-              disabled={busy}
-            />
-            <PlacementPointsEditor value={editPlacementPoints} onChange={setEditPlacementPoints} disabled={busy} />
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Mulligans</span>
+        {isAddingNew && (
+          <Card>
+            <CardHeader>
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">New League</h2>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <Input
-                type="number"
-                min={0}
-                className="w-16 text-right"
-                value={editMulliganCount}
-                onChange={(e) => setEditMulliganCount(Math.max(0, parseInt(e.target.value) || 0))}
+                value={newLeagueName}
+                onChange={(e) => setNewLeagueName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                placeholder="League name"
+                autoFocus
                 disabled={busy}
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Stages</span>
+              <PlacementPointsEditor value={newPlacementPoints} onChange={setNewPlacementPoints} disabled={busy} />
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Mulligans</span>
+                <Input
+                  type="number"
+                  min={0}
+                  className="w-16 text-right"
+                  value={newMulliganCount}
+                  onChange={(e) => setNewMulliganCount(Math.max(0, parseInt(e.target.value) || 0))}
+                  disabled={busy}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Stages</span>
+                <Input
+                  type="number"
+                  min={0}
+                  className="w-16 text-right"
+                  value={newStageCount}
+                  onChange={(e) => setNewStageCount(Math.max(0, parseInt(e.target.value) || 0))}
+                  disabled={busy}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1 flex items-center gap-1">
+                  Scoring depth
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
+                        <HelpCircle className="size-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Leave blank to score all finishing positions</TooltipContent>
+                  </Tooltip>
+                </span>
+                <Input
+                  type="number"
+                  min={1}
+                  className="w-16 text-right"
+                  value={newScoringDepth ?? ""}
+                  onChange={(e) => setNewScoringDepth(e.target.value === "" ? undefined : Math.max(1, parseInt(e.target.value)))}
+                  disabled={busy}
+                />
+              </div>
+              <PropPointValuesEditor values={newPropPointValues} onChange={setNewPropPointValues} disabled={busy} />
+              <div className="flex gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={addDisabled ? 0 : undefined}>
+                      <Button variant="outline" onClick={handleAdd} disabled={addDisabled}>
+                        {loadingOp === "add" && <Spinner className="w-3 h-3 mr-1" />}
+                        Add
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {!newLeagueName.trim() && (
+                    <TooltipContent>League name is required</TooltipContent>
+                  )}
+                </Tooltip>
+                <Button variant="ghost" onClick={cancelAdd} disabled={busy}>Cancel</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {editingLeagueId !== null && (
+          <Card>
+            <CardHeader>
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Edit League</h2>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <Input
-                type="number"
-                min={0}
-                className="w-16 text-right"
-                value={editStageCount}
-                onChange={(e) => setEditStageCount(Math.max(0, parseInt(e.target.value) || 0))}
+                value={editLeagueName}
+                onChange={(e) => setEditLeagueName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleUpdate()}
+                autoFocus
                 disabled={busy}
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Scoring depth</span>
-              <Input
-                type="number"
-                min={1}
-                className="w-16 text-right"
-                value={editScoringDepth}
-                onChange={(e) => setEditScoringDepth(Math.max(1, parseInt(e.target.value) || 1))}
-                disabled={busy}
-              />
-            </div>
-            <PropPointValuesEditor values={editPropPointValues} onChange={setEditPropPointValues} disabled={busy} />
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleUpdate} disabled={busy}>
-                {loadingOp === "save" && <Spinner className="w-3 h-3 mr-1" />}
-                Save
-              </Button>
-              <Button variant="ghost" onClick={() => setEditingLeagueId(null)} disabled={busy}>Cancel</Button>
-              <Button variant="destructive" onClick={handleRemove} disabled={busy}>
-                {loadingOp === "delete" && <Spinner className="w-3 h-3 mr-1" />}
-                Delete
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+              <PlacementPointsEditor value={editPlacementPoints} onChange={setEditPlacementPoints} disabled={busy} />
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Mulligans</span>
+                <Input
+                  type="number"
+                  min={0}
+                  className="w-16 text-right"
+                  value={editMulliganCount}
+                  onChange={(e) => setEditMulliganCount(Math.max(0, parseInt(e.target.value) || 0))}
+                  disabled={busy}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Stages</span>
+                <Input
+                  type="number"
+                  min={0}
+                  className="w-16 text-right"
+                  value={editStageCount}
+                  onChange={(e) => setEditStageCount(Math.max(0, parseInt(e.target.value) || 0))}
+                  disabled={busy}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1 flex items-center gap-1">
+                  Scoring depth
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
+                        <HelpCircle className="size-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Leave blank to score all finishing positions</TooltipContent>
+                  </Tooltip>
+                </span>
+                <Input
+                  type="number"
+                  min={1}
+                  className="w-16 text-right"
+                  value={editScoringDepth ?? ""}
+                  onChange={(e) => setEditScoringDepth(e.target.value === "" ? undefined : Math.max(1, parseInt(e.target.value)))}
+                  disabled={busy}
+                />
+              </div>
+              <PropPointValuesEditor values={editPropPointValues} onChange={setEditPropPointValues} disabled={busy} />
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleUpdate} disabled={busy}>
+                  {loadingOp === "save" && <Spinner className="w-3 h-3 mr-1" />}
+                  Save
+                </Button>
+                <Button variant="ghost" onClick={() => setEditingLeagueId(null)} disabled={busy}>Cancel</Button>
+                <Button variant="destructive" onClick={handleRemove} disabled={busy}>
+                  {loadingOp === "delete" && <Spinner className="w-3 h-3 mr-1" />}
+                  Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }

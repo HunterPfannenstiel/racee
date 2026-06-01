@@ -11,7 +11,7 @@ const LeaguePersistenceSchema = z.object({
   name: z.string().min(1),
   placementPoints: z.array(z.number().int().min(0)),
   mulliganCount: z.number().int().min(0),
-  scoringDepth: z.number().int().min(1),
+  scoringDepth: z.number().int().min(1).optional(),
   stageCount: z.number().int().min(0).optional(),
   propPointValues: z.object({
     driverOfDay: z.number().int().min(0),
@@ -22,10 +22,14 @@ const LeaguePersistenceSchema = z.object({
     underAchiever: z.number().int().min(0),
     wrecker: z.number().int().min(0),
   }),
+  motorsportId: z.string().uuid().optional(),
 });
 type LeaguePersistence = z.infer<typeof LeaguePersistenceSchema>;
 
 function toDomain(raw: LeaguePersistence): League {
+  if (!raw.motorsportId) {
+    throw new Error(`League ${raw.id} is missing motorsportId — run the migration script`);
+  }
   return new League({
     leagueId: raw.id,
     commissionerId: raw.commissionerId,
@@ -35,6 +39,7 @@ function toDomain(raw: LeaguePersistence): League {
     scoringDepth: raw.scoringDepth,
     stageCount: raw.stageCount,
     propPointValues: raw.propPointValues,
+    motorsportId: raw.motorsportId,
   });
 }
 
@@ -48,6 +53,7 @@ function toPersistence(league: League): LeaguePersistence {
     scoringDepth: league.scoringDepth,
     stageCount: league.stageCount,
     propPointValues: { ...league.propPointValues },
+    motorsportId: league.motorsportId,
   };
 }
 

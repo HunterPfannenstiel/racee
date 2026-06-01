@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { blob } from "@/lib/blob";
-import { racesPath } from "@/lib/paths";
+import { motorsportRacesPath } from "@/lib/paths";
 import { Race } from "@/server/domain/race";
 import { ParseError, PersistenceError } from "@/server/domain/errors";
 import type { IRaceRepository } from "../interfaces/IRaceRepository";
 
 const RacePersistenceSchema = z.object({
   id: z.string().uuid(),
-  leagueId: z.string().uuid(),
+  motorsportId: z.string().uuid(),
   title: z.string().min(1),
   label: z.string().optional(),
   date: z.string().min(1),
@@ -19,7 +19,7 @@ type RacePersistence = z.infer<typeof RacePersistenceSchema>;
 function toDomain(raw: RacePersistence): Race {
   return new Race({
     raceId: raw.id,
-    leagueId: raw.leagueId,
+    motorsportId: raw.motorsportId,
     title: raw.title,
     label: raw.label,
     date: raw.date,
@@ -31,7 +31,7 @@ function toDomain(raw: RacePersistence): Race {
 function toPersistence(race: Race): RacePersistence {
   return {
     id: race.raceId,
-    leagueId: race.leagueId,
+    motorsportId: race.motorsportId,
     title: race.title,
     label: race.label,
     date: race.date,
@@ -40,8 +40,8 @@ function toPersistence(race: Race): RacePersistence {
   };
 }
 
-async function readAll(leagueId: string): Promise<RacePersistence[]> {
-  const path = racesPath(leagueId);
+async function readAll(motorsportId: string): Promise<RacePersistence[]> {
+  const path = motorsportRacesPath(motorsportId);
   let raw: unknown;
   try {
     raw = await blob.read<unknown>(path);
@@ -57,19 +57,19 @@ async function readAll(leagueId: string): Promise<RacePersistence[]> {
 }
 
 export class BlobRaceRepository implements IRaceRepository {
-  async findAllForLeague(leagueId: string): Promise<Race[]> {
-    return (await readAll(leagueId)).map(toDomain);
+  async findAllForMotorsport(motorsportId: string): Promise<Race[]> {
+    return (await readAll(motorsportId)).map(toDomain);
   }
 
-  async findById(leagueId: string, raceId: string): Promise<Race | null> {
-    const all = await readAll(leagueId);
+  async findById(motorsportId: string, raceId: string): Promise<Race | null> {
+    const all = await readAll(motorsportId);
     const found = all.find((r) => r.id === raceId);
     return found ? toDomain(found) : null;
   }
 
   async save(race: Race): Promise<void> {
-    const path = racesPath(race.leagueId);
-    const all = await readAll(race.leagueId);
+    const path = motorsportRacesPath(race.motorsportId);
+    const all = await readAll(race.motorsportId);
     const p = toPersistence(race);
     const idx = all.findIndex((r) => r.id === p.id);
     const updated =
@@ -81,9 +81,9 @@ export class BlobRaceRepository implements IRaceRepository {
     }
   }
 
-  async remove(leagueId: string, raceId: string): Promise<void> {
-    const path = racesPath(leagueId);
-    const all = await readAll(leagueId);
+  async remove(motorsportId: string, raceId: string): Promise<void> {
+    const path = motorsportRacesPath(motorsportId);
+    const all = await readAll(motorsportId);
     try {
       await blob.write(path, all.filter((r) => r.id !== raceId));
     } catch (e) {

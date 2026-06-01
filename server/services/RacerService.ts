@@ -9,6 +9,7 @@ export class RacerService {
     racerId: string;
     name: string;
     constructor: string;
+    motorsportId: string;
     image?: string;
     teamColor?: string;
   }): Promise<void> {

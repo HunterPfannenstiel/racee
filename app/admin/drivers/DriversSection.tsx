@@ -13,11 +13,12 @@ type Draft = { name: string; team: string; image?: string; teamColor?: string };
 
 type Props = {
   racers: Racer[];
+  motorsportId: string | null;
   onRacersChange: (racers: Racer[]) => void;
   onError: (msg: string) => void;
 };
 
-export function DriversSection({ racers, onRacersChange, onError }: Props) {
+export function DriversSection({ racers, motorsportId, onRacersChange, onError }: Props) {
   const [newRacer, setNewRacer] = useState<Draft>({ name: "", team: "", image: "", teamColor: "" });
   const [editingRacerId, setEditingRacerId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Draft>({ name: "", team: "", image: "", teamColor: "" });
@@ -28,8 +29,8 @@ export function DriversSection({ racers, onRacersChange, onError }: Props) {
   async function handleAdd() {
     const name = newRacer.name.trim();
     const team = newRacer.team.trim();
-    if (!name || !team) return;
-    const racer: Racer = { id: crypto.randomUUID(), name, team, image: newRacer.image || undefined, teamColor: newRacer.teamColor || undefined };
+    if (!name || !team || !motorsportId) return;
+    const racer: Racer = { id: crypto.randomUUID(), name, team, motorsportId, image: newRacer.image || undefined, teamColor: newRacer.teamColor || undefined };
     setLoadingOp("add");
     try {
       const res = await fetch("/api/racers", {

@@ -7,7 +7,7 @@ import type { Racer } from "@/server/domain/racer";
 const svc = new RacerService(new BlobRacerRepository());
 
 function ser(r: Racer) {
-  return { id: r.racerId, name: r.name, team: r.constructorName, image: r.image, teamColor: r.teamColor };
+  return { id: r.racerId, name: r.name, team: r.constructorName, motorsportId: r.motorsportId, image: r.image, teamColor: r.teamColor };
 }
 
 export async function GET() {
@@ -18,6 +18,6 @@ export async function POST(request: Request) {
   const parsed = RacerSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const d = parsed.data;
-  await svc.createRacer({ racerId: d.id, name: d.name, constructor: d.team, image: d.image, teamColor: d.teamColor });
+  await svc.createRacer({ racerId: d.id, name: d.name, constructor: d.team, motorsportId: d.motorsportId, image: d.image, teamColor: d.teamColor });
   return NextResponse.json({ ok: true });
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useUser } from "@/app/context/UserContext";
-import { type League, type Race, type Racer, type PredictionsFile, type PropName } from "@/lib/schemas";
+import { type League, type Racer, type PredictionsFile, type PropName } from "@/lib/schemas";
 import { RequireUser } from "@/components/RequireUser";
 import { PredictionForm } from "./PredictionForm";
 import { RacePicker } from "./RacePicker";
@@ -15,14 +15,30 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 
+// Race shape returned by /api/predict/init — includes leagueId for context
+type PredictRace = {
+  id: string;
+  leagueId: string;
+  motorsportId: string;
+  title: string;
+  label?: string;
+  date: string;
+  lockTime?: string;
+  startingGrid: string[];
+};
+
 type InitData = {
   leagues: League[];
-  races: Race[];
+  races: PredictRace[];
   racersById: Record<string, Racer>;
   predictions: Record<string, PredictionsFile>;
 };
 
-function autoSelectRace(leagues: League[], races: Race[]): { leagueId: string; raceId: string | null } | null {
+function predKey(leagueId: string, raceId: string) {
+  return `${leagueId}_${raceId}`;
+}
+
+function autoSelectRace(leagues: League[], races: PredictRace[]): { leagueId: string; raceId: string | null } | null {
   if (leagues.length === 0) return null;
   const league = leagues[0];
   const today = new Date().toISOString().split("T")[0];
@@ -72,15 +88,16 @@ export default function PredictPage() {
   }
 
   function handlePredictionSave(racerIds: string[], submittedAt: string, propPicks: Partial<Record<PropName, string>>) {
-    if (!user || !selectedRaceId) return;
+    if (!user || !selectedRaceId || !selectedLeagueId) return;
+    const key = predKey(selectedLeagueId, selectedRaceId);
     setData(prev => {
       if (!prev) return prev;
-      const existing = prev.predictions[selectedRaceId] ?? { key: null, predictions: {}, propPicks: {} };
+      const existing = prev.predictions[key] ?? { key: null, predictions: {}, propPicks: {} };
       return {
         ...prev,
         predictions: {
           ...prev.predictions,
-          [selectedRaceId]: {
+          [key]: {
             ...existing,
             predictions: { ...existing.predictions, [user.id]: racerIds },
             submittedAt: { ...existing.submittedAt, [user.id]: submittedAt },
@@ -91,8 +108,9 @@ export default function PredictPage() {
     });
   }
 
-  const selectedRace = data?.races.find((r) => r.id === selectedRaceId) ?? null;
+  const selectedRace = data?.races.find((r) => r.id === selectedRaceId && r.leagueId === selectedLeagueId) ?? null;
   const leagueRaces = data?.races.filter((r) => r.leagueId === selectedLeagueId) ?? [];
+  const activePredKey = selectedLeagueId && selectedRaceId ? predKey(selectedLeagueId, selectedRaceId) : null;
 
   return (
     <PageShell title="Predict">
@@ -156,15 +174,16 @@ export default function PredictPage() {
 
               {error && <p className="text-sm text-destructive">{error}</p>}
 
-              {selectedRace ? (
+              {selectedRace && activePredKey ? (
                 <PredictionForm
-                  key={selectedRaceId}
+                  key={activePredKey}
                   race={selectedRace}
+                  leagueId={selectedLeagueId!}
                   racersById={data.racersById}
-                  existingPrediction={data.predictions[selectedRace.id]?.predictions[user?.id ?? ""] ?? null}
-                  existingSubmittedAt={data.predictions[selectedRace.id]?.submittedAt?.[user?.id ?? ""] ?? null}
-                  existingPropPicks={data.predictions[selectedRace.id]?.propPicks?.[user?.id ?? ""] ?? {}}
-                  keySetAt={data.predictions[selectedRace.id]?.keySetAt ?? null}
+                  existingPrediction={data.predictions[activePredKey]?.predictions[user?.id ?? ""] ?? null}
+                  existingSubmittedAt={data.predictions[activePredKey]?.submittedAt?.[user?.id ?? ""] ?? null}
+                  existingPropPicks={data.predictions[activePredKey]?.propPicks?.[user?.id ?? ""] ?? {}}
+                  keySetAt={data.predictions[activePredKey]?.keySetAt ?? null}
                   onPredictionSave={handlePredictionSave}
                   onError={setError}
                 />

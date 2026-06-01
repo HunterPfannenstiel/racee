@@ -11,16 +11,21 @@ const RacerPersistenceSchema = z.object({
   team: z.string().min(1),
   image: z.string().url().optional(),
   teamColor: z.string().optional(),
+  motorsportId: z.string().uuid().optional(),
 });
 type RacerPersistence = z.infer<typeof RacerPersistenceSchema>;
 
 function toDomain(raw: RacerPersistence): Racer {
+  if (!raw.motorsportId) {
+    throw new Error(`Racer ${raw.id} is missing motorsportId — run the migration script`);
+  }
   return new Racer({
     racerId: raw.id,
     name: raw.name,
     constructor: raw.team,
     image: raw.image,
     teamColor: raw.teamColor,
+    motorsportId: raw.motorsportId,
   });
 }
 
@@ -31,6 +36,7 @@ function toPersistence(racer: Racer): RacerPersistence {
     team: racer.constructorName,
     image: racer.image,
     teamColor: racer.teamColor,
+    motorsportId: racer.motorsportId,
   };
 }
 

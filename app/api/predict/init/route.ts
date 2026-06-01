@@ -19,13 +19,16 @@ export async function GET(request: Request) {
   const leagues = await leagueRepo.findAll();
   const [racersList, racesPerLeague] = await Promise.all([
     racerRepo.findAll(),
-    Promise.all(leagues.map(l => raceRepo.findAllForLeague(l.leagueId))),
+    Promise.all(leagues.map(async (l) => {
+      const races = await raceRepo.findAllForMotorsport(l.motorsportId);
+      return races.map((race) => ({ race, leagueId: l.leagueId }));
+    })),
   ]);
-  const races = racesPerLeague.flat();
+  const raceEntries = racesPerLeague.flat();
 
   const predictionEntries = await Promise.all(
-    races.map(async (race) => {
-      const book = await bookRepo.findByRace(race.leagueId, race.raceId);
+    raceEntries.map(async ({ race, leagueId }) => {
+      const book = await bookRepo.findByRace(leagueId, race.raceId);
       const data = book ? {
         key: book.keyOrder ? [...book.keyOrder] : null,
         keySetAt: book.keySetAt,
@@ -36,14 +39,14 @@ export async function GET(request: Request) {
         propKey: book.propKey,
         propPicks: Object.fromEntries(book.allPredictions().map(p => [p.userId, { ...p.propPicks }])),
       } : { key: null, keySetAt: null, predictions: {}, propKey: emptyPropKey, propPicks: {} };
-      return [race.raceId, data] as const;
+      return [`${leagueId}_${race.raceId}`, data] as const;
     }),
   );
 
   return NextResponse.json({
     leagues: leagues.map(l => ({ id: l.leagueId, name: l.name, placementPoints: [...l.placementPoints], mulliganCount: l.mulliganCount, scoringDepth: l.scoringDepth, stageCount: l.stageCount, propPointValues: { ...l.propPointValues } })),
     racersById: Object.fromEntries(racersList.map(r => [r.racerId, { id: r.racerId, name: r.name, team: r.constructorName, image: r.image, teamColor: r.teamColor }])),
-    races: races.map(r => ({ id: r.raceId, leagueId: r.leagueId, title: r.title, label: r.label, date: r.date, lockTime: r.lockTime, startingGrid: [...r.startingGrid] })),
+    races: raceEntries.map(({ race: r, leagueId }) => ({ id: r.raceId, leagueId, motorsportId: r.motorsportId, title: r.title, label: r.label, date: r.date, lockTime: r.lockTime, startingGrid: [...r.startingGrid] })),
     predictions: Object.fromEntries(predictionEntries),
   });
 }

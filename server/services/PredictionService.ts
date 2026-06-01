@@ -44,16 +44,17 @@ export class PredictionService {
     propKey: PropKey,
     now: string,
   ): Promise<RaceScores> {
-    // 1. LOAD in parallel
-    const [book, league, race, existingStandings, teams] = await Promise.all([
+    // 1. LOAD league first to resolve motorsport context
+    const league = await this.leagues.findById(leagueId);
+    if (!league) throw new NotFoundError("League", leagueId);
+
+    const [book, race, existingStandings, teams] = await Promise.all([
       this.books.findByRace(leagueId, raceId),
-      this.leagues.findById(leagueId),
-      this.races.findById(leagueId, raceId),
+      this.races.findById(league.motorsportId, raceId),
       this.standings.findByLeague(leagueId),
       this.teams.findAllForLeague(leagueId),
     ]);
 
-    if (!league) throw new NotFoundError("League", leagueId);
     if (!race) throw new NotFoundError("Race", raceId);
 
     const activeBook = book ?? RacePredictionBook.empty(leagueId, raceId);
@@ -78,18 +79,19 @@ export class PredictionService {
   }
 
   async recalculate(leagueId: string, raceId: string): Promise<void> {
-    // 1. LOAD in parallel
-    const [book, league, race, existingStandings, teams] = await Promise.all([
+    // 1. LOAD league first to resolve motorsport context
+    const league = await this.leagues.findById(leagueId);
+    if (!league) throw new NotFoundError("League", leagueId);
+
+    const [book, race, existingStandings, teams] = await Promise.all([
       this.books.findByRace(leagueId, raceId),
-      this.leagues.findById(leagueId),
-      this.races.findById(leagueId, raceId),
+      this.races.findById(league.motorsportId, raceId),
       this.standings.findByLeague(leagueId),
       this.teams.findAllForLeague(leagueId),
     ]);
 
     if (!book) throw new NotFoundError("RacePredictionBook", raceId);
     if (!book.hasKey) throw new NotFoundError("AnswerKey", raceId);
-    if (!league) throw new NotFoundError("League", leagueId);
     if (!race) throw new NotFoundError("Race", raceId);
 
     // 2. EXECUTE

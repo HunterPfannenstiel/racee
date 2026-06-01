@@ -17,9 +17,10 @@ const LeaguePropsSchema = z.object({
   name: z.string().min(1),
   placementPoints: z.array(z.number().int().min(0)),
   mulliganCount: z.number().int().min(0),
-  scoringDepth: z.number().int().min(1),
+  scoringDepth: z.number().int().min(1).optional(),
   stageCount: z.number().int().min(0).optional(),
   propPointValues: PropPointValuesSchema,
+  motorsportId: z.string().uuid(),
 });
 
 
@@ -37,9 +38,10 @@ export class League {
   get name() { return this.props.name; }
   get placementPoints(): readonly number[] { return this.props.placementPoints; }
   get mulliganCount() { return this.props.mulliganCount; }
-  get scoringDepth() { return this.props.scoringDepth; }
+  get scoringDepth() { return this.props.scoringDepth; }  // undefined means score all positions
   get stageCount() { return this.props.stageCount; }
   get propPointValues(): PropPointValues { return this.props.propPointValues; }
+  get motorsportId() { return this.props.motorsportId; }
 
   rename(name: string): void {
     this.props = LeaguePropsSchema.parse({ ...this.props, name });

@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-import { type Race, type Racer, type PropName } from "@/lib/schemas";
+import { type Racer, type PropName } from "@/lib/schemas";
 import { useUser } from "@/app/context/UserContext";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -26,8 +26,20 @@ import { CheckIcon } from "lucide-react";
 import { PropPicker } from "./PropPicker";
 import { SortableRacerRow } from "@/components/SortableRacerRow";
 
+type PredictRace = {
+  id: string;
+  leagueId: string;
+  motorsportId: string;
+  title: string;
+  label?: string;
+  date: string;
+  lockTime?: string;
+  startingGrid: string[];
+};
+
 type Props = {
-  race: Race;
+  race: PredictRace;
+  leagueId: string;
   racersById: Record<string, Racer>;
   existingPrediction: string[] | null;
   existingSubmittedAt: string | null;
@@ -60,7 +72,7 @@ function formatCountdown(ms: number): string {
   return `${seconds}s`;
 }
 
-export function PredictionForm({ race, racersById, existingPrediction, existingSubmittedAt, existingPropPicks, keySetAt, onPredictionSave, onError }: Props) {
+export function PredictionForm({ race, leagueId, racersById, existingPrediction, existingSubmittedAt, existingPropPicks, keySetAt, onPredictionSave, onError }: Props) {
   const { user } = useUser();
   const [orderedRacerIds, setOrderedRacerIds] = useState<string[]>(
     existingPrediction ?? race.startingGrid
@@ -118,7 +130,7 @@ export function PredictionForm({ race, racersById, existingPrediction, existingS
       const res = await fetch("/api/predict/prediction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leagueId: race.leagueId, raceId: race.id, userId: user.id, racerIds: orderedRacerIds, propPicks }),
+        body: JSON.stringify({ leagueId, raceId: race.id, userId: user.id, racerIds: orderedRacerIds, propPicks }),
       });
       if (!res.ok) { onError("Failed to save prediction."); return; }
       const now = new Date().toISOString();

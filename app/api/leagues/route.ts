@@ -13,7 +13,7 @@ const userRepo = new PrismaUserRepository();
 const svc = new LeagueService(leagueRepo, teamRepo, userRepo);
 
 function ser(l: League) {
-  return { id: l.leagueId, commissionerId: l.commissionerId, name: l.name, placementPoints: [...l.placementPoints], mulliganCount: l.mulliganCount, scoringDepth: l.scoringDepth, stageCount: l.stageCount, propPointValues: { ...l.propPointValues } };
+  return { id: l.leagueId, commissionerId: l.commissionerId, name: l.name, placementPoints: [...l.placementPoints], mulliganCount: l.mulliganCount, scoringDepth: l.scoringDepth, stageCount: l.stageCount, propPointValues: { ...l.propPointValues }, motorsportId: l.motorsportId };
 }
 
 export async function GET() {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const parsed = LeagueSchema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     const d = parsed.data;
-    await svc.createLeague({ leagueId: d.id, commissionerId: session.user.id, name: d.name, placementPoints: d.placementPoints, mulliganCount: d.mulliganCount, scoringDepth: d.scoringDepth, stageCount: d.stageCount, propPointValues: d.propPointValues });
+    await svc.createLeague({ leagueId: d.id, commissionerId: session.user.id, name: d.name, placementPoints: d.placementPoints, mulliganCount: d.mulliganCount, scoringDepth: d.scoringDepth, stageCount: d.stageCount, propPointValues: d.propPointValues, motorsportId: d.motorsportId });
     return NextResponse.json({ ok: true });
   } catch (e) {
     if (e instanceof AuthError) return NextResponse.json({ error: e.message }, { status: 401 });

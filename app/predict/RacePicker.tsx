@@ -1,14 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { type League, type Race } from "@/lib/schemas";
+import { type League } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { LeaguePicker } from "@/components/ui/league-picker";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 
+type PredictRace = {
+  id: string;
+  leagueId: string;
+  title: string;
+  date: string;
+};
+
 type Props = {
   leagues: League[];
-  races: Race[];
+  races: PredictRace[];
   selectedLeagueId: string | null;
   selectedRaceId: string | null;
   onLeagueSelect: (id: string) => void;
@@ -23,7 +30,7 @@ function formatDate(dateStr: string) {
 }
 
 function RaceItem({ race, selected, onSelect }: {
-  race: Race;
+  race: PredictRace;
   selected: boolean;
   onSelect: (id: string) => void;
 }) {

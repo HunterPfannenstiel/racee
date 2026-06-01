@@ -4,7 +4,7 @@ import { BlobRaceRepository } from "@/server/repositories/blob/BlobRaceRepositor
 import { RaceService } from "@/server/services/RaceService";
 
 const BodySchema = z.object({
-  leagueId: z.string().uuid(),
+  motorsportId: z.string().uuid(),
   startingGrid: z.array(z.string().uuid()),
 });
 
@@ -17,7 +17,7 @@ export async function PATCH(
   const { raceId } = await params;
   const parsed = BodySchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { leagueId, startingGrid } = parsed.data;
-  await svc.setStartingGrid(leagueId, raceId, startingGrid);
+  const { motorsportId, startingGrid } = parsed.data;
+  await svc.setStartingGrid(motorsportId, raceId, startingGrid);
   return NextResponse.json({ ok: true });
 }

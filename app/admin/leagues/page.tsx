@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { type League } from "@/lib/schemas";
+import { type League, type Motorsport } from "@/lib/schemas";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,17 @@ import { LeaguesSection } from "./LeaguesSection";
 
 export default function AdminLeaguesPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
+  const [motorsportId, setMotorsportId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/leagues")
-      .then((r) => r.json())
-      .then(setLeagues);
+    Promise.all([
+      fetch("/api/leagues").then((r) => r.json()),
+      fetch("/api/motorsports").then((r) => r.json()),
+    ]).then(([leagueList, motorsports]: [League[], Motorsport[]]) => {
+      setLeagues(leagueList);
+      if (motorsports.length > 0) setMotorsportId(motorsports[0].id);
+    });
   }, []);
 
   return (
@@ -31,7 +36,7 @@ export default function AdminLeaguesPage() {
           </AlertDescription>
         </Alert>
       )}
-      <LeaguesSection leagues={leagues} onLeaguesChange={setLeagues} onError={setError} />
+      <LeaguesSection leagues={leagues} motorsportId={motorsportId} onLeaguesChange={setLeagues} onError={setError} />
     </PageShell>
   );
 }

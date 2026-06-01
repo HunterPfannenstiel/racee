@@ -59,22 +59,24 @@ export const LeagueSchema = z.object({
   name: z.string().min(1),
   placementPoints: PlacementPointsSchema,
   mulliganCount: z.number().int().min(0),
-  scoringDepth: z.number().int().min(1),
+  scoringDepth: z.number().int().min(1).optional(),
   stageCount: z.number().int().min(0).optional(),
   propPointValues: PropPointValuesSchema,
+  motorsportId: z.string().uuid(),
 });
 
 export const RacerSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
   team: z.string().min(1),
+  motorsportId: z.string().uuid(),
   image: z.string().url().optional(),
   teamColor: z.string().optional(),
 });
 
 export const RaceSchema = z.object({
   id: z.string().uuid(),
-  leagueId: z.string().uuid(),
+  motorsportId: z.string().uuid(),
   title: z.string().min(1),
   label: z.string().optional(),
   date: z.string().min(1),
@@ -82,9 +84,23 @@ export const RaceSchema = z.object({
   startingGrid: z.array(z.string().uuid()),
 });
 
+export const MotorsportSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  slug: z.string().min(1),
+});
+
+export const LeagueRaceConfigSchema = z.object({
+  leagueId: z.string().uuid(),
+  raceId: z.string().uuid(),
+  lockTime: z.string().datetime(),
+});
+
 export type League = z.infer<typeof LeagueSchema>;
 export type Racer = z.infer<typeof RacerSchema>;
 export type Race = z.infer<typeof RaceSchema>;
+export type Motorsport = z.infer<typeof MotorsportSchema>;
+export type LeagueRaceConfig = z.infer<typeof LeagueRaceConfigSchema>;
 
 export const RacesFileSchema = z.array(RaceSchema);
 export type RacesFile = z.infer<typeof RacesFileSchema>;

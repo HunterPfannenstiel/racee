@@ -5,3 +5,5 @@ export type { ITeamRepository } from "./ITeamRepository";
 export type { IRacePredictionBookRepository } from "./IRacePredictionBookRepository";
 export type { ILeagueStandingsRepository } from "./ILeagueStandingsRepository";
 export type { IUserRepository } from "./IUserRepository";
+export type { IMotorsportRepository } from "./IMotorsportRepository";
+export type { ILeagueRaceConfigRepository } from "./ILeagueRaceConfigRepository";

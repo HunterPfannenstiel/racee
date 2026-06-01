@@ -12,8 +12,8 @@ export async function PATCH(
   const { raceId } = await params;
   const parsed = RaceSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { leagueId, id: _id, startingGrid: _sg, ...patch } = parsed.data;
-  await svc.updateRace(leagueId, raceId, patch);
+  const { motorsportId, id: _id, startingGrid: _sg, ...patch } = parsed.data;
+  await svc.updateRace(motorsportId, raceId, patch);
   return NextResponse.json({ ok: true });
 }
 
@@ -23,8 +23,10 @@ export async function DELETE(
 ) {
   const { raceId } = await params;
   const body = await request.json();
-  const leagueId = body?.leagueId;
-  if (!leagueId) return NextResponse.json({ error: "leagueId required" }, { status: 400 });
-  await svc.deleteRace(leagueId, raceId);
+  const motorsportId = body?.motorsportId as string | undefined;
+  if (!motorsportId) {
+    return NextResponse.json({ error: "motorsportId required" }, { status: 400 });
+  }
+  await svc.deleteRace(motorsportId, raceId);
   return NextResponse.json({ ok: true });
 }

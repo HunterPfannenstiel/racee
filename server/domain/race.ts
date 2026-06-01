@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const RacePropsSchema = z.object({
   raceId: z.string().uuid(),
-  leagueId: z.string().uuid(),
+  motorsportId: z.string().uuid(),
   title: z.string().min(1),
   label: z.string().optional(),
   date: z.string().min(1),
@@ -19,7 +19,7 @@ export class Race {
   }
 
   get raceId() { return this.props.raceId; }
-  get leagueId() { return this.props.leagueId; }
+  get motorsportId() { return this.props.motorsportId; }
   get title() { return this.props.title; }
   get label() { return this.props.label; }
   get date() { return this.props.date; }

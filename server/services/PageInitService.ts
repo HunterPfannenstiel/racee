@@ -17,7 +17,7 @@ export type ViewInitDto = {
     id: string;
     name: string;
     mulliganCount: number;
-    scoringDepth: number;
+    scoringDepth?: number;
     stageCount?: number;
     propPointValues: PropPointValues;
     placementPoints: number[];
@@ -77,6 +77,7 @@ export type ProfileRaceDto = {
 
 export type CreateInitDto = {
   leagueId: string;
+  motorsportId: string;
   name: string;
   races: Array<{
     raceId: string;
@@ -90,6 +91,7 @@ export type CreateInitDto = {
     racerId: string;
     name: string;
     constructorName: string;
+    motorsportId: string;
     image?: string;
     teamColor?: string;
   }>;
@@ -107,14 +109,14 @@ export class PageInitService {
   ) {}
 
   async getViewInit(leagueId: string): Promise<ViewInitDto> {
-    const [league, races, standingsData, teams] = await Promise.all([
-      this.leagues.findById(leagueId),
-      this.races.findAllForLeague(leagueId),
+    const league = await this.leagues.findById(leagueId);
+    if (!league) throw new Error(`League not found: ${leagueId}`);
+
+    const [races, standingsData, teams] = await Promise.all([
+      this.races.findAllForMotorsport(league.motorsportId),
       this.standings.findByLeague(leagueId),
       this.teams.findAllForLeague(leagueId),
     ]);
-
-    if (!league) throw new Error(`League not found: ${leagueId}`);
 
     const mulliganCount = league.mulliganCount;
     const stageCount = league.stageCount ?? 0;
@@ -182,7 +184,7 @@ export class PageInitService {
       },
       races: sortedRaces.map(r => ({
         id: r.raceId,
-        leagueId: r.leagueId,
+        leagueId,
         title: r.title,
         label: r.label,
         date: r.date,
@@ -248,15 +250,16 @@ export class PageInitService {
     const leagues = await this.leagues.findAll();
     const [racers, racesPerLeague] = await Promise.all([
       this.racers.findAll(),
-      Promise.all(leagues.map(l => this.races.findAllForLeague(l.leagueId))),
+      Promise.all(leagues.map(l => this.races.findAllForMotorsport(l.motorsportId))),
     ]);
 
     return leagues.map((league, i) => ({
       leagueId: league.leagueId,
+      motorsportId: league.motorsportId,
       name: league.name,
       races: racesPerLeague[i].map(r => ({
         raceId: r.raceId,
-        leagueId: r.leagueId,
+        leagueId: league.leagueId,
         title: r.title,
         label: r.label,
         date: r.date,
@@ -266,6 +269,7 @@ export class PageInitService {
         racerId: r.racerId,
         name: r.name,
         constructorName: r.constructorName,
+        motorsportId: r.motorsportId,
         image: r.image,
         teamColor: r.teamColor,
       })),

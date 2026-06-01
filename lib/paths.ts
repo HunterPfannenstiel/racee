@@ -1,6 +1,15 @@
 export const LEAGUES_PATH = "leagues.json";
 export const RACERS_PATH = "racers.json";
 export const PARTICIPANTS_PATH = "participants.json";
+export const MOTORSPORTS_PATH = "motorsports.json";
+
+export function motorsportRacesPath(motorsportId: string) {
+  return `motorsports/${motorsportId}/races.json`;
+}
+
+export function leagueRaceConfigPath(leagueId: string, raceId: string) {
+  return `leagues/${leagueId}/races/${raceId}/config.json`;
+}
 
 export function teamsPath(leagueId: string) {
   return `leagues/${leagueId}/teams.json`;

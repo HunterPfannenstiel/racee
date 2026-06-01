@@ -59,14 +59,14 @@ type GridEditor = {
 const EMPTY_GRID_EDITOR: GridEditor = { raceId: "", order: [] };
 
 type Props = {
-  leagueId: string;
+  motorsportId: string;
   races: Race[];
   racers: Racer[];
   onRacesChange: (races: Race[]) => void;
   onError: (msg: string) => void;
 };
 
-export function RacesSection({ leagueId, races, racers, onRacesChange, onError }: Props) {
+export function RacesSection({ motorsportId, races, racers, onRacesChange, onError }: Props) {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editor, setEditor] = useState<Editor>(EMPTY_EDITOR);
   const [gridEditorOpen, setGridEditorOpen] = useState(false);
@@ -115,7 +115,7 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
     if (!editor.title.trim() || !editor.date) return;
     const race: Race = {
       id: editor.raceId,
-      leagueId,
+      motorsportId,
       title: editor.title.trim(),
       label: editor.label.trim() || undefined,
       date: editor.date,
@@ -146,7 +146,7 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
       const res = await fetch(`/api/races/${race.id}/grid`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leagueId, startingGrid: gridEditor.order }),
+        body: JSON.stringify({ motorsportId, startingGrid: gridEditor.order }),
       });
       if (!res.ok) { onError("Failed to save starting grid."); return; }
       onRacesChange(races.map((r) => (r.id === race.id ? { ...r, startingGrid: gridEditor.order } : r)));
@@ -164,7 +164,7 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
       const res = await fetch(`/api/races/${race.id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leagueId }),
+        body: JSON.stringify({ motorsportId }),
       });
       if (!res.ok) { onError("Failed to delete race."); return; }
       onRacesChange(races.filter((r) => r.id !== race.id));

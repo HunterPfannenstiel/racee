@@ -19,26 +19,25 @@
       "overAchiever": 5,
       "underAchiever": 5,
       "wrecker": 5
-    }
+    },
+    "motorsportId": "4b2451d9-8676-42f5-b7a0-7ad9210389a7"
   },
   {
-    "id": "51c662c7-d807-4a8c-a100-d17c0e96d0ca",
+    "id": "fbff3a53-9532-4200-b696-fa16f5a52b8f",
     "commissionerId": "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J",
-    "name": "Test League",
-    "placementPoints": [
-      70
-    ],
+    "name": "Test!!!",
+    "placementPoints": [],
     "mulliganCount": 0,
-    "scoringDepth": 22,
-    "stageCount": 2,
+    "stageCount": 0,
     "propPointValues": {
-      "driverOfDay": 1,
-      "lapsLed": 1,
-      "fastestPitStop": 1,
-      "fastestLap": 1,
-      "overAchiever": 1,
-      "underAchiever": 1,
-      "wrecker": 1
-    }
+      "driverOfDay": 0,
+      "lapsLed": 0,
+      "fastestPitStop": 0,
+      "fastestLap": 0,
+      "overAchiever": 0,
+      "underAchiever": 0,
+      "wrecker": 0
+    },
+    "motorsportId": "4b2451d9-8676-42f5-b7a0-7ad9210389a7"
   }
 ]

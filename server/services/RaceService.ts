@@ -7,7 +7,7 @@ export class RaceService {
 
   async createRace(data: {
     raceId: string;
-    leagueId: string;
+    motorsportId: string;
     title: string;
     label?: string;
     date: string;
@@ -18,34 +18,34 @@ export class RaceService {
     await this.races.save(race);
   }
 
-  async listRaces(leagueId: string): Promise<Race[]> {
-    return this.races.findAllForLeague(leagueId);
+  async listRaces(motorsportId: string): Promise<Race[]> {
+    return this.races.findAllForMotorsport(motorsportId);
   }
 
-  async getRace(leagueId: string, raceId: string): Promise<Race> {
-    const race = await this.races.findById(leagueId, raceId);
+  async getRace(motorsportId: string, raceId: string): Promise<Race> {
+    const race = await this.races.findById(motorsportId, raceId);
     if (!race) throw new NotFoundError("Race", raceId);
     return race;
   }
 
-  async updateRace(leagueId: string, raceId: string, patch: Partial<{
+  async updateRace(motorsportId: string, raceId: string, patch: Partial<{
     title: string;
     label: string;
     date: string;
     lockTime: string;
   }>): Promise<void> {
-    const race = await this.getRace(leagueId, raceId);
+    const race = await this.getRace(motorsportId, raceId);
     race.updateDetails(patch);
     await this.races.save(race);
   }
 
-  async setStartingGrid(leagueId: string, raceId: string, racerIds: string[]): Promise<void> {
-    const race = await this.getRace(leagueId, raceId);
+  async setStartingGrid(motorsportId: string, raceId: string, racerIds: string[]): Promise<void> {
+    const race = await this.getRace(motorsportId, raceId);
     race.setStartingGrid(racerIds);
     await this.races.save(race);
   }
 
-  async deleteRace(leagueId: string, raceId: string): Promise<void> {
-    await this.races.remove(leagueId, raceId);
+  async deleteRace(motorsportId: string, raceId: string): Promise<void> {
+    await this.races.remove(motorsportId, raceId);
   }
 }
