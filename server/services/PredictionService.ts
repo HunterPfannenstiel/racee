@@ -6,10 +6,12 @@ import type {
   ITeamRepository,
 } from "@/server/repositories/interfaces";
 import { RacePredictionBook } from "@/server/domain/race-prediction-book";
-import type { PropKey, RaceScores, PropName } from "@/server/domain/race-prediction-book";
+import type { PropKey, PropName } from "@/server/domain/race-prediction-book";
 import { LeagueStandings } from "@/server/domain/league-standings";
 import { NotFoundError } from "@/server/domain/errors";
 import type { Team } from "@/server/domain/team";
+import type { League } from "@/server/domain/league";
+import type { Race } from "@/server/domain/race";
 
 export class PredictionService {
   constructor(
@@ -38,73 +40,63 @@ export class PredictionService {
   }
 
   async setAnswerKey(
-    leagueId: string,
+    motorsportId: string,
     raceId: string,
     keyOrder: string[],
     propKey: PropKey,
     now: string,
-  ): Promise<RaceScores> {
-    // 1. LOAD league first to resolve motorsport context
-    const league = await this.leagues.findById(leagueId);
-    if (!league) throw new NotFoundError("League", leagueId);
-
-    const [book, race, existingStandings, teams] = await Promise.all([
-      this.books.findByRace(leagueId, raceId),
-      this.races.findById(league.motorsportId, raceId),
-      this.standings.findByLeague(leagueId),
-      this.teams.findAllForLeague(leagueId),
+  ): Promise<void> {
+    // 1. LOAD race and all leagues for this motorsport
+    const [race, allLeagues] = await Promise.all([
+      this.races.findById(motorsportId, raceId),
+      this.leagues.findAll(),
     ]);
 
     if (!race) throw new NotFoundError("Race", raceId);
 
-    const activeBook = book ?? RacePredictionBook.empty(leagueId, raceId);
+    // 2. Set key on the race entity (single source of truth)
+    race.setKey(keyOrder, propKey, now);
 
-    // 2. EXECUTE
-    activeBook.setAnswerKey(keyOrder, propKey, now);
+    // 3. Grade all leagues that use this motorsport
+    const relevantLeagues = allLeagues.filter(l => l.motorsportId === motorsportId);
+    await Promise.all([
+      this.races.save(race),
+      ...relevantLeagues.map(league => this._gradeLeague(league, race)),
+    ]);
+  }
+
+  async recalculate(motorsportId: string, raceId: string): Promise<void> {
+    // 1. LOAD race and all leagues for this motorsport
+    const [race, allLeagues] = await Promise.all([
+      this.races.findById(motorsportId, raceId),
+      this.leagues.findAll(),
+    ]);
+
+    if (!race) throw new NotFoundError("Race", raceId);
+    if (!race.keyOrder) throw new NotFoundError("AnswerKey", raceId);
+
+    // 2. Re-grade all leagues that use this motorsport
+    const relevantLeagues = allLeagues.filter(l => l.motorsportId === motorsportId);
+    await Promise.all(relevantLeagues.map(league => this._gradeLeague(league, race)));
+  }
+
+  private async _gradeLeague(league: League, race: Race): Promise<void> {
+    const [book, existingStandings, teams] = await Promise.all([
+      this.books.findByRace(league.leagueId, race.raceId),
+      this.standings.findByLeague(league.leagueId),
+      this.teams.findAllForLeague(league.leagueId),
+    ]);
+
+    const activeBook = book ?? RacePredictionBook.empty(league.leagueId, race.raceId);
     const raceScores = activeBook.grade(league, race);
 
     const teamMembership = buildTeamMembership(teams);
     const activeTeamIds = new Set(teams.map(t => t.teamId));
-    const activeStandings = existingStandings ?? LeagueStandings.empty(leagueId);
+    const activeStandings = existingStandings ?? LeagueStandings.empty(league.leagueId);
     activeStandings.incorporateRaceResult(raceScores, activeTeamIds, teamMembership);
 
-    // 3. PERSIST in parallel
     await Promise.all([
       this.books.save(activeBook),
-      this.standings.save(activeStandings),
-    ]);
-
-    // 4. RETURN
-    return raceScores;
-  }
-
-  async recalculate(leagueId: string, raceId: string): Promise<void> {
-    // 1. LOAD league first to resolve motorsport context
-    const league = await this.leagues.findById(leagueId);
-    if (!league) throw new NotFoundError("League", leagueId);
-
-    const [book, race, existingStandings, teams] = await Promise.all([
-      this.books.findByRace(leagueId, raceId),
-      this.races.findById(league.motorsportId, raceId),
-      this.standings.findByLeague(leagueId),
-      this.teams.findAllForLeague(leagueId),
-    ]);
-
-    if (!book) throw new NotFoundError("RacePredictionBook", raceId);
-    if (!book.hasKey) throw new NotFoundError("AnswerKey", raceId);
-    if (!race) throw new NotFoundError("Race", raceId);
-
-    // 2. EXECUTE
-    const raceScores = book.grade(league, race);
-
-    const teamMembership = buildTeamMembership(teams);
-    const activeTeamIds = new Set(teams.map(t => t.teamId));
-    const activeStandings = existingStandings ?? LeagueStandings.empty(leagueId);
-    activeStandings.incorporateRaceResult(raceScores, activeTeamIds, teamMembership);
-
-    // 3. PERSIST in parallel
-    await Promise.all([
-      this.books.save(book),
       this.standings.save(activeStandings),
     ]);
   }

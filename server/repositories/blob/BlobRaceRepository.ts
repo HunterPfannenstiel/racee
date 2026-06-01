@@ -5,6 +5,16 @@ import { Race } from "@/server/domain/race";
 import { ParseError, PersistenceError } from "@/server/domain/errors";
 import type { IRaceRepository } from "../interfaces/IRaceRepository";
 
+const PropKeyPersistenceSchema = z.object({
+  driverOfDay: z.array(z.string()).nullable(),
+  lapsLed: z.array(z.string()).nullable(),
+  fastestPitStop: z.array(z.string()).nullable(),
+  fastestLap: z.array(z.string()).nullable(),
+  overAchiever: z.array(z.string()).nullable(),
+  underAchiever: z.array(z.string()).nullable(),
+  wrecker: z.array(z.string()).nullable(),
+});
+
 const RacePersistenceSchema = z.object({
   id: z.string().uuid(),
   motorsportId: z.string().uuid(),
@@ -13,6 +23,9 @@ const RacePersistenceSchema = z.object({
   date: z.string().min(1),
   lockTime: z.string().datetime().optional(),
   startingGrid: z.array(z.string().uuid()),
+  keyOrder: z.array(z.string().uuid()).nullable().default(null),
+  propKey: PropKeyPersistenceSchema.nullable().default(null),
+  keySetAt: z.string().nullable().default(null),
 });
 type RacePersistence = z.infer<typeof RacePersistenceSchema>;
 
@@ -25,6 +38,9 @@ function toDomain(raw: RacePersistence): Race {
     date: raw.date,
     lockTime: raw.lockTime,
     startingGrid: raw.startingGrid,
+    keyOrder: raw.keyOrder,
+    propKey: raw.propKey,
+    keySetAt: raw.keySetAt,
   });
 }
 
@@ -37,6 +53,9 @@ function toPersistence(race: Race): RacePersistence {
     date: race.date,
     lockTime: race.lockTime,
     startingGrid: [...race.startingGrid],
+    keyOrder: race.keyOrder ? [...race.keyOrder] : null,
+    propKey: race.propKey,
+    keySetAt: race.keySetAt,
   };
 }
 

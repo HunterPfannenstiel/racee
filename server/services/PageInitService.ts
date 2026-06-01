@@ -200,7 +200,7 @@ export class PageInitService {
       })),
       driverRows,
       constructorRows,
-      gradedRaceIds: standingsData ? [...standingsData.gradedRaceIds] : [],
+      gradedRaceIds: sortedRaces.filter(r => r.keySetAt !== null).map(r => r.raceId),
       stages,
     };
   }
@@ -210,6 +210,8 @@ export class PageInitService {
       this.books.findByRace(leagueId, raceId),
       this.leagues.findById(leagueId),
     ]);
+
+    const race = league ? await this.races.findById(league.motorsportId, raceId) : null;
 
     const pred = book?.predictionFor(userId);
     const scores = book?.scores ?? null;
@@ -228,9 +230,9 @@ export class PageInitService {
 
     return {
       prediction: pred ? [...pred.racerIds] : null,
-      key: book?.keyOrder ? [...book.keyOrder] : null,
+      key: race?.keyOrder ? [...race.keyOrder] : null,
       propPicks: pred ? { ...pred.propPicks } : {},
-      propKey: book?.propKey ?? null,
+      propKey: race?.propKey ?? null,
       scores: userEntry
         ? {
             userId,

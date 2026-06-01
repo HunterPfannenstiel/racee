@@ -13,16 +13,6 @@ import type { IRacePredictionBookRepository } from "../interfaces/IRacePredictio
 // Persistence schemas
 // ---------------------------------------------------------------------------
 
-const PropKeyPersistenceSchema = z.object({
-  driverOfDay: z.array(z.string()).nullable(),
-  lapsLed: z.array(z.string()).nullable(),
-  fastestPitStop: z.array(z.string()).nullable(),
-  fastestLap: z.array(z.string()).nullable(),
-  overAchiever: z.array(z.string()).nullable(),
-  underAchiever: z.array(z.string()).nullable(),
-  wrecker: z.array(z.string()).nullable(),
-});
-
 const PropPicksPersistenceSchema = z.object({
   driverOfDay: z.string().optional(),
   lapsLed: z.string().optional(),
@@ -34,11 +24,8 @@ const PropPicksPersistenceSchema = z.object({
 });
 
 const PredictionsPersistenceSchema = z.object({
-  key: z.array(z.string().uuid()).nullable(),
-  keySetAt: z.string().nullable().default(null),
   predictions: z.record(z.string(), z.array(z.string().uuid())),
   submittedAt: z.record(z.string(), z.string()).optional(),
-  propKey: PropKeyPersistenceSchema,
   propPicks: z.record(z.string(), PropPicksPersistenceSchema),
 });
 type PredictionsPersistence = z.infer<typeof PredictionsPersistenceSchema>;
@@ -82,15 +69,7 @@ function predictionsToDomain(
     );
   }
 
-  return new RacePredictionBook(
-    leagueId,
-    raceId,
-    raw.key,
-    raw.propKey,
-    raw.keySetAt,
-    predictions,
-    scores,
-  );
+  return new RacePredictionBook(leagueId, raceId, predictions, scores);
 }
 
 function scoresToDomain(raw: ScoresPersistence): RaceScores {
@@ -115,8 +94,6 @@ function scoresToDomain(raw: ScoresPersistence): RaceScores {
 function predictionsToPersistence(book: RacePredictionBook): PredictionsPersistence {
   const allPredictions = book.allPredictions();
   return {
-    key: book.keyOrder ? [...book.keyOrder] : null,
-    keySetAt: book.keySetAt,
     predictions: Object.fromEntries(
       allPredictions.map((p) => [p.userId, [...p.racerIds]]),
     ),
@@ -125,7 +102,6 @@ function predictionsToPersistence(book: RacePredictionBook): PredictionsPersiste
         .filter((p) => p.submittedAt !== null)
         .map((p) => [p.userId, p.submittedAt!]),
     ),
-    propKey: book.propKey,
     propPicks: Object.fromEntries(
       allPredictions.map((p) => [p.userId, { ...p.propPicks }]),
     ),

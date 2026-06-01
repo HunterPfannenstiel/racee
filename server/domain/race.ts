@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PropKeySchema, type PropKey } from "@/lib/schemas";
 
 const RacePropsSchema = z.object({
   raceId: z.string().uuid(),
@@ -8,13 +9,16 @@ const RacePropsSchema = z.object({
   date: z.string().min(1),
   lockTime: z.string().datetime().optional(),
   startingGrid: z.array(z.string().uuid()),
+  keyOrder: z.array(z.string().uuid()).nullable().default(null),
+  propKey: PropKeySchema.nullable().default(null),
+  keySetAt: z.string().nullable().default(null),
 });
 type RaceProps = z.infer<typeof RacePropsSchema>;
 
 export class Race {
   private props: RaceProps;
 
-  constructor(props: RaceProps) {
+  constructor(props: z.input<typeof RacePropsSchema>) {
     this.props = RacePropsSchema.parse(props);
   }
 
@@ -25,6 +29,9 @@ export class Race {
   get date() { return this.props.date; }
   get lockTime() { return this.props.lockTime; }
   get startingGrid(): readonly string[] { return this.props.startingGrid; }
+  get keyOrder(): readonly string[] | null { return this.props.keyOrder; }
+  get propKey(): PropKey | null { return this.props.propKey; }
+  get keySetAt(): string | null { return this.props.keySetAt; }
 
   isLocked(now: Date): boolean {
     if (!this.props.lockTime) return false;
@@ -39,5 +46,10 @@ export class Race {
 
   updateDetails(patch: Partial<Pick<RaceProps, "title" | "label" | "date" | "lockTime">>): void {
     this.props = RacePropsSchema.parse({ ...this.props, ...patch });
+  }
+
+  setKey(keyOrder: string[], propKey: PropKey, now: string): void {
+    if (keyOrder.length === 0) throw new Error("Race: keyOrder cannot be empty");
+    this.props = RacePropsSchema.parse({ ...this.props, keyOrder, propKey, keySetAt: now });
   }
 }

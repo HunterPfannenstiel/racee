@@ -29,16 +29,18 @@ export async function GET(request: Request) {
   const predictionEntries = await Promise.all(
     raceEntries.map(async ({ race, leagueId }) => {
       const book = await bookRepo.findByRace(leagueId, race.raceId);
+      const key = race.keyOrder ? [...race.keyOrder] : null;
+      const propKey = race.propKey ?? emptyPropKey;
       const data = book ? {
-        key: book.keyOrder ? [...book.keyOrder] : null,
-        keySetAt: book.keySetAt,
+        key,
+        keySetAt: race.keySetAt,
         predictions: Object.fromEntries(book.allPredictions().map(p => [p.userId, [...p.racerIds]])),
         submittedAt: Object.fromEntries(
           book.allPredictions().filter(p => p.submittedAt !== null).map(p => [p.userId, p.submittedAt!])
         ),
-        propKey: book.propKey,
+        propKey,
         propPicks: Object.fromEntries(book.allPredictions().map(p => [p.userId, { ...p.propPicks }])),
-      } : { key: null, keySetAt: null, predictions: {}, propKey: emptyPropKey, propPicks: {} };
+      } : { key, keySetAt: race.keySetAt, predictions: {}, propKey, propPicks: {} };
       return [`${leagueId}_${race.raceId}`, data] as const;
     }),
   );

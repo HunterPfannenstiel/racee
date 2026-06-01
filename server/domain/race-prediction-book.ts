@@ -94,42 +94,29 @@ export class RaceScores {
 export class RacePredictionBook {
   private _raceId: string;
   private _leagueId: string;
-  private _keyOrder: string[] | null;
-  private _propKey: PropKey;
-  private _keySetAt: string | null;
   private _predictions: Map<string, UserPrediction>;
   private _scores: RaceScores | null;
 
   static empty(leagueId: string, raceId: string): RacePredictionBook {
-    return new RacePredictionBook(leagueId, raceId, null, emptyPropKey(), null, new Map(), null);
+    return new RacePredictionBook(leagueId, raceId, new Map(), null);
   }
 
   constructor(
     leagueId: string,
     raceId: string,
-    keyOrder: string[] | null,
-    propKey: PropKey,
-    keySetAt: string | null,
     predictions: Map<string, UserPrediction>,
     scores: RaceScores | null,
   ) {
     this._leagueId = leagueId;
     this._raceId = raceId;
-    this._keyOrder = keyOrder;
-    this._propKey = PropKeySchema.parse(propKey);
-    this._keySetAt = keySetAt;
     this._predictions = predictions;
     this._scores = scores;
   }
 
   get raceId() { return this._raceId; }
   get leagueId() { return this._leagueId; }
-  get keyOrder(): readonly string[] | null { return this._keyOrder; }
-  get propKey(): PropKey { return this._propKey; }
-  get keySetAt(): string | null { return this._keySetAt; }
   get scores(): RaceScores | null { return this._scores; }
   get isGraded(): boolean { return this._scores !== null; }
-  get hasKey(): boolean { return this._keyOrder !== null; }
 
   predictionFor(userId: string): UserPrediction | undefined {
     return this._predictions.get(userId);
@@ -143,29 +130,24 @@ export class RacePredictionBook {
     this._predictions.set(userId, new UserPrediction({ userId, racerIds, propPicks, submittedAt }));
   }
 
-  setAnswerKey(keyOrder: string[], propKey: PropKey, now: string): void {
-    if (keyOrder.length === 0) throw new Error("RacePredictionBook: keyOrder cannot be empty");
-    this._keyOrder = keyOrder;
-    this._propKey = PropKeySchema.parse(propKey);
-    this._keySetAt = now;
-  }
-
   grade(league: League, race: Race): RaceScores {
-    if (!this._keyOrder || this._keyOrder.length === 0) {
+    if (!race.keyOrder || race.keyOrder.length === 0) {
       throw new Error("RacePredictionBook: cannot grade without an answer key");
     }
+
+    const propKey = race.propKey ?? emptyPropKey();
 
     const rawEntries = Array.from(this._predictions.values()).map(pred => ({
       userId: pred.userId,
       gridPoints: computeGridPoints(
         pred.racerIds as string[],
-        this._keyOrder!,
+        race.keyOrder as string[],
         league.placementPoints as number[],
         league.scoringDepth,
       ),
       propPoints: computePropPoints(
         pred.propPicks as Record<string, string>,
-        this._propKey,
+        propKey,
         league.propPointValues,
       ),
     }));

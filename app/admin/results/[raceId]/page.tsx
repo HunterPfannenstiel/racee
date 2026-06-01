@@ -3,41 +3,42 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { type Race, type Racer, type PropName } from "@/lib/schemas";
+import { type League, type Race, type Racer, type PropName } from "@/lib/schemas";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { KeyEditor } from "../../KeyEditor";
+import { KeyEditor } from "../KeyEditor";
 
 export default function SetResultPage() {
-  const { leagueId, raceId } = useParams<{ leagueId: string; raceId: string }>();
+  const { raceId } = useParams<{ raceId: string }>();
   const router = useRouter();
   const [race, setRace] = useState<Race | null>(null);
+  const [motorsportId, setMotorsportId] = useState<string | null>(null);
   const [racersById, setRacersById] = useState<Record<string, Racer>>({});
-  const [existingKey, setExistingKey] = useState<string[] | null>(null);
-  const [keySetAt, setKeySetAt] = useState<string | null>(null);
-  const [existingPropKey, setExistingPropKey] = useState<Partial<Record<PropName, string[] | null>>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/races?leagueId=${leagueId}`).then((r) => r.json() as Promise<Race[]>),
-      fetch("/api/racers").then((r) => r.json() as Promise<Racer[]>),
-      fetch(`/api/races/key?leagueId=${leagueId}&raceId=${raceId}`).then((r) => r.json() as Promise<{ key: string[] | null; keySetAt: string | null; propKey: Partial<Record<PropName, string[] | null>> | null }>),
-    ])
-      .then(([races, racerList, keyMeta]) => {
-        const found = races.find((r) => r.id === raceId) ?? null;
+    fetch("/api/leagues")
+      .then((r) => r.json())
+      .then(async (leagues: League[]) => {
+        if (leagues.length === 0) throw new Error("No leagues");
+        const msId = leagues[0].motorsportId;
+        setMotorsportId(msId);
+
+        const [raceList, racerList] = await Promise.all([
+          fetch(`/api/races?motorsportId=${msId}`).then((r) => r.json() as Promise<Race[]>),
+          fetch("/api/racers").then((r) => r.json() as Promise<Racer[]>),
+        ]);
+
+        const found = raceList.find((r) => r.id === raceId) ?? null;
         setRace(found);
         setRacersById(Object.fromEntries(racerList.map((r) => [r.id, r])));
-        setExistingKey(keyMeta.key);
-        setKeySetAt(keyMeta.keySetAt);
-        setExistingPropKey(keyMeta.propKey ?? {});
       })
       .catch(() => setError("Failed to load race data."))
       .finally(() => setLoading(false));
-  }, [leagueId, raceId]);
+  }, [raceId]);
 
   return (
     <PageShell title="Set Result">
@@ -59,21 +60,21 @@ export default function SetResultPage() {
           <Spinner className="w-4 h-4" />
           <span className="text-xs tracking-widest uppercase">Loading</span>
         </div>
-      ) : !race ? (
+      ) : !race || !motorsportId ? (
         <p className="text-xs tracking-widest uppercase text-muted-foreground">Race not found.</p>
       ) : (
         <div className="space-y-4">
-          {keySetAt && (
+          {race.keySetAt && (
             <p className="text-xs text-muted-foreground">
-              Key last set {new Date(Number(keySetAt)).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}.
+              Key last set {new Date(Number(race.keySetAt)).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}.
             </p>
           )}
           <KeyEditor
             race={race}
-            leagueId={leagueId}
+            motorsportId={motorsportId}
             racersById={racersById}
-            existingKey={existingKey}
-            existingPropKey={existingPropKey}
+            existingKey={race.keyOrder ?? null}
+            existingPropKey={(race.propKey as Partial<Record<PropName, string[] | null>>) ?? {}}
             onSave={() => router.push("/admin/results")}
             onCancel={() => router.push("/admin/results")}
             onError={setError}

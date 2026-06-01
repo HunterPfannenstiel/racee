@@ -74,6 +74,17 @@ export const RacerSchema = z.object({
   teamColor: z.string().optional(),
 });
 
+export const PropKeySchema = z.object({
+  driverOfDay: z.array(z.string()).nullable(),
+  lapsLed: z.array(z.string()).nullable(),
+  fastestPitStop: z.array(z.string()).nullable(),
+  fastestLap: z.array(z.string()).nullable(),
+  overAchiever: z.array(z.string()).nullable(),
+  underAchiever: z.array(z.string()).nullable(),
+  wrecker: z.array(z.string()).nullable(),
+});
+export type PropKey = z.infer<typeof PropKeySchema>;
+
 export const RaceSchema = z.object({
   id: z.string().uuid(),
   motorsportId: z.string().uuid(),
@@ -82,6 +93,9 @@ export const RaceSchema = z.object({
   date: z.string().min(1),
   lockTime: z.string().datetime().optional(),
   startingGrid: z.array(z.string().uuid()),
+  keyOrder: z.array(z.string().uuid()).nullable().optional(),
+  propKey: PropKeySchema.nullable().optional(),
+  keySetAt: z.string().nullable().optional(),
 });
 
 export const MotorsportSchema = z.object({
@@ -104,17 +118,6 @@ export type LeagueRaceConfig = z.infer<typeof LeagueRaceConfigSchema>;
 
 export const RacesFileSchema = z.array(RaceSchema);
 export type RacesFile = z.infer<typeof RacesFileSchema>;
-
-export const PropKeySchema = z.object({
-  driverOfDay: z.array(z.string()).nullable(),
-  lapsLed: z.array(z.string()).nullable(),
-  fastestPitStop: z.array(z.string()).nullable(),
-  fastestLap: z.array(z.string()).nullable(),
-  overAchiever: z.array(z.string()).nullable(),
-  underAchiever: z.array(z.string()).nullable(),
-  wrecker: z.array(z.string()).nullable(),
-});
-export type PropKey = z.infer<typeof PropKeySchema>;
 
 export const PredictionsFileSchema = z.object({
   key: z.array(z.string().uuid()).nullable(),
@@ -144,7 +147,7 @@ export const PredictionMutationSchema = z.object({
 export type PredictionMutation = z.infer<typeof PredictionMutationSchema>;
 
 export const KeyMutationSchema = z.object({
-  leagueId: z.string().uuid(),
+  motorsportId: z.string().uuid(),
   raceId: z.string().uuid(),
   racerIds: z.array(z.string().uuid()),
   propKey: PropKeySchema,

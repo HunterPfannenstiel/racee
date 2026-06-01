@@ -16,18 +16,18 @@ const predSvc = new PredictionService(
   new BlobTeamRepository(),
 );
 
-const BodySchema = z.object({ raceId: z.string().uuid() });
+const BodySchema = z.object({ motorsportId: z.string().uuid() });
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ leagueId: string }> },
+  { params }: { params: Promise<{ raceId: string }> },
 ) {
-  const { leagueId } = await params;
+  const { raceId } = await params;
   const body = BodySchema.safeParse(await request.json());
   if (!body.success) return NextResponse.json({ error: body.error.flatten() }, { status: 400 });
 
   try {
-    await predSvc.recalculate(leagueId, body.data.raceId);
+    await predSvc.recalculate(body.data.motorsportId, raceId);
   } catch (e) {
     if (e instanceof NotFoundError) return NextResponse.json({ error: e.message }, { status: 404 });
     throw e;

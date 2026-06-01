@@ -163,8 +163,8 @@
       "raceScores": [
         {
           "raceId": "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05",
-          "gridPoints": 158,
-          "propPoints": 30
+          "gridPoints": 164,
+          "propPoints": 35
         }
       ]
     },
@@ -173,8 +173,8 @@
       "raceScores": [
         {
           "raceId": "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05",
-          "gridPoints": 164,
-          "propPoints": 30
+          "gridPoints": 170,
+          "propPoints": 35
         }
       ]
     }
@@ -315,13 +315,13 @@
       "raceScores": [
         {
           "raceId": "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05",
-          "gridPoints": 164,
-          "propPoints": 30
+          "gridPoints": 170,
+          "propPoints": 35
         },
         {
           "raceId": "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05",
-          "gridPoints": 158,
-          "propPoints": 30
+          "gridPoints": 164,
+          "propPoints": 35
         }
       ]
     }

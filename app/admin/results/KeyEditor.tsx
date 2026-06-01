@@ -26,7 +26,7 @@ import { PropGrader } from "./PropGrader";
 
 type Props = {
   race: Race;
-  leagueId: string;
+  motorsportId: string;
   racersById: Record<string, Racer>;
   existingKey: string[] | null;
   existingPropKey: Partial<Record<PropName, string[] | null>>;
@@ -35,7 +35,7 @@ type Props = {
   onError: (msg: string) => void;
 };
 
-export function KeyEditor({ race, leagueId, racersById, existingKey, existingPropKey, onSave, onCancel, onError }: Props) {
+export function KeyEditor({ race, motorsportId, racersById, existingKey, existingPropKey, onSave, onCancel, onError }: Props) {
   const [orderedIds, setOrderedIds] = useState<string[]>(existingKey ?? race.startingGrid);
   const [propResults, setPropResults] = useState<Partial<Record<PropName, string[] | null>>>(existingPropKey);
   const [saving, setSaving] = useState(false);
@@ -72,7 +72,7 @@ export function KeyEditor({ race, leagueId, racersById, existingKey, existingPro
       const res = await fetch("/api/races/key", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leagueId, raceId: race.id, racerIds: orderedIds, propKey }),
+        body: JSON.stringify({ motorsportId, raceId: race.id, racerIds: orderedIds, propKey }),
       });
       if (!res.ok) { onError("Failed to save result."); return; }
       onSave();

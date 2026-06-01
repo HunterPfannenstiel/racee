@@ -10,7 +10,7 @@ const svc = new RaceService(new BlobRaceRepository());
 const leagueRepo = new BlobLeagueRepository();
 
 function ser(r: Race) {
-  return { id: r.raceId, motorsportId: r.motorsportId, title: r.title, label: r.label, date: r.date, lockTime: r.lockTime, startingGrid: [...r.startingGrid] };
+  return { id: r.raceId, motorsportId: r.motorsportId, title: r.title, label: r.label, date: r.date, lockTime: r.lockTime, startingGrid: [...r.startingGrid], keyOrder: r.keyOrder ? [...r.keyOrder] : null, propKey: r.propKey, keySetAt: r.keySetAt };
 }
 
 export async function GET(request: Request) {
