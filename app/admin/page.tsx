@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/ui/page-shell";
-import { CalendarIcon, FlagIcon, UserIcon, UsersIcon, KeyRoundIcon } from "lucide-react";
+import { CalendarIcon, FlagIcon, UserIcon, UsersIcon, KeyRoundIcon, ShieldIcon } from "lucide-react";
 import { getSession } from "@/server/auth/server";
 
 const CARDS = [
@@ -34,6 +34,12 @@ const CARDS = [
     icon: KeyRoundIcon,
     title: "Results",
     description: "Set official race finish orders.",
+  },
+  {
+    href: "/admin/users",
+    icon: ShieldIcon,
+    title: "Users",
+    description: "Manage user roles and admin access.",
   },
 ];
 

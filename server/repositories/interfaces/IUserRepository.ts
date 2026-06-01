@@ -4,4 +4,5 @@ export interface IUserRepository {
   findByIds(userIds: string[]): Promise<User[]>;
   findAll(): Promise<User[]>;
   update(userId: string, name: string): Promise<User>;
+  updateIsAdmin(userId: string, isAdmin: boolean): Promise<User>;
 }

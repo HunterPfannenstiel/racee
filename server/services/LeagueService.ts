@@ -13,6 +13,7 @@ export class LeagueService {
 
   async createLeague(data: {
     leagueId: string;
+    commissionerId: string;
     name: string;
     placementPoints: number[];
     mulliganCount: number;
@@ -27,6 +28,11 @@ export class LeagueService {
 
   async listLeagues(): Promise<League[]> {
     return this.leagues.findAll();
+  }
+
+  async listLeaguesByCommissioner(userId: string): Promise<League[]> {
+    const all = await this.leagues.findAll();
+    return all.filter((l) => l.commissionerId === userId);
   }
 
   async getLeague(leagueId: string): Promise<League> {

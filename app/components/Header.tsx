@@ -1,13 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/server/auth/auth-client";
 import { useUser } from "@/app/context/UserContext";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
 import { Drawer, DrawerContent, DrawerClose } from "@/components/ui/drawer";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const NAV = [
   { href: "/predict", label: "Predict" },
@@ -18,9 +19,8 @@ const NAV = [
 export default function Header() {
   const { user, isAdmin, isLoading } = useUser();
   const pathname = usePathname();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const router = useRouter();
   const [navOpen, setNavOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
 
   const navLinks = [
     ...NAV,
@@ -67,44 +67,31 @@ export default function Header() {
         </nav>
 
         {/* User dropdown — right col on mobile; rightmost on desktop */}
-        <div className="flex justify-end relative text-sm font-medium" ref={ref}>
+        <div className="flex justify-end text-sm font-medium">
           {isLoading ? (
             <span className="text-muted-foreground/40 flex items-center gap-1.5">
               <span className="text-primary/40">◉</span> ···
             </span>
           ) : user ? (
-            <>
-              <button
-                onClick={() => setDropdownOpen((o) => !o)}
-                className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-              >
+            <DropdownMenu>
+              <DropdownMenuTrigger className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
                 <span className="text-primary">◉</span> {user.name}
-              </button>
-              {dropdownOpen && (
-                <div className="absolute right-0 mt-1 w-32 rounded-md border border-border bg-card shadow-md z-50">
-                  <Link
-                    href="/account"
-                    onClick={() => setDropdownOpen(false)}
-                    className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md"
-                  >
-                    Account
-                  </Link>
-                  <Link
-                    href={`/profile/${user.id}`}
-                    onClick={() => setDropdownOpen(false)}
-                    className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md"
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={() => { signOut(); setDropdownOpen(false); }}
-                    className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md"
-                  >
-                    Sign out
-                  </button>
-                </div>
-              )}
-            </>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/account">Account</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/profile/${user.id}`}>Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/commissioner">Commissioner</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => { signOut(); router.push("/"); }}>
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Link href="/signin" className="text-muted-foreground hover:text-foreground transition-colors">
               Sign in

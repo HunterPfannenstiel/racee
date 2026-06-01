@@ -13,6 +13,7 @@ export type PropPointValues = z.infer<typeof PropPointValuesSchema>;
 
 const LeaguePropsSchema = z.object({
   leagueId: z.string().uuid(),
+  commissionerId: z.string(),
   name: z.string().min(1),
   placementPoints: z.array(z.number().int().min(0)),
   mulliganCount: z.number().int().min(0),
@@ -32,6 +33,7 @@ export class League {
   }
 
   get leagueId() { return this.props.leagueId; }
+  get commissionerId() { return this.props.commissionerId; }
   get name() { return this.props.name; }
   get placementPoints(): readonly number[] { return this.props.placementPoints; }
   get mulliganCount() { return this.props.mulliganCount; }

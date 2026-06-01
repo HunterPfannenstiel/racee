@@ -7,6 +7,7 @@ import type { ILeagueRepository } from "../interfaces/ILeagueRepository";
 
 const LeaguePersistenceSchema = z.object({
   id: z.string().uuid(),
+  commissionerId: z.string(),
   name: z.string().min(1),
   placementPoints: z.array(z.number().int().min(0)),
   mulliganCount: z.number().int().min(0),
@@ -27,6 +28,7 @@ type LeaguePersistence = z.infer<typeof LeaguePersistenceSchema>;
 function toDomain(raw: LeaguePersistence): League {
   return new League({
     leagueId: raw.id,
+    commissionerId: raw.commissionerId,
     name: raw.name,
     placementPoints: raw.placementPoints,
     mulliganCount: raw.mulliganCount,
@@ -39,6 +41,7 @@ function toDomain(raw: LeaguePersistence): League {
 function toPersistence(league: League): LeaguePersistence {
   return {
     id: league.leagueId,
+    commissionerId: league.commissionerId,
     name: league.name,
     placementPoints: [...league.placementPoints],
     mulliganCount: league.mulliganCount,

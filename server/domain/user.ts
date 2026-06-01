@@ -2,4 +2,5 @@
 export interface User {
   userId: string;
   name: string;
+  isAdmin: boolean;
 }
