@@ -29,11 +29,15 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
   const userTeamColor = Object.fromEntries(
     teams.flatMap((t) => t.memberIds.map((uid) => [uid, t.color ?? "#6b7280"]))
   );
+  const userTeamName = Object.fromEntries(
+    teams.flatMap((t) => t.memberIds.map((uid) => [uid, t.name]))
+  );
 
   const mappedDriverRows: StandingsRowData[] = driverRows.map(({ userId, total, rawTotal, propTotal, raceScores }) => ({
     id: userId,
     label: usersById[userId]?.name ?? "Unknown User",
     color: userTeamColor[userId] ?? "#6b7280",
+    teamName: userTeamName[userId],
     total,
     rawTotal,
     propTotal,
@@ -49,6 +53,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     id: teamId,
     label: teamsById[teamId]?.name ?? teamId,
     color: teamsById[teamId]?.color ?? "#6b7280",
+    teamName: teamsById[teamId]?.name,
     total,
     rawTotal,
     propTotal,

@@ -164,6 +164,7 @@ export default function PredictPage() {
                   existingPrediction={data.predictions[selectedRace.id]?.predictions[user?.id ?? ""] ?? null}
                   existingSubmittedAt={data.predictions[selectedRace.id]?.submittedAt?.[user?.id ?? ""] ?? null}
                   existingPropPicks={data.predictions[selectedRace.id]?.propPicks?.[user?.id ?? ""] ?? {}}
+                  keySetAt={data.predictions[selectedRace.id]?.keySetAt ?? null}
                   onPredictionSave={handlePredictionSave}
                   onError={setError}
                 />

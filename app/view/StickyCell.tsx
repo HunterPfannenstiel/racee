@@ -1,4 +1,7 @@
+"use client";
+
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const COL_WIDTHS = {
   pos:   40,
@@ -18,11 +21,12 @@ type StickyCellProps = {
   col: Col;
   as?: "td" | "th";
   color?: string;
+  teamName?: string;
   className?: string;
   children?: React.ReactNode;
 };
 
-export function StickyCell({ col, as: Tag = "td", color, className, children }: StickyCellProps) {
+export function StickyCell({ col, as: Tag = "td", color, teamName, className, children }: StickyCellProps) {
   const isTotal = col === "total";
 
   return (
@@ -40,10 +44,22 @@ export function StickyCell({ col, as: Tag = "td", color, className, children }: 
       }}
     >
       {color && (
-        <span
-          className="absolute left-0 top-0 bottom-0 w-1"
-          style={{ backgroundColor: color }}
-        />
+        teamName ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className="absolute left-0 top-0 bottom-0 w-1 cursor-default"
+                style={{ backgroundColor: color }}
+              />
+            </TooltipTrigger>
+            <TooltipContent side="right">{teamName}</TooltipContent>
+          </Tooltip>
+        ) : (
+          <span
+            className="absolute left-0 top-0 bottom-0 w-1"
+            style={{ backgroundColor: color }}
+          />
+        )
       )}
       {children}
     </Tag>

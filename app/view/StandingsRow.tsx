@@ -8,6 +8,7 @@ export type StandingsRowData = {
   id: string;
   label: string;
   color: string;
+  teamName?: string;
   total: number;
   rawTotal: number;
   propTotal: number;
@@ -60,7 +61,7 @@ export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, 
         <span className={`font-mono font-semibold ${medalColor[rank] ?? "text-muted-foreground"}`}>{rank}</span>
       </StickyCell>
 
-      <StickyCell col="name" color={row.color}>
+      <StickyCell col="name" color={row.color} teamName={row.teamName}>
         {row.linkTo ? (
           <Link href={row.linkTo} className="hover:text-primary transition-colors">
             {row.label}
