@@ -1,5 +1,18 @@
-import { ScoreEntry, UserLeagueScores, TeamLeagueScores } from "@/lib/schemas";
+import { ScoreEntry, UserLeagueScores, TeamLeagueScores, PropKey, PropPointValues } from "@/lib/schemas";
 import { Team } from "@/lib/schemas";
+
+export function computePropPoints(
+  picks: Record<string, string>,
+  propKey: PropKey,
+  propPointValues: PropPointValues,
+): number {
+  let total = 0;
+  for (const [prop, winners] of Object.entries(propKey) as [keyof PropKey, string[] | null][]) {
+    if (!winners || winners.length === 0) continue;
+    if (winners.includes(picks[prop])) total += propPointValues[prop];
+  }
+  return total;
+}
 
 export function computeGridPoints(userOrder: string[], keyOrder: string[], placementPoints: number[], scoringDepth: number): number {
   let total = 0;

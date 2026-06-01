@@ -1,25 +1,49 @@
 "use client";
-import { createContext, useContext } from "react";
-import { useSession } from "@/server/auth/auth-client";
+import { createContext, useContext, useState } from "react";
+import { useSession, refreshSession } from "@/server/auth/auth-client";
 import { type User } from "@/lib/schemas";
 
 type UserContextValue = {
   user: User | null;
   isAdmin: boolean;
+  isLoading: boolean;
+  updateName: (name: string) => Promise<void>;
 };
 
-const UserContext = createContext<UserContextValue>({ user: null, isAdmin: false });
+const UserContext = createContext<UserContextValue>({
+  user: null,
+  isAdmin: false,
+  isLoading: true,
+  updateName: async () => {},
+});
 
 export function UserContextProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
+  const [nameOverride, setNameOverride] = useState<string | null>(null);
 
-  const user: User | null = session?.user
-    ? { id: session.user.id, name: session.user.name }
+  const sessionUser = session?.user ?? null;
+  const user: User | null = sessionUser
+    ? { id: sessionUser.id, name: nameOverride ?? sessionUser.name }
     : null;
 
-  const isAdmin = session?.user?.isAdmin ?? false;
+  const isAdmin = sessionUser?.isAdmin ?? false;
 
-  return <UserContext.Provider value={{ user, isAdmin }}>{children}</UserContext.Provider>;
+  async function updateName(name: string) {
+    const res = await fetch("/api/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) throw new Error("Failed to update name");
+    setNameOverride(name);
+    refreshSession();
+  }
+
+  return (
+    <UserContext.Provider value={{ user, isAdmin, isLoading: isPending, updateName }}>
+      {children}
+    </UserContext.Provider>
+  );
 }
 
 export function useUser() {

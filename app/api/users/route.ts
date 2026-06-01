@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAll } from "@/server/repositories/user";
+import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
+
+const userRepo = new PrismaUserRepository();
 
 export async function GET() {
-  return NextResponse.json(await getAll());
+  const users = await userRepo.findAll();
+  return NextResponse.json(users.map(u => ({ id: u.userId, name: u.name })));
 }

@@ -12,5 +12,9 @@ export const { signOut, useSession } = authClient;
 export const signInWithGoogle = async () => {
   await authClient.signIn.social({
     provider: "google",
+    callbackURL: "/",
   });
 };
+
+export const refreshSession = () =>
+  authClient.getSession({ fetchOptions: { cache: "no-store" } });

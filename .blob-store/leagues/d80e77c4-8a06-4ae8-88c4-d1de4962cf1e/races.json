@@ -3,6 +3,7 @@
     "id": "5db851b3-5df4-4210-b34a-7778040d9126",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Australian Grand Prix",
+    "label": "AUS",
     "date": "2026-03-08",
     "startingGrid": [
       "291b9ee4-27cc-41eb-a97b-d153c1d04144",
@@ -27,13 +28,13 @@
       "6bc25d04-60ac-4fd8-8f0e-d875c32a1a1a",
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510"
-    ],
-    "label": "Australia"
+    ]
   },
   {
     "id": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Chinese Grand Prix",
+    "label": "China",
     "date": "2026-03-15",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -58,13 +59,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "China"
+    ]
   },
   {
     "id": "4989ab0d-78f3-4ba4-90da-a208becef79f",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Japanese Grand Prix",
+    "label": "Japan",
     "date": "2026-03-29",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -89,13 +90,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Japan"
+    ]
   },
   {
     "id": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Miami Grand Prix",
+    "label": "Miami",
     "date": "2026-05-03",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -120,13 +121,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Miami"
+    ]
   },
   {
     "id": "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Canadian Grand Prix",
+    "label": "Canada",
     "date": "2026-05-24",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -151,13 +152,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Canada"
+    ]
   },
   {
     "id": "ddd16434-a37c-47ff-8ffc-2b95eb7c0dc6",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Monaco Grand Prix",
+    "label": "Monaco",
     "date": "2026-06-07",
     "lockTime": "2026-05-29T17:09:00.000Z",
     "startingGrid": [
@@ -183,13 +184,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Monaco"
+    ]
   },
   {
     "id": "91703cd3-4e79-4567-8353-931f008bf05c",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Barcelona-Catalunya Grand Prix",
+    "label": "Barcelona",
     "date": "2026-06-14",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -214,13 +215,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Barcelona"
+    ]
   },
   {
     "id": "03ba5918-a3fd-44d9-a084-4bcb3f72f635",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Austrian Grand Prix",
+    "label": "Austria",
     "date": "2026-06-28",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -245,13 +246,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Austria"
+    ]
   },
   {
     "id": "6f5bc4a6-1ea8-4850-84cf-a8f61116e88b",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "British Grand Prix",
+    "label": "British",
     "date": "2026-07-05",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -276,13 +277,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "British"
+    ]
   },
   {
     "id": "b17bf26c-b809-4173-a9f7-eac0c38560b5",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Belgian Grand Prix",
+    "label": "Belgium",
     "date": "2026-07-19",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -307,13 +308,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Belgium"
+    ]
   },
   {
     "id": "cdb15878-7fdc-426b-bdbf-ff3ec162cf4a",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Hungarian Grand Prix",
+    "label": "Hungary",
     "date": "2026-07-26",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -338,13 +339,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Hungary"
+    ]
   },
   {
     "id": "2c100b56-37ad-4a8c-a90a-003e038b97bd",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Dutch Grand Prix",
+    "label": "Netherlands",
     "date": "2026-08-23",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -369,13 +370,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Netherlands"
+    ]
   },
   {
     "id": "26d43493-fd71-4cd0-a340-ce548eda28a7",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Italian Grand Prix",
+    "label": "Monza",
     "date": "2026-09-06",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -400,13 +401,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Monza"
+    ]
   },
   {
     "id": "868a5703-7e6e-4182-bd28-565bb71c0287",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Spanish Grand Prix",
+    "label": "Spain",
     "date": "2026-09-13",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -431,13 +432,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Spain"
+    ]
   },
   {
     "id": "3c95b83f-ed72-4213-aeba-8d3efd70cafc",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Azerbaijan Grand Prix",
+    "label": "Azerbaijan",
     "date": "2026-09-26",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -462,13 +463,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Azerbaijan"
+    ]
   },
   {
     "id": "5e62f63e-296e-4e14-8838-67cdba619451",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Singapore Grand Prix",
+    "label": "Singapore",
     "date": "2026-10-11",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -493,13 +494,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Singapore"
+    ]
   },
   {
     "id": "aa58e85d-a9ef-42cb-a9d2-79350e677ffe",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "United States Grand Prix",
+    "label": "US GP",
     "date": "2026-10-25",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -524,13 +525,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "US GP"
+    ]
   },
   {
     "id": "f354707f-3bc8-4aa8-b5af-0e8c867af1c6",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Mexican Grand Prix",
+    "label": "Mexico",
     "date": "2026-11-01",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -555,13 +556,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Mexico"
+    ]
   },
   {
     "id": "708427d4-97c6-4f0c-8e7f-a0947fe5b583",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Brazilian Grand Prix",
+    "label": "Brazil",
     "date": "2026-11-08",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -586,13 +587,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Brazil"
+    ]
   },
   {
     "id": "411ddda3-9b9b-468a-bb63-12456f6e7994",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Las Vegas Grand Prix",
+    "label": "Las Vegas",
     "date": "2026-11-22",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -617,13 +618,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Las Vegas"
+    ]
   },
   {
     "id": "92e15250-935e-415c-95f3-7734fe78e64f",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Qatar Grand Prix",
+    "label": "Qatar",
     "date": "2026-11-29",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -648,13 +649,13 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Qatar"
+    ]
   },
   {
     "id": "b987fa78-df57-4cff-8e0d-eaf2f1dbba51",
     "leagueId": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
     "title": "Abu Dhabi Grand Prix",
+    "label": "Abu Dhabi",
     "date": "2026-12-06",
     "startingGrid": [
       "d74c2afb-dd77-4f07-a3a0-98e3743445db",
@@ -679,7 +680,6 @@
       "cfb2fc91-046b-4085-8856-be4827960f77",
       "57a4dc27-2284-4a86-9d57-da29fa6b4510",
       "291b9ee4-27cc-41eb-a97b-d153c1d04144"
-    ],
-    "label": "Abu Dhabi"
+    ]
   }
 ]

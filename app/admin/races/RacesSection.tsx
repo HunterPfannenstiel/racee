@@ -24,14 +24,26 @@ import { Spinner } from "@/components/ui/spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SortableRacerRow } from "@/components/SortableRacerRow";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { InfoIcon } from "lucide-react";
 
 type Editor = {
   raceId: string;
   title: string;
+  label: string;
   date: string;
   lockTime: string;
   startingGrid: string[];
 };
+
+const EMPTY_EDITOR: Editor = { raceId: "", title: "", label: "", date: "", lockTime: "", startingGrid: [] };
 
 function isoToDatetimeLocal(iso: string): string {
   const d = new Date(iso);
@@ -44,6 +56,8 @@ type GridEditor = {
   order: string[];
 };
 
+const EMPTY_GRID_EDITOR: GridEditor = { raceId: "", order: [] };
+
 type Props = {
   leagueId: string;
   races: Race[];
@@ -53,8 +67,10 @@ type Props = {
 };
 
 export function RacesSection({ leagueId, races, racers, onRacesChange, onError }: Props) {
-  const [editor, setEditor] = useState<Editor | null>(null);
-  const [gridEditor, setGridEditor] = useState<GridEditor | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editor, setEditor] = useState<Editor>(EMPTY_EDITOR);
+  const [gridEditorOpen, setGridEditorOpen] = useState(false);
+  const [gridEditor, setGridEditor] = useState<GridEditor>(EMPTY_GRID_EDITOR);
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
 
   const busy = loadingOp !== null;
@@ -67,9 +83,8 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
   );
 
   function handleGridDragEnd({ active, over }: DragEndEvent) {
-    if (!over || active.id === over.id || !gridEditor) return;
+    if (!over || active.id === over.id) return;
     setGridEditor((g) => {
-      if (!g) return g;
       const oldIndex = g.order.indexOf(active.id as string);
       const newIndex = g.order.indexOf(over.id as string);
       return { ...g, order: arrayMove(g.order, oldIndex, newIndex) };
@@ -77,21 +92,19 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
   }
 
   function openEditor(race?: Race) {
-    setGridEditor(null);
-    if (race) {
-      setEditor({ raceId: race.id, title: race.title, date: race.date, lockTime: race.lockTime ? isoToDatetimeLocal(race.lockTime) : "", startingGrid: race.startingGrid });
-    } else {
-      setEditor({ raceId: crypto.randomUUID(), title: "", date: "", lockTime: "", startingGrid: [] });
-    }
+    setEditor(race
+      ? { raceId: race.id, title: race.title, label: race.label ?? "", date: race.date, lockTime: race.lockTime ? isoToDatetimeLocal(race.lockTime) : "", startingGrid: race.startingGrid }
+      : { ...EMPTY_EDITOR, raceId: crypto.randomUUID() }
+    );
+    setEditorOpen(true);
   }
 
   function openGridEditor(race: Race) {
-    setEditor(null);
     setGridEditor({ raceId: race.id, order: [...race.startingGrid] });
+    setGridEditorOpen(true);
   }
 
   function toggleRacerId(racerId: string) {
-    if (!editor) return;
     const startingGrid = editor.startingGrid.includes(racerId)
       ? editor.startingGrid.filter((id) => id !== racerId)
       : [...editor.startingGrid, racerId];
@@ -99,11 +112,12 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
   }
 
   async function commitRace() {
-    if (!editor || !editor.title.trim() || !editor.date) return;
+    if (!editor.title.trim() || !editor.date) return;
     const race: Race = {
       id: editor.raceId,
       leagueId,
       title: editor.title.trim(),
+      label: editor.label.trim() || undefined,
       date: editor.date,
       lockTime: editor.lockTime ? new Date(editor.lockTime).toISOString() : undefined,
       startingGrid: editor.startingGrid,
@@ -116,7 +130,7 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
         : await fetch(`/api/races/${race.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(race) });
       if (!res.ok) { onError("Failed to save race."); return; }
       onRacesChange(isNew ? [...races, race] : races.map((r) => (r.id === race.id ? race : r)));
-      setEditor(null);
+      setEditorOpen(false);
     } catch {
       onError("Failed to save race.");
     } finally {
@@ -125,7 +139,6 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
   }
 
   async function commitGrid() {
-    if (!gridEditor) return;
     const race = races.find((r) => r.id === gridEditor.raceId);
     if (!race) return;
     setLoadingOp("grid-save");
@@ -137,7 +150,7 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
       });
       if (!res.ok) { onError("Failed to save starting grid."); return; }
       onRacesChange(races.map((r) => (r.id === race.id ? { ...r, startingGrid: gridEditor.order } : r)));
-      setGridEditor(null);
+      setGridEditorOpen(false);
     } catch {
       onError("Failed to save starting grid.");
     } finally {
@@ -163,85 +176,86 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
   }
 
   const sorted = [...races].sort((a, b) => a.date.localeCompare(b.date));
-  const gridRace = gridEditor ? races.find((r) => r.id === gridEditor.raceId) : null;
+  const gridRace = races.find((r) => r.id === gridEditor.raceId);
+  const isNew = !races.some((r) => r.id === editor.raceId);
 
   return (
-    <Card>
-      <CardHeader>
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Races</h2>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <ul className="space-y-1">
-          {sorted.map((race) => (
-            <li key={race.id} className="flex items-center justify-between py-1.5">
-              <div>
-                <p className="text-sm font-medium">{race.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  {race.date}
-                  {race.lockTime && (
-                    <span className="ml-2 text-amber-600">
-                      locks {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(race.lockTime))}
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="flex gap-1 items-center shrink-0">
-                {loadingOp === `remove-${race.id}` && <Spinner className="w-3 h-3" />}
-                <Button variant="ghost" size="sm" onClick={() => openGridEditor(race)} disabled={busy}>Starting Grid</Button>
-                <Button variant="ghost" size="sm" onClick={() => openEditor(race)} disabled={busy}>Edit</Button>
-                <Button variant="ghost" size="sm" onClick={() => handleRemove(race)} disabled={busy}>Remove</Button>
-              </div>
-            </li>
-          ))}
-        </ul>
+    <>
+      <Card>
+        <CardHeader>
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Races</h2>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <ul className="space-y-1">
+            {sorted.map((race) => (
+              <li key={race.id} className="flex items-center justify-between py-1.5">
+                <div>
+                  <p className="text-sm font-medium">{race.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {race.date}
+                    {race.lockTime && (
+                      <span className="ml-2 text-amber-600">
+                        locks {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(race.lockTime))}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex gap-1 items-center shrink-0">
+                  {loadingOp === `remove-${race.id}` && <Spinner className="w-3 h-3" />}
+                  <Button variant="ghost" size="sm" onClick={() => openGridEditor(race)} disabled={busy}>Starting Grid</Button>
+                  <Button variant="ghost" size="sm" onClick={() => openEditor(race)} disabled={busy}>Edit</Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleRemove(race)} disabled={busy}>Remove</Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {races.length > 0 && <Separator />}
+          <Button variant="outline" onClick={() => openEditor()} disabled={busy}>
+            Create new race
+          </Button>
+        </CardContent>
+      </Card>
 
-        {gridEditor && gridRace ? (
-          <div className="bg-muted/50 rounded-sm p-3 space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              {gridRace.title} — Starting Grid
-            </p>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGridDragEnd}>
-              <SortableContext items={gridEditor.order} strategy={verticalListSortingStrategy}>
-                <ul className="space-y-1 max-h-[32rem] overflow-y-auto">
-                  {gridEditor.order.map((id, index) => {
-                    const racer = racersById[id];
-                    if (!racer) return null;
-                    return <SortableRacerRow key={id} racerId={id} index={index} racer={racer} disabled={busy} />;
-                  })}
-                </ul>
-              </SortableContext>
-            </DndContext>
-            <div className="flex gap-2 items-center">
-              <Button onClick={commitGrid} disabled={busy}>
-                {loadingOp === "grid-save" && <Spinner className="w-3 h-3 mr-1" />}
-                Save
-              </Button>
-              <Button variant="ghost" onClick={() => setGridEditor(null)} disabled={busy}>Cancel</Button>
-            </div>
-          </div>
-        ) : editor === null ? (
-          <>
-            {races.length > 0 && <Separator />}
-            <Button variant="outline" onClick={() => openEditor()} disabled={busy}>
-              Create new race
-            </Button>
-          </>
-        ) : (
-          <div className="bg-muted/50 rounded-sm p-3 space-y-3">
-            <Input
-              value={editor.title}
-              onChange={(e) => setEditor({ ...editor, title: e.target.value })}
-              placeholder="Race title"
-              autoFocus
-            />
-            <Input
-              type="date"
-              value={editor.date}
-              onChange={(e) => setEditor({ ...editor, date: e.target.value })}
-              autoComplete="off"
-            />
+      <Dialog open={editorOpen} onOpenChange={(open) => { if (!open && !busy) setEditorOpen(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{isNew ? "Create race" : "Edit race"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Lock time (optional)</p>
+              <label className="text-xs text-muted-foreground">Race title</label>
+              <Input
+                value={editor.title}
+                onChange={(e) => setEditor({ ...editor, title: e.target.value })}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <label className="text-xs text-muted-foreground">Column label (optional, e.g. AUS)</label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <InfoIcon className="size-3 text-muted-foreground cursor-default" />
+                  </TooltipTrigger>
+                  <TooltipContent>Shown as the column header on the standings page. Falls back to the full race title if blank.</TooltipContent>
+                </Tooltip>
+              </div>
+              <Input
+                value={editor.label}
+                onChange={(e) => setEditor({ ...editor, label: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Date</label>
+              <Input
+                type="date"
+                value={editor.date}
+                onChange={(e) => setEditor({ ...editor, date: e.target.value })}
+                autoComplete="off"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Lock time (optional)</label>
               <Input
                 type="datetime-local"
                 value={editor.lockTime}
@@ -251,7 +265,7 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Drivers</p>
+                <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Drivers</label>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -279,16 +293,42 @@ export function RacesSection({ leagueId, races, racers, onRacesChange, onError }
                 ))}
               </ul>
             </div>
-            <div className="flex gap-2 items-center">
-              <Button onClick={commitRace} disabled={busy}>
-                {loadingOp === "save" && <Spinner className="w-3 h-3 mr-1" />}
-                Save
-              </Button>
-              <Button variant="ghost" onClick={() => setEditor(null)} disabled={busy}>Cancel</Button>
-            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <DialogFooter>
+            <Button onClick={commitRace} disabled={busy || !editor.title.trim() || !editor.date}>
+              {loadingOp === "save" && <Spinner className="w-3 h-3 mr-1" />}
+              Save
+            </Button>
+            <Button variant="outline" onClick={() => setEditorOpen(false)} disabled={busy}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={gridEditorOpen} onOpenChange={(open) => { if (!open && !busy) setGridEditorOpen(false); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{gridRace?.title} — Starting Grid</DialogTitle>
+          </DialogHeader>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGridDragEnd}>
+            <SortableContext items={gridEditor.order} strategy={verticalListSortingStrategy}>
+              <ul className="space-y-1 max-h-[32rem] overflow-y-auto">
+                {gridEditor.order.map((id, index) => {
+                  const racer = racersById[id];
+                  if (!racer) return null;
+                  return <SortableRacerRow key={id} racerId={id} index={index} racer={racer} disabled={busy} />;
+                })}
+              </ul>
+            </SortableContext>
+          </DndContext>
+          <DialogFooter>
+            <Button onClick={commitGrid} disabled={busy}>
+              {loadingOp === "grid-save" && <Spinner className="w-3 h-3 mr-1" />}
+              Save
+            </Button>
+            <Button variant="outline" onClick={() => setGridEditorOpen(false)} disabled={busy}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

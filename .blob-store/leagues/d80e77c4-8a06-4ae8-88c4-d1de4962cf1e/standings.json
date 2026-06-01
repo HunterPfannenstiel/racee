@@ -3,8 +3,8 @@
   "gradedRaceIds": [
     "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
     "4989ab0d-78f3-4ba4-90da-a208becef79f",
-    "f5475ab9-aed8-4ac9-9bad-5266527662a8",
     "5db851b3-5df4-4210-b34a-7778040d9126",
+    "f5475ab9-aed8-4ac9-9bad-5266527662a8",
     "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05"
   ],
   "individual": [
@@ -22,14 +22,14 @@
           "propPoints": 20
         },
         {
-          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "gridPoints": 106,
-          "propPoints": 10
-        },
-        {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
           "gridPoints": 146,
           "propPoints": 15
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 106,
+          "propPoints": 10
         }
       ]
     },
@@ -47,13 +47,13 @@
           "propPoints": 35
         },
         {
-          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "gridPoints": 170,
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "gridPoints": 90,
           "propPoints": 35
         },
         {
-          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "gridPoints": 90,
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 170,
           "propPoints": 35
         }
       ]
@@ -72,13 +72,13 @@
           "propPoints": 30
         },
         {
-          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "gridPoints": 125,
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "gridPoints": 95,
           "propPoints": 20
         },
         {
-          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "gridPoints": 95,
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 125,
           "propPoints": 20
         }
       ]
@@ -97,14 +97,14 @@
           "propPoints": 20
         },
         {
-          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "gridPoints": 105,
-          "propPoints": 15
-        },
-        {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
           "gridPoints": 95,
           "propPoints": 5
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 105,
+          "propPoints": 15
         }
       ]
     },
@@ -122,14 +122,14 @@
           "propPoints": 25
         },
         {
-          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "gridPoints": 70,
-          "propPoints": 10
-        },
-        {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
           "gridPoints": 77,
           "propPoints": 0
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 70,
+          "propPoints": 10
         }
       ]
     },
@@ -147,19 +147,29 @@
           "propPoints": 0
         },
         {
-          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "gridPoints": 6,
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "gridPoints": 62,
           "propPoints": 0
         },
         {
-          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "gridPoints": 62,
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 6,
           "propPoints": 0
         }
       ]
     },
     {
       "userId": "I9a3e5YFCKhzmxz9r0bwJlFiV2A6FSfx",
+      "raceScores": [
+        {
+          "raceId": "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05",
+          "gridPoints": 158,
+          "propPoints": 30
+        }
+      ]
+    },
+    {
+      "userId": "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J",
       "raceScores": [
         {
           "raceId": "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05",
@@ -175,23 +185,63 @@
       "raceScores": [
         {
           "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
-          "gridPoints": 384,
-          "propPoints": 45
+          "gridPoints": 136,
+          "propPoints": 20
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "gridPoints": 129,
+          "propPoints": 10
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "gridPoints": 119,
+          "propPoints": 15
         },
         {
           "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
-          "gridPoints": 377,
-          "propPoints": 75
+          "gridPoints": 132,
+          "propPoints": 30
         },
         {
-          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "gridPoints": 300,
-          "propPoints": 45
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "gridPoints": 129,
+          "propPoints": 20
+        },
+        {
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "gridPoints": 116,
+          "propPoints": 25
         },
         {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "gridPoints": 267,
-          "propPoints": 25
+          "gridPoints": 95,
+          "propPoints": 20
+        },
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "gridPoints": 95,
+          "propPoints": 5
+        },
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "gridPoints": 77,
+          "propPoints": 0
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 125,
+          "propPoints": 20
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 105,
+          "propPoints": 15
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 70,
+          "propPoints": 10
         }
       ]
     },
@@ -200,23 +250,78 @@
       "raceScores": [
         {
           "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
-          "gridPoints": 402,
-          "propPoints": 70
+          "gridPoints": 151,
+          "propPoints": 35
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "gridPoints": 150,
+          "propPoints": 35
+        },
+        {
+          "raceId": "5a3a63ba-de3f-40c2-9ec9-a3723ca8af86",
+          "gridPoints": 101,
+          "propPoints": 0
         },
         {
           "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
-          "gridPoints": 338,
-          "propPoints": 55
+          "gridPoints": 170,
+          "propPoints": 35
         },
         {
-          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
-          "gridPoints": 282,
-          "propPoints": 45
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "gridPoints": 125,
+          "propPoints": 20
+        },
+        {
+          "raceId": "4989ab0d-78f3-4ba4-90da-a208becef79f",
+          "gridPoints": 43,
+          "propPoints": 0
         },
         {
           "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
-          "gridPoints": 298,
-          "propPoints": 50
+          "gridPoints": 146,
+          "propPoints": 15
+        },
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "gridPoints": 90,
+          "propPoints": 35
+        },
+        {
+          "raceId": "5db851b3-5df4-4210-b34a-7778040d9126",
+          "gridPoints": 62,
+          "propPoints": 0
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 170,
+          "propPoints": 35
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 106,
+          "propPoints": 10
+        },
+        {
+          "raceId": "f5475ab9-aed8-4ac9-9bad-5266527662a8",
+          "gridPoints": 6,
+          "propPoints": 0
+        }
+      ]
+    },
+    {
+      "teamId": "85021ae6-ad54-4826-b0d8-46087fed363a",
+      "raceScores": [
+        {
+          "raceId": "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05",
+          "gridPoints": 164,
+          "propPoints": 30
+        },
+        {
+          "raceId": "c3e20ec8-5c1d-4df5-a05b-63d7bb335e05",
+          "gridPoints": 158,
+          "propPoints": 30
         }
       ]
     }

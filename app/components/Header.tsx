@@ -16,7 +16,7 @@ const NAV = [
 ];
 
 export default function Header() {
-  const { user, isAdmin } = useUser();
+  const { user, isAdmin, isLoading } = useUser();
   const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
@@ -68,7 +68,11 @@ export default function Header() {
 
         {/* User dropdown — right col on mobile; rightmost on desktop */}
         <div className="flex justify-end relative text-sm font-medium" ref={ref}>
-          {user ? (
+          {isLoading ? (
+            <span className="text-muted-foreground/40 flex items-center gap-1.5">
+              <span className="text-primary/40">◉</span> ···
+            </span>
+          ) : user ? (
             <>
               <button
                 onClick={() => setDropdownOpen((o) => !o)}
@@ -78,6 +82,13 @@ export default function Header() {
               </button>
               {dropdownOpen && (
                 <div className="absolute right-0 mt-1 w-32 rounded-md border border-border bg-card shadow-md z-50">
+                  <Link
+                    href="/account"
+                    onClick={() => setDropdownOpen(false)}
+                    className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md"
+                  >
+                    Account
+                  </Link>
                   <Link
                     href={`/profile/${user.id}`}
                     onClick={() => setDropdownOpen(false)}

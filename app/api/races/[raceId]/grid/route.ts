@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import * as raceRepository from "@/server/repositories/race";
+import { BlobRaceRepository } from "@/server/repositories/blob/BlobRaceRepository";
+import { RaceService } from "@/server/services/RaceService";
 
 const BodySchema = z.object({
   leagueId: z.string().uuid(),
   startingGrid: z.array(z.string().uuid()),
 });
+
+const svc = new RaceService(new BlobRaceRepository());
 
 export async function PATCH(
   request: Request,
@@ -13,13 +16,8 @@ export async function PATCH(
 ) {
   const { raceId } = await params;
   const parsed = BodySchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const { leagueId, startingGrid } = parsed.data;
-  const races = await raceRepository.getForLeague(leagueId);
-  const race = races.find((r) => r.id === raceId);
-  if (!race) return NextResponse.json({ error: "Race not found" }, { status: 404 });
-  await raceRepository.update(leagueId, raceId, { ...race, startingGrid });
+  await svc.setStartingGrid(leagueId, raceId, startingGrid);
   return NextResponse.json({ ok: true });
 }

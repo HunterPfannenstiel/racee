@@ -1,7 +1,22 @@
 import { NextResponse } from "next/server";
-import * as leagueRepository from "@/server/repositories/league";
-import * as predictionRepository from "@/server/repositories/prediction";
-import * as scoreRepository from "@/server/repositories/score";
+import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
+import { BlobRaceRepository } from "@/server/repositories/blob/BlobRaceRepository";
+import { BlobRacerRepository } from "@/server/repositories/blob/BlobRacerRepository";
+import { BlobRacePredictionBookRepository } from "@/server/repositories/blob/BlobRacePredictionBookRepository";
+import { BlobLeagueStandingsRepository } from "@/server/repositories/blob/BlobLeagueStandingsRepository";
+import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
+import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
+import { PageInitService } from "@/server/services/PageInitService";
+
+const pageSvc = new PageInitService(
+  new BlobLeagueRepository(),
+  new BlobRaceRepository(),
+  new BlobRacerRepository(),
+  new BlobRacePredictionBookRepository(),
+  new BlobLeagueStandingsRepository(),
+  new BlobTeamRepository(),
+  new PrismaUserRepository(),
+);
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,27 +28,5 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "leagueId, raceId, and userId are required" }, { status: 400 });
   }
 
-  const [predictions, scores, league] = await Promise.all([
-    predictionRepository.getForRace(leagueId, raceId),
-    scoreRepository.get(leagueId, raceId),
-    leagueRepository.getById(leagueId),
-  ]);
-
-  const userScore = scores?.entries.find((e) => e.userId === userId) ?? null;
-  const sortedEntries = scores
-    ? [...scores.entries].sort((a, b) => b.gridPoints + b.propPoints - (a.gridPoints + a.propPoints))
-    : [];
-  const rank = userScore ? sortedEntries.findIndex((e) => e.userId === userId) + 1 : null;
-
-  return NextResponse.json({
-    prediction: predictions?.predictions[userId] ?? null,
-    key: predictions?.key ?? null,
-    propPicks: predictions?.propPicks[userId] ?? {},
-    propKey: predictions?.propKey ?? null,
-    scores: userScore,
-    rank,
-    totalParticipants: sortedEntries.length,
-    placementPoints: league?.placementPoints ?? [],
-    propPointValues: league?.propPointValues ?? null,
-  });
+  return NextResponse.json(await pageSvc.getProfileRace(leagueId, raceId, userId));
 }

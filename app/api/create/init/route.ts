@@ -1,14 +1,23 @@
 import { NextResponse } from "next/server";
-import * as leagueRepository from "@/server/repositories/league";
-import * as racerRepository from "@/server/repositories/racer";
-import * as raceRepository from "@/server/repositories/race";
+import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
+import { BlobRaceRepository } from "@/server/repositories/blob/BlobRaceRepository";
+import { BlobRacerRepository } from "@/server/repositories/blob/BlobRacerRepository";
+import { BlobRacePredictionBookRepository } from "@/server/repositories/blob/BlobRacePredictionBookRepository";
+import { BlobLeagueStandingsRepository } from "@/server/repositories/blob/BlobLeagueStandingsRepository";
+import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
+import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
+import { PageInitService } from "@/server/services/PageInitService";
+
+const pageSvc = new PageInitService(
+  new BlobLeagueRepository(),
+  new BlobRaceRepository(),
+  new BlobRacerRepository(),
+  new BlobRacePredictionBookRepository(),
+  new BlobLeagueStandingsRepository(),
+  new BlobTeamRepository(),
+  new PrismaUserRepository(),
+);
 
 export async function GET() {
-  const leagues = await leagueRepository.getAll();
-  const [racers, racesPerLeague] = await Promise.all([
-    racerRepository.getAll(),
-    Promise.all(leagues.map((l) => raceRepository.getForLeague(l.id))),
-  ]);
-
-  return NextResponse.json({ leagues, racers, races: racesPerLeague.flat() });
+  return NextResponse.json(await pageSvc.getCreateInit());
 }
