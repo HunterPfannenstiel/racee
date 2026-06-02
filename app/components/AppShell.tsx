@@ -12,7 +12,7 @@ import { SidebarContent } from "@/app/components/SidebarContent";
 import Header from "@/app/components/Header";
 import { TabBar } from "@/app/components/TabBar";
 
-const SIDEBAR_COLLAPSED_KEY = "racee_sidebar_collapsed";
+const sidebarKey = (userId: string) => `racee_sidebar_collapsed:${userId}`;
 
 const BASE_NAV = [
   { href: "/predict",  label: "Predict",   Icon: Flag },
@@ -36,14 +36,15 @@ function DesktopSidebar() {
   ];
 
   useEffect(() => {
-    const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    if (!user) return;
+    const stored = localStorage.getItem(sidebarKey(user.id));
     if (stored !== null) setCollapsed(stored === "true");
-  }, []);
+  }, [user]);
 
   function toggle() {
     setCollapsed((c) => {
       const next = !c;
-      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
+      if (user) localStorage.setItem(sidebarKey(user.id), String(next));
       return next;
     });
   }
@@ -84,7 +85,7 @@ function DesktopSidebar() {
 
           {/* Nav — icons, flex-1 pushes user to bottom */}
           <nav className="px-2 py-4 space-y-1 flex-1">
-            {nav.map(({ href, label, Icon }) => {
+            {user && nav.map(({ href, label, Icon }) => {
               const active = pathname.startsWith(href);
               return (
                 <Tooltip key={href}>
@@ -109,11 +110,11 @@ function DesktopSidebar() {
           <div className="px-2 py-2 border-t border-border shrink-0">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link href="/profile" className="w-full flex items-center justify-center h-10 rounded-sm text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors">
+                <Link href={user ? "/profile" : "/signin"} className="w-full flex items-center justify-center h-10 rounded-sm text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors">
                   <CircleUser className="size-5" />
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">{user?.name ?? "Profile"}</TooltipContent>
+              <TooltipContent side="right">{user?.name ?? "Sign in"}</TooltipContent>
             </Tooltip>
           </div>
         </div>

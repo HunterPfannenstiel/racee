@@ -61,32 +61,36 @@ export function SidebarContent({ onNavigate }: Props) {
 
       {/* Nav — flex-1 pushes user to bottom */}
       <nav className="px-5 py-4 space-y-1 flex-1">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Navigate</p>
-        {nav.map(({ href, label, Icon }) => {
-          const active = pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-3 min-h-12 px-3 text-sm font-medium rounded-sm transition-colors border-l-2",
-                active
-                  ? "border-primary text-foreground bg-subtle"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-subtle"
-              )}
-            >
-              <Icon className="size-4 shrink-0" fill={active ? "currentColor" : "none"} />
-              {label}
-            </Link>
-          );
-        })}
+        {user && (
+          <>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Navigate</p>
+            {nav.map(({ href, label, Icon }) => {
+              const active = pathname.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 min-h-12 px-3 text-sm font-medium rounded-sm transition-colors border-l-2",
+                    active
+                      ? "border-primary text-foreground bg-subtle"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-subtle"
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" fill={active ? "currentColor" : "none"} />
+                  {label}
+                </Link>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       {/* User — pinned to bottom */}
       <div className="px-3 py-2 border-t border-border shrink-0">
         <Link
-          href="/profile"
+          href={user ? "/profile" : "/signin"}
           onClick={onNavigate}
           className="flex items-center gap-2.5 min-h-10 px-3 rounded-sm text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors"
         >
