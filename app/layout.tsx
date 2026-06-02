@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Barlow_Condensed, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { UserContextProvider } from "@/app/context/UserContext";
-import Header from "@/app/components/Header";
+import { LeagueContextProvider } from "@/app/context/LeagueContext";
+import { AppShell } from "@/app/components/AppShell";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const barlowCondensed = Barlow_Condensed({
@@ -32,11 +33,12 @@ export default function RootLayout({
       lang="en"
       className={`${barlowCondensed.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="h-full bg-background">
         <TooltipProvider>
           <UserContextProvider>
-            <Header />
-            {children}
+            <LeagueContextProvider>
+              <AppShell>{children}</AppShell>
+            </LeagueContextProvider>
           </UserContextProvider>
         </TooltipProvider>
       </body>

@@ -25,7 +25,7 @@ export function SortableRacerRow({ racerId, index, racer, disabled, startingGrid
       {...attributes}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "flex items-center gap-3 py-1 rounded-sm select-none touch-none",
+        "flex items-center gap-3 min-h-12 py-1 rounded-sm select-none touch-none",
         isDragging ? "opacity-40 z-10" : "opacity-100",
         disabled ? "cursor-not-allowed opacity-40" : "cursor-grab active:cursor-grabbing"
       )}
@@ -38,8 +38,8 @@ export function SortableRacerRow({ racerId, index, racer, disabled, startingGrid
         const delta = startingGridPosition - index;
         return (
           <span className={cn("w-8 shrink-0 text-xs font-mono tabular-nums",
-            delta > 0 ? "text-green-600 dark:text-green-400" :
-            delta < 0 ? "text-red-500 dark:text-red-400" :
+            delta > 0 ? "text-state-success" :
+            delta < 0 ? "text-state-error" :
             "text-muted-foreground"
           )}>
             SG{startingGridPosition + 1}
@@ -49,7 +49,7 @@ export function SortableRacerRow({ racerId, index, racer, disabled, startingGrid
       <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: racer.teamColor ?? "#6b7280" }} />
       <RacerAvatar name={racer.name} image={racer.image} />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{racer.name}</p>
+        <p className="font-heading text-sm font-semibold truncate">{racer.name}</p>
         <p className="text-xs text-muted-foreground truncate">{racer.team}</p>
       </div>
     </li>

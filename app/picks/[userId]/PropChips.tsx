@@ -36,8 +36,8 @@ export function PropChips({ propPicks, propKey, racersById, propPointValues }: P
               "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs ring-1",
               graded
                 ? correct
-                  ? "bg-green-500/10 text-green-700 ring-green-500/30 dark:text-green-400"
-                  : "bg-red-500/10 text-red-700 ring-red-500/30 dark:text-red-400"
+                  ? "bg-state-success/10 text-state-success ring-state-success/30"
+                  : "bg-state-error/10 text-state-error ring-state-error/30"
                 : "bg-muted text-muted-foreground ring-foreground/10"
             )}
           >

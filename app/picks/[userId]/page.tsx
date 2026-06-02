@@ -22,7 +22,6 @@ type RaceData = {
   propPointValues: PropPointValues | null;
 };
 
-
 function computeDriverPoints(
   prediction: string[],
   key: string[],
@@ -39,7 +38,7 @@ function computeDriverPoints(
   return result;
 }
 
-export default function ProfilePage() {
+export default function PicksPage() {
   const { userId } = useParams<{ userId: string }>();
   const searchParams = useSearchParams();
   const paramLeagueId = searchParams.get("leagueId");
@@ -99,7 +98,7 @@ export default function ProfilePage() {
     : null;
 
   return (
-    <PageShell title="Profile">
+    <PageShell title="Picks">
       {!leagues ? (
         <div className="flex items-center gap-3 text-muted-foreground">
           <Spinner className="w-4 h-4" />

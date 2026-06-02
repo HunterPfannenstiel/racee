@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ChevronLeft } from "lucide-react";
 import { PageShell } from "@/components/ui/page-shell";
 import { getSession } from "@/server/auth/server";
 import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
@@ -17,6 +17,10 @@ export default async function CommissionerPage() {
 
   return (
     <PageShell title="Commissioner">
+      <Link href="/profile" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit">
+        <ChevronLeft className="size-3.5" />
+        Profile
+      </Link>
       {leagues.length === 0 ? (
         <p className="text-sm text-muted-foreground">You haven't created any leagues.</p>
       ) : (

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useUser } from "@/app/context/UserContext";
-import { type League, type Racer, type PredictionsFile, type PropName } from "@/lib/schemas";
+import { useLeague } from "@/app/context/LeagueContext";
+import { type Racer, type PredictionsFile, type PropName } from "@/lib/schemas";
 import { RequireUser } from "@/components/RequireUser";
 import { PredictionForm } from "./PredictionForm";
 import { RacePicker } from "./RacePicker";
@@ -15,7 +16,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 
-// Race shape returned by /api/predict/init — includes leagueId for context
 type PredictRace = {
   id: string;
   leagueId: string;
@@ -28,9 +28,8 @@ type PredictRace = {
 };
 
 type InitData = {
-  leagues: League[];
-  races: PredictRace[];
   racersById: Record<string, Racer>;
+  races: PredictRace[];
   predictions: Record<string, PredictionsFile>;
 };
 
@@ -38,21 +37,19 @@ function predKey(leagueId: string, raceId: string) {
   return `${leagueId}_${raceId}`;
 }
 
-function autoSelectRace(leagues: League[], races: PredictRace[]): { leagueId: string; raceId: string | null } | null {
-  if (leagues.length === 0) return null;
-  const league = leagues[0];
+function autoSelectRace(races: PredictRace[]): string | null {
   const today = new Date().toISOString().split("T")[0];
-  const leagueRaces = races.filter((r) => r.leagueId === league.id);
-  const next =
-    leagueRaces.filter((r) => r.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0] ??
-    leagueRaces.sort((a, b) => b.date.localeCompare(a.date))[0];
-  return { leagueId: league.id, raceId: next?.id ?? null };
+  return (
+    races.filter((r) => r.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0]?.id ??
+    races.sort((a, b) => b.date.localeCompare(a.date))[0]?.id ??
+    null
+  );
 }
 
 export default function PredictPage() {
   const { user } = useUser();
+  const { activeLeagueId } = useLeague();
   const [data, setData] = useState<InitData | null>(null);
-  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,26 +58,17 @@ export default function PredictPage() {
     if (!user) return;
     fetch(`/api/predict/init?userId=${user.id}`)
       .then((r) => r.json())
-      .then((d: InitData) => {
-        setData(d);
-        const auto = autoSelectRace(d.leagues, d.races);
-        if (auto) {
-          setSelectedLeagueId(auto.leagueId);
-          setSelectedRaceId(auto.raceId);
-        }
+      .then((d) => {
+        setData({ racersById: d.racersById, races: d.races, predictions: d.predictions });
       });
   }, [user]);
 
-  function handleLeagueSelect(leagueId: string) {
-    if (!data || leagueId === selectedLeagueId) return;
-    setSelectedLeagueId(leagueId);
-    const today = new Date().toISOString().split("T")[0];
-    const leagueRaces = data.races.filter((r) => r.leagueId === leagueId);
-    const next =
-      leagueRaces.filter((r) => r.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0] ??
-      leagueRaces.sort((a, b) => b.date.localeCompare(a.date))[0];
-    setSelectedRaceId(next?.id ?? null);
-  }
+  // Auto-select race when the active league changes or data loads
+  useEffect(() => {
+    if (!data || !activeLeagueId) return;
+    const leagueRaces = data.races.filter((r) => r.leagueId === activeLeagueId);
+    setSelectedRaceId(autoSelectRace(leagueRaces));
+  }, [activeLeagueId, data]);
 
   function handleRaceSelect(raceId: string) {
     setSelectedRaceId(raceId);
@@ -88,8 +76,8 @@ export default function PredictPage() {
   }
 
   function handlePredictionSave(racerIds: string[], submittedAt: string, propPicks: Partial<Record<PropName, string>>) {
-    if (!user || !selectedRaceId || !selectedLeagueId) return;
-    const key = predKey(selectedLeagueId, selectedRaceId);
+    if (!user || !selectedRaceId || !activeLeagueId) return;
+    const key = predKey(activeLeagueId, selectedRaceId);
     setData(prev => {
       if (!prev) return prev;
       const existing = prev.predictions[key] ?? { key: null, predictions: {}, propPicks: {} };
@@ -108,9 +96,9 @@ export default function PredictPage() {
     });
   }
 
-  const selectedRace = data?.races.find((r) => r.id === selectedRaceId && r.leagueId === selectedLeagueId) ?? null;
-  const leagueRaces = data?.races.filter((r) => r.leagueId === selectedLeagueId) ?? [];
-  const activePredKey = selectedLeagueId && selectedRaceId ? predKey(selectedLeagueId, selectedRaceId) : null;
+  const leagueRaces = data?.races.filter((r) => r.leagueId === activeLeagueId) ?? [];
+  const selectedRace = leagueRaces.find((r) => r.id === selectedRaceId) ?? null;
+  const activePredKey = activeLeagueId && selectedRaceId ? predKey(activeLeagueId, selectedRaceId) : null;
 
   return (
     <PageShell title="Predict">
@@ -120,65 +108,31 @@ export default function PredictPage() {
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             <span className="text-xs tracking-widest uppercase">Loading</span>
           </div>
-        ) : data.leagues.length === 0 ? (
-          <p className="text-xs tracking-widest uppercase text-muted-foreground">No leagues yet.</p>
         ) : (
-          <div className="flex gap-10">
+          <div className="space-y-5">
 
-            {/* Desktop sidebar — hidden on mobile */}
-            <aside className="hidden md:flex flex-col gap-6 w-44 shrink-0">
-              <RacePicker
-                leagues={data.leagues}
-                races={leagueRaces}
-                selectedLeagueId={selectedLeagueId}
-                selectedRaceId={selectedRaceId}
-                onLeagueSelect={handleLeagueSelect}
-                onRaceSelect={handleRaceSelect}
-              />
-            </aside>
-
-            {/* Main content */}
-            <div className="flex-1 min-w-0 space-y-5">
-
-              {/* Mobile controls — hidden on desktop */}
-              <div className="md:hidden space-y-3">
-                <div className="flex flex-wrap gap-1.5">
-                  {data.leagues.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => handleLeagueSelect(s.id)}
-                      className={`px-2.5 py-1 text-xs font-semibold rounded-sm transition-colors ${
-                        selectedLeagueId === s.id
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {s.name}
-                    </button>
-                  ))}
+            {/* Race selector */}
+            <div className="flex items-center justify-between">
+              {selectedRace ? (
+                <div>
+                  <p className="text-xs text-muted-foreground">{selectedRace.date}</p>
+                  <p className="text-sm font-semibold">{selectedRace.title}</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  {selectedRace ? (
-                    <div>
-                      <p className="text-xs text-muted-foreground">{selectedRace.date}</p>
-                      <p className="text-sm font-semibold">{selectedRace.title}</p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No race selected</p>
-                  )}
-                  <Button variant="outline" size="sm" onClick={() => setDrawerOpen(true)}>
-                    All races
-                  </Button>
-                </div>
-              </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No race selected</p>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setDrawerOpen(true)}>
+                All races
+              </Button>
+            </div>
 
-              {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-              {selectedRace && activePredKey ? (
+            {selectedRace && activePredKey ? (
                 <PredictionForm
                   key={activePredKey}
                   race={selectedRace}
-                  leagueId={selectedLeagueId!}
+                  leagueId={activeLeagueId!}
                   racersById={data.racersById}
                   existingPrediction={data.predictions[activePredKey]?.predictions[user?.id ?? ""] ?? null}
                   existingSubmittedAt={data.predictions[activePredKey]?.submittedAt?.[user?.id ?? ""] ?? null}
@@ -190,8 +144,6 @@ export default function PredictPage() {
               ) : (
                 <p className="text-sm text-muted-foreground">Select a race to get started.</p>
               )}
-            </div>
-
           </div>
         )}
       </RequireUser>
@@ -203,17 +155,11 @@ export default function PredictPage() {
             <DrawerTitle>Select Race</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-10 overflow-y-auto">
-            {data && (
-              <RacePicker
-                leagues={data.leagues}
-                races={leagueRaces}
-                selectedLeagueId={selectedLeagueId}
-                selectedRaceId={selectedRaceId}
-                onLeagueSelect={handleLeagueSelect}
-                onRaceSelect={handleRaceSelect}
-                showLeagues={false}
-              />
-            )}
+            <RacePicker
+              races={leagueRaces}
+              selectedRaceId={selectedRaceId}
+              onRaceSelect={handleRaceSelect}
+            />
           </div>
         </DrawerContent>
       </Drawer>

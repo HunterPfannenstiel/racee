@@ -25,7 +25,7 @@ export function PicksGrid({ prediction, racersById, keyOrder, driverPoints }: Pr
             <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: racer?.teamColor ?? "#6b7280" }} />
             <RacerAvatar name={racer?.name ?? "?"} image={racer?.image} className="w-8 h-8 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{racer?.name ?? "Unknown"}</p>
+              <p className="font-heading text-sm font-semibold truncate">{racer?.name ?? "Unknown"}</p>
               <p className="text-xs text-muted-foreground truncate">{racer?.team ?? ""}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0 text-xs font-mono tabular-nums">
@@ -34,14 +34,14 @@ export function PicksGrid({ prediction, racersById, keyOrder, driverPoints }: Pr
               <span className="font-semibold text-foreground">{actualPos !== null ? `P${actualPos}` : "—"}</span>
               {delta !== null && delta !== 0 && (
                 <span className={cn("w-6 font-semibold",
-                  delta > 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
+                  delta > 0 ? "text-state-success" : "text-state-error"
                 )}>
                   {delta > 0 ? `+${delta}` : delta}
                 </span>
               )}
             </div>
             {points !== undefined && (
-              <span className="text-xs font-mono tabular-nums text-green-600 dark:text-green-400 shrink-0">
+              <span className="text-xs font-mono tabular-nums text-state-success shrink-0">
                 {points}pts
               </span>
             )}

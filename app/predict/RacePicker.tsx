@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { type League } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
-import { LeaguePicker } from "@/components/ui/league-picker";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 
 type PredictRace = {
@@ -14,13 +12,9 @@ type PredictRace = {
 };
 
 type Props = {
-  leagues: League[];
   races: PredictRace[];
-  selectedLeagueId: string | null;
   selectedRaceId: string | null;
-  onLeagueSelect: (id: string) => void;
   onRaceSelect: (id: string) => void;
-  showLeagues?: boolean;
 };
 
 function formatDate(dateStr: string) {
@@ -50,15 +44,7 @@ function RaceItem({ race, selected, onSelect }: {
   );
 }
 
-export function RacePicker({
-  leagues,
-  races,
-  selectedLeagueId,
-  selectedRaceId,
-  onLeagueSelect,
-  onRaceSelect,
-  showLeagues = true,
-}: Props) {
+export function RacePicker({ races, selectedRaceId, onRaceSelect }: Props) {
   const [allOpen, setAllOpen] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
@@ -75,10 +61,6 @@ export function RacePicker({
 
   return (
     <div className="space-y-4">
-      {showLeagues && (
-        <LeaguePicker leagues={leagues} selectedLeagueId={selectedLeagueId} onSelect={onLeagueSelect} />
-      )}
-
       {nextRace && (
         <div className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Next</p>

@@ -152,16 +152,16 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             {formatDate(race.date)}
           </p>
-          <h2 className="text-lg font-bold tracking-tight text-foreground">{race.title}</h2>
+          <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground">{race.title}</h2>
           {isLocked ? (
-            <p className="text-xs font-medium text-red-600">Submissions closed</p>
+            <p className="text-xs font-medium text-state-locked">Submissions closed</p>
           ) : countdown !== null ? (
-            <p className="text-xs text-muted-foreground">Locks in {countdown}</p>
+            <p className="text-xs text-state-upcoming">Locks in {countdown}</p>
           ) : null}
         </div>
         {existingPrediction ? (
           <div className="flex flex-col items-end gap-0.5 shrink-0">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-sm px-2 py-1">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-state-success bg-subtle border border-border rounded-sm px-2 py-1">
               <CheckIcon className="size-3" />
               Submitted
             </span>
@@ -208,10 +208,12 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
         disabled={saving || isLocked}
       />
 
-      <Button onClick={savePrediction} disabled={saving || saved || isLocked}>
-        {saving && <Spinner className="w-3 h-3 mr-1" />}
-        {saved ? <><CheckIcon className="w-3 h-3 mr-1" />Saved</> : "Save prediction"}
-      </Button>
+      <div className="sticky bottom-0 -mx-6 px-6 py-4 bg-background border-t border-border md:static md:mx-0 md:px-0 md:py-0 md:bg-transparent md:border-none">
+        <Button onClick={savePrediction} disabled={saving || saved || isLocked} className="w-full md:w-auto h-12 uppercase tracking-[0.06em] font-semibold">
+          {saving && <Spinner className="w-3 h-3 mr-1" />}
+          {saved ? <><CheckIcon className="w-3 h-3 mr-1" />Saved</> : "Save prediction"}
+        </Button>
+      </div>
     </section>
   );
 }
