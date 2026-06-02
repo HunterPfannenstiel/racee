@@ -3,33 +3,35 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
-import { type Racer, type PredictionsFile, type PropName } from "@/lib/schemas";
+import { type Racer, type PropName } from "@/lib/schemas";
 import { RequireUser } from "@/components/RequireUser";
 import { PredictionForm } from "./PredictionForm";
 import { PageShell } from "@/components/ui/page-shell";
 import { cn } from "@/lib/utils";
 import { FlagIcon } from "lucide-react";
 
-type PredictRace = {
+type MyPick = {
+  racerIds: string[];
+  propPicks: Partial<Record<PropName, string>>;
+  submittedAt: string | null;
+};
+
+type OpenRace = {
   id: string;
   leagueId: string;
-  motorsportId: string;
   title: string;
   label?: string;
   date: string;
   lockTime?: string;
   startingGrid: string[];
+  keyIsSet: boolean;
+  myPick: MyPick | null;
 };
 
 type InitData = {
+  openRaces: OpenRace[];
   racersById: Record<string, Racer>;
-  races: PredictRace[];
-  predictions: Record<string, PredictionsFile>;
 };
-
-function predKey(leagueId: string, raceId: string) {
-  return `${leagueId}_${raceId}`;
-}
 
 function formatChipDate(dateStr: string) {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -37,7 +39,7 @@ function formatChipDate(dateStr: string) {
     .format(new Date(year, month - 1, day));
 }
 
-function autoSelectRace(races: PredictRace[]): string | null {
+function autoSelectRace(races: OpenRace[]): string | null {
   const today = new Date().toISOString().split("T")[0];
   return (
     races.filter((r) => r.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0]?.id ??
@@ -55,45 +57,35 @@ export default function PredictPage() {
 
   useEffect(() => {
     if (!user) return;
-    fetch(`/api/predict/init?userId=${user.id}`)
+    fetch("/api/predict/init")
       .then((r) => r.json())
-      .then((d) => {
-        setData({ racersById: d.racersById, races: d.races, predictions: d.predictions });
-      });
+      .then((d) => setData({ openRaces: d.openRaces, racersById: d.racersById }));
   }, [user]);
 
-  // Auto-select race when the active league changes or data loads
   useEffect(() => {
     if (!data || !activeLeagueId) return;
-    const leagueRaces = data.races.filter((r) => r.leagueId === activeLeagueId);
+    const leagueRaces = data.openRaces.filter((r) => r.leagueId === activeLeagueId);
     setSelectedRaceId(autoSelectRace(leagueRaces));
   }, [activeLeagueId, data]);
 
   function handlePredictionSave(racerIds: string[], submittedAt: string, propPicks: Partial<Record<PropName, string>>) {
-    if (!user || !selectedRaceId || !activeLeagueId) return;
-    const key = predKey(activeLeagueId, selectedRaceId);
-    setData(prev => {
+    if (!selectedRaceId || !activeLeagueId) return;
+    setData((prev) => {
       if (!prev) return prev;
-      const existing = prev.predictions[key] ?? { key: null, predictions: {}, propPicks: {} };
       return {
         ...prev,
-        predictions: {
-          ...prev.predictions,
-          [key]: {
-            ...existing,
-            predictions: { ...existing.predictions, [user.id]: racerIds },
-            submittedAt: { ...existing.submittedAt, [user.id]: submittedAt },
-            propPicks: { ...(existing.propPicks ?? {}), [user.id]: propPicks },
-          },
-        },
+        openRaces: prev.openRaces.map((r) =>
+          r.id === selectedRaceId && r.leagueId === activeLeagueId
+            ? { ...r, myPick: { racerIds, propPicks, submittedAt } }
+            : r,
+        ),
       };
     });
   }
 
-  const leagueRaces = data?.races.filter((r) => r.leagueId === activeLeagueId) ?? [];
+  const leagueRaces = data?.openRaces.filter((r) => r.leagueId === activeLeagueId) ?? [];
   const sortedRaces = [...leagueRaces].sort((a, b) => a.date.localeCompare(b.date));
   const selectedRace = leagueRaces.find((r) => r.id === selectedRaceId) ?? null;
-  const activePredKey = activeLeagueId && selectedRaceId ? predKey(activeLeagueId, selectedRaceId) : null;
 
   return (
     <PageShell title="Predict">
@@ -133,32 +125,31 @@ export default function PredictPage() {
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
-            {selectedRace && activePredKey ? (
-                <PredictionForm
-                  key={activePredKey}
-                  race={selectedRace}
-                  leagueId={activeLeagueId!}
-                  racersById={data.racersById}
-                  existingPrediction={data.predictions[activePredKey]?.predictions[user?.id ?? ""] ?? null}
-                  existingSubmittedAt={data.predictions[activePredKey]?.submittedAt?.[user?.id ?? ""] ?? null}
-                  existingPropPicks={data.predictions[activePredKey]?.propPicks?.[user?.id ?? ""] ?? {}}
-                  keySetAt={data.predictions[activePredKey]?.keySetAt ?? null}
-                  onPredictionSave={handlePredictionSave}
-                  onError={setError}
-                />
-              ) : (
-                <div className="flex flex-col items-center text-center pt-12 gap-4">
-                  <FlagIcon className="size-12 text-text-tertiary" strokeWidth={1.5} />
-                  <div className="space-y-1">
-                    <p className="font-heading text-[1.75rem] font-bold text-foreground">No Active Race</p>
-                    <p className="text-sm font-mono text-muted-foreground">No races are scheduled for this league yet.</p>
-                  </div>
+            {selectedRace ? (
+              <PredictionForm
+                key={`${activeLeagueId}_${selectedRace.id}`}
+                race={selectedRace}
+                leagueId={activeLeagueId!}
+                racersById={data.racersById}
+                existingPrediction={selectedRace.myPick?.racerIds ?? null}
+                existingSubmittedAt={selectedRace.myPick?.submittedAt ?? null}
+                existingPropPicks={selectedRace.myPick?.propPicks ?? {}}
+                keyIsSet={selectedRace.keyIsSet}
+                onPredictionSave={handlePredictionSave}
+                onError={setError}
+              />
+            ) : (
+              <div className="flex flex-col items-center text-center pt-12 gap-4">
+                <FlagIcon className="size-12 text-text-tertiary" strokeWidth={1.5} />
+                <div className="space-y-1">
+                  <p className="font-heading text-[1.75rem] font-bold text-foreground">No Active Race</p>
+                  <p className="text-sm font-mono text-muted-foreground">No races are scheduled for this league yet.</p>
                 </div>
-              )}
+              </div>
+            )}
           </div>
         )}
       </RequireUser>
-
     </PageShell>
   );
 }

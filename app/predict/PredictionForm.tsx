@@ -29,7 +29,6 @@ import { SortableRacerRow } from "@/components/SortableRacerRow";
 type PredictRace = {
   id: string;
   leagueId: string;
-  motorsportId: string;
   title: string;
   label?: string;
   date: string;
@@ -44,7 +43,7 @@ type Props = {
   existingPrediction: string[] | null;
   existingSubmittedAt: string | null;
   existingPropPicks: Partial<Record<PropName, string>>;
-  keySetAt: string | null;
+  keyIsSet: boolean;
   onPredictionSave: (racerIds: string[], submittedAt: string, propPicks: Partial<Record<PropName, string>>) => void;
   onError: (msg: string) => void;
 };
@@ -72,7 +71,7 @@ function formatCountdown(ms: number): string {
   return `${seconds}s`;
 }
 
-export function PredictionForm({ race, leagueId, racersById, existingPrediction, existingSubmittedAt, existingPropPicks, keySetAt, onPredictionSave, onError }: Props) {
+export function PredictionForm({ race, leagueId, racersById, existingPrediction, existingSubmittedAt, existingPropPicks, keyIsSet, onPredictionSave, onError }: Props) {
   const { user } = useUser();
   const [orderedRacerIds, setOrderedRacerIds] = useState<string[]>(
     existingPrediction ?? race.startingGrid
@@ -82,7 +81,7 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isLocked, setIsLocked] = useState(() =>
-    keySetAt !== null || (!!race.lockTime && Date.now() >= new Date(race.lockTime).getTime())
+    keyIsSet || (!!race.lockTime && Date.now() >= new Date(race.lockTime).getTime())
   );
   const [countdown, setCountdown] = useState<string | null>(() => {
     if (!race.lockTime) return null;
@@ -91,7 +90,7 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
   });
 
   useEffect(() => {
-    if (!race.lockTime || keySetAt !== null) return;
+    if (keyIsSet || !race.lockTime) return;
     function tick() {
       const ms = new Date(race.lockTime!).getTime() - Date.now();
       if (ms <= 0) {

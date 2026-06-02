@@ -1,29 +1,4 @@
 {
-  "key": [
-    "7e6e2c4b-2985-4491-934b-b3aa42f80a28",
-    "20364dff-cf53-4c99-8503-f0bf276cdbfb",
-    "f04099e1-1d7a-4672-b355-a3cfc594015b",
-    "64efd553-4a97-492d-9504-0269312a165b",
-    "b6b9ffb8-e758-43f4-a7cf-58cf7b00c0e5",
-    "4d30469d-6d77-40a1-82b9-1427abe6e156",
-    "82c1ecfc-1c62-4dc8-996e-676034651bae",
-    "d74c2afb-dd77-4f07-a3a0-98e3743445db",
-    "6bc25d04-60ac-4fd8-8f0e-d875c32a1a1a",
-    "4a0ac502-e0fd-4600-85dd-569e18017dcf",
-    "4603e44b-7a83-451e-874a-de8d7529437d",
-    "33c6bf1b-bbd5-4d5c-9e58-72cb94cf307f",
-    "9b1f262a-aa81-4d00-b117-93e040acd204",
-    "cfb2fc91-046b-4085-8856-be4827960f77",
-    "63e64e87-8fc1-422c-a846-2e0f2f89b6ed",
-    "29e13467-f743-406a-b9ab-4cb10a4b9d92",
-    "57a4dc27-2284-4a86-9d57-da29fa6b4510",
-    "efc2d9fb-f699-4af5-8d2b-2f35a5058acb",
-    "291b9ee4-27cc-41eb-a97b-d153c1d04144",
-    "a3678d59-8024-4322-884c-0a67a3d40af9",
-    "9857b713-7a89-446a-87cd-b17e56055f54",
-    "6b6daa38-5756-4147-82ad-0ed2431a3344"
-  ],
-  "keySetAt": "1779075510555",
   "predictions": {
     "e983a72e-ed1c-4153-aba5-f83b5f591a08": [
       "7e6e2c4b-2985-4491-934b-b3aa42f80a28",
@@ -177,29 +152,6 @@
     "d9f26f95-c241-4991-8698-1e8ed034378b": "2026-05-18T03:38:30.526Z",
     "34190f2a-74d6-4e46-9027-38b6386c00cd": "2026-05-18T03:38:30.528Z",
     "ac7b214a-0b75-4f62-b0e3-db3d29ac5f05": "2026-05-18T03:38:30.531Z"
-  },
-  "propKey": {
-    "driverOfDay": [
-      "20364dff-cf53-4c99-8503-f0bf276cdbfb"
-    ],
-    "lapsLed": [
-      "7e6e2c4b-2985-4491-934b-b3aa42f80a28"
-    ],
-    "fastestPitStop": [
-      "McLaren"
-    ],
-    "fastestLap": [
-      "b6b9ffb8-e758-43f4-a7cf-58cf7b00c0e5"
-    ],
-    "overAchiever": [
-      "82c1ecfc-1c62-4dc8-996e-676034651bae"
-    ],
-    "underAchiever": [
-      "d74c2afb-dd77-4f07-a3a0-98e3743445db"
-    ],
-    "wrecker": [
-      "9857b713-7a89-446a-87cd-b17e56055f54"
-    ]
   },
   "propPicks": {
     "e983a72e-ed1c-4153-aba5-f83b5f591a08": {
