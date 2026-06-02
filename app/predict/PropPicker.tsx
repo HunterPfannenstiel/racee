@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { type PropName, type Racer } from "@/lib/schemas";
 import { PROP_META, getPropOptions } from "@/lib/props";
-import { Input } from "@/components/ui/input";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -13,60 +19,108 @@ type Props = {
   disabled: boolean;
 };
 
-const emptySearch = () =>
-  Object.fromEntries(Object.keys(PROP_META).map((k) => [k, ""])) as Record<PropName, string>;
+const PROP_NAMES = Object.keys(PROP_META) as PropName[];
 
 export function PropPicker({ racers, propPicks, onChange, disabled }: Props) {
-  const [search, setSearch] = useState<Record<PropName, string>>(emptySearch);
+  const [activeProp, setActiveProp] = useState<PropName | null>(null);
 
-  function toggle(prop: PropName, id: string) {
-    onChange({ ...propPicks, [prop]: propPicks[prop] === id ? undefined : id });
+  function handleSelect(prop: PropName, optionId: string) {
+    const next: Partial<Record<PropName, string>> = { ...propPicks };
+    if (next[prop] === optionId) {
+      delete next[prop];
+    } else {
+      next[prop] = optionId;
+    }
+    onChange(next);
+    setActiveProp(null);
   }
 
+  const activeOptions = activeProp ? getPropOptions(activeProp, racers) : [];
+
   return (
-    <div className="space-y-3">
-      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Prop Bets</p>
-      {(Object.keys(PROP_META) as PropName[]).map((prop) => {
-        const options = getPropOptions(prop, racers);
-        const query = search[prop].toLowerCase();
-        const visible = query ? options.filter((o) => o.label.toLowerCase().includes(query)) : options;
-        const selected = propPicks[prop];
-        return (
-          <div key={prop} className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium shrink-0">{PROP_META[prop].label}</p>
-              <Input
-                placeholder="Search…"
-                value={search[prop]}
-                onChange={(e) => setSearch((s) => ({ ...s, [prop]: e.target.value }))}
+    <>
+      <div>
+        <p className="text-xs font-mono uppercase tracking-[0.08em] text-muted-foreground mb-3">
+          Prop Bets
+        </p>
+        <div className="border border-border rounded-sm overflow-hidden">
+          {PROP_NAMES.map((prop, i) => {
+            const selectedId = propPicks[prop];
+            const selectedLabel = selectedId
+              ? getPropOptions(prop, racers).find((o) => o.id === selectedId)?.label
+              : null;
+            const isLast = i === PROP_NAMES.length - 1;
+
+            return (
+              <button
+                key={prop}
+                onClick={() => setActiveProp(prop)}
                 disabled={disabled}
-                className="h-7 text-xs flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {visible.map((opt) => (
+                className={cn(
+                  "w-full flex items-center justify-between px-4 min-h-[56px] text-left transition-colors",
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
+                  !disabled && "hover:bg-subtle",
+                  !isLast && "border-b border-border"
+                )}
+              >
+                <span className="text-xs font-mono uppercase tracking-[0.08em] text-muted-foreground">
+                  {PROP_META[prop].label}
+                </span>
+                <span className="flex items-center gap-2 shrink-0 ml-4">
+                  {selectedLabel ? (
+                    <>
+                      <span className="text-xs font-mono text-foreground truncate max-w-[120px]">
+                        {selectedLabel}
+                      </span>
+                      <span className="text-xs font-mono text-muted-foreground">EDIT ›</span>
+                    </>
+                  ) : (
+                    <span className="text-xs font-mono text-state-open">PICK ›</span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <Drawer open={activeProp !== null} onOpenChange={(open) => !open && setActiveProp(null)}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle className="text-xs font-mono uppercase tracking-[0.08em] text-muted-foreground text-left">
+              {activeProp ? PROP_META[activeProp].label : ""}
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+            {activeOptions.map((opt) => {
+              const isSelected = activeProp ? propPicks[activeProp] === opt.id : false;
+              return (
                 <button
                   key={opt.id}
-                  onClick={() => toggle(prop, opt.id)}
-                  disabled={disabled}
-                  style={selected === opt.id && opt.color ? { backgroundColor: opt.color } : undefined}
+                  onClick={() => activeProp && handleSelect(activeProp, opt.id)}
                   className={cn(
-                    "rounded-sm border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                    selected === opt.id
-                      ? "text-text-inverse border-transparent"
-                      : "hover:border-foreground text-muted-foreground hover:text-foreground"
+                    "w-full flex items-center gap-3 px-4 h-[52px] text-left transition-colors border-b border-border last:border-b-0",
+                    isSelected ? "bg-subtle" : "hover:bg-subtle"
                   )}
                 >
-                  {opt.label}
+                  {opt.color && (
+                    <span
+                      className="shrink-0 w-3 h-3 rounded-full"
+                      style={{ backgroundColor: opt.color }}
+                    />
+                  )}
+                  <span className="flex-1 text-sm font-mono text-foreground truncate">
+                    {opt.label}
+                  </span>
+                  {isSelected && (
+                    <CheckIcon className="shrink-0 size-4 text-state-success" />
+                  )}
                 </button>
-              ))}
-              {visible.length === 0 && (
-                <span className="text-xs text-muted-foreground">No matches.</span>
-              )}
-            </div>
+              );
+            })}
           </div>
-        );
-      })}
-    </div>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }

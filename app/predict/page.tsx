@@ -6,15 +6,9 @@ import { useLeague } from "@/app/context/LeagueContext";
 import { type Racer, type PredictionsFile, type PropName } from "@/lib/schemas";
 import { RequireUser } from "@/components/RequireUser";
 import { PredictionForm } from "./PredictionForm";
-import { RacePicker } from "./RacePicker";
 import { PageShell } from "@/components/ui/page-shell";
-import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { cn } from "@/lib/utils";
+import { FlagIcon } from "lucide-react";
 
 type PredictRace = {
   id: string;
@@ -37,6 +31,12 @@ function predKey(leagueId: string, raceId: string) {
   return `${leagueId}_${raceId}`;
 }
 
+function formatChipDate(dateStr: string) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" })
+    .format(new Date(year, month - 1, day));
+}
+
 function autoSelectRace(races: PredictRace[]): string | null {
   const today = new Date().toISOString().split("T")[0];
   return (
@@ -51,7 +51,6 @@ export default function PredictPage() {
   const { activeLeagueId } = useLeague();
   const [data, setData] = useState<InitData | null>(null);
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,11 +68,6 @@ export default function PredictPage() {
     const leagueRaces = data.races.filter((r) => r.leagueId === activeLeagueId);
     setSelectedRaceId(autoSelectRace(leagueRaces));
   }, [activeLeagueId, data]);
-
-  function handleRaceSelect(raceId: string) {
-    setSelectedRaceId(raceId);
-    setDrawerOpen(false);
-  }
 
   function handlePredictionSave(racerIds: string[], submittedAt: string, propPicks: Partial<Record<PropName, string>>) {
     if (!user || !selectedRaceId || !activeLeagueId) return;
@@ -97,6 +91,7 @@ export default function PredictPage() {
   }
 
   const leagueRaces = data?.races.filter((r) => r.leagueId === activeLeagueId) ?? [];
+  const sortedRaces = [...leagueRaces].sort((a, b) => a.date.localeCompare(b.date));
   const selectedRace = leagueRaces.find((r) => r.id === selectedRaceId) ?? null;
   const activePredKey = activeLeagueId && selectedRaceId ? predKey(activeLeagueId, selectedRaceId) : null;
 
@@ -106,25 +101,35 @@ export default function PredictPage() {
         {!data ? (
           <div className="flex items-center gap-3 text-muted-foreground">
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs tracking-widest uppercase">Loading</span>
+            <span className="text-xs tracking-[0.08em] uppercase">Loading</span>
           </div>
         ) : (
           <div className="space-y-5">
 
-            {/* Race selector */}
-            <div className="flex items-center justify-between">
-              {selectedRace ? (
-                <div>
-                  <p className="text-xs text-muted-foreground">{selectedRace.date}</p>
-                  <p className="text-sm font-semibold">{selectedRace.title}</p>
+            {sortedRaces.length > 1 && (
+              <div className="overflow-x-auto">
+                <div className="flex gap-2 pb-0.5">
+                  {sortedRaces.map((race) => {
+                    const active = selectedRaceId === race.id;
+                    return (
+                      <button
+                        key={race.id}
+                        onClick={() => setSelectedRaceId(race.id)}
+                        className={cn(
+                          "shrink-0 rounded-sm px-3 py-2 text-left transition-colors",
+                          active
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-subtle text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <p className="text-xs font-mono font-semibold leading-snug max-w-[120px] truncate">{race.title}</p>
+                        <p className={cn("text-[10px] font-mono", active ? "opacity-70" : "")}>{formatChipDate(race.date)}</p>
+                      </button>
+                    );
+                  })}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No race selected</p>
-              )}
-              <Button variant="outline" size="sm" onClick={() => setDrawerOpen(true)}>
-                All races
-              </Button>
-            </div>
+              </div>
+            )}
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -142,27 +147,18 @@ export default function PredictPage() {
                   onError={setError}
                 />
               ) : (
-                <p className="text-sm text-muted-foreground">Select a race to get started.</p>
+                <div className="flex flex-col items-center text-center pt-12 gap-4">
+                  <FlagIcon className="size-12 text-text-tertiary" strokeWidth={1.5} />
+                  <div className="space-y-1">
+                    <p className="font-heading text-[1.75rem] font-bold text-foreground">No Active Race</p>
+                    <p className="text-sm font-mono text-muted-foreground">No races are scheduled for this league yet.</p>
+                  </div>
+                </div>
               )}
           </div>
         )}
       </RequireUser>
 
-      {/* Mobile race drawer */}
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Select Race</DrawerTitle>
-          </DrawerHeader>
-          <div className="px-4 pb-10 overflow-y-auto">
-            <RacePicker
-              races={leagueRaces}
-              selectedRaceId={selectedRaceId}
-              onRaceSelect={handleRaceSelect}
-            />
-          </div>
-        </DrawerContent>
-      </Drawer>
     </PageShell>
   );
 }

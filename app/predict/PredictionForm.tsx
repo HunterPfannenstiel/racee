@@ -22,7 +22,7 @@ import { useUser } from "@/app/context/UserContext";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, LockIcon } from "lucide-react";
 import { PropPicker } from "./PropPicker";
 import { SortableRacerRow } from "@/components/SortableRacerRow";
 
@@ -149,14 +149,17 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
     <section className="space-y-4 rounded-sm">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-0.5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          <p className="text-xs font-mono uppercase tracking-[0.08em] text-muted-foreground">
             {formatDate(race.date)}
           </p>
           <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground">{race.title}</h2>
           {isLocked ? (
-            <p className="text-xs font-medium text-state-locked">Submissions closed</p>
+            <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-[0.08em] text-state-locked border border-state-locked/40 rounded-sm px-2 py-0.5">
+              <LockIcon className="size-3" />
+              Locked
+            </span>
           ) : countdown !== null ? (
-            <p className="text-xs text-state-upcoming">Locks in {countdown}</p>
+            <p className="text-xs font-mono text-state-upcoming">Locks in {countdown}</p>
           ) : null}
         </div>
         {existingPrediction ? (
@@ -180,7 +183,7 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={orderedRacerIds} strategy={verticalListSortingStrategy}>
-          <ul className="space-y-1 max-h-[32rem] overflow-y-auto">
+          <ul className="space-y-1">
             {orderedRacerIds.map((racerId, index) => {
               const racer = racersById[racerId];
               if (!racer) return null;
@@ -211,7 +214,7 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
       <div className="sticky bottom-0 -mx-6 px-6 py-4 bg-background border-t border-border md:static md:mx-0 md:px-0 md:py-0 md:bg-transparent md:border-none">
         <Button onClick={savePrediction} disabled={saving || saved || isLocked} className="w-full md:w-auto h-12 uppercase tracking-[0.06em] font-semibold">
           {saving && <Spinner className="w-3 h-3 mr-1" />}
-          {saved ? <><CheckIcon className="w-3 h-3 mr-1" />Saved</> : "Save prediction"}
+          {saved ? <><CheckIcon className="w-3 h-3 mr-1" />Submitted</> : "Submit Predictions"}
         </Button>
       </div>
     </section>
