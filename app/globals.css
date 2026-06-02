@@ -93,39 +93,39 @@
   --font-sans: var(--font-ibm-plex-mono);
 
   /* Surfaces */
-  --background: oklch(0.07 0 0);           /* #0A0A0B — bg-base */
-  --surface:    oklch(0.10 0.003 270);     /* #121214 — bg-surface */
-  --elevated:   oklch(0.14 0.004 270);     /* #1C1C1F — bg-elevated */
-  --subtle:     oklch(0.18 0.005 270);     /* #242428 — bg-subtle */
+  --background: oklch(0.22 0.003 270);     /* charcoal — bg-base */
+  --surface:    oklch(0.26 0.004 270);     /* #121214 — bg-surface */
+  --elevated:   oklch(0.30 0.005 270);     /* #1C1C1F — bg-elevated */
+  --subtle:     oklch(0.34 0.006 270);     /* #242428 — bg-subtle */
 
   /* shadcn surface mappings */
   --foreground:        oklch(0.95 0.003 270);  /* #F0F0F2 — text-primary */
-  --card:              oklch(0.10 0.003 270);  /* bg-surface */
+  --card:              oklch(0.26 0.004 270);  /* bg-surface */
   --card-foreground:   oklch(0.95 0.003 270);
-  --popover:           oklch(0.14 0.004 270);  /* bg-elevated */
+  --popover:           oklch(0.30 0.005 270);  /* bg-elevated */
   --popover-foreground: oklch(0.95 0.003 270);
-  --secondary:         oklch(0.18 0.005 270);  /* bg-subtle */
+  --secondary:         oklch(0.34 0.006 270);  /* bg-subtle */
   --secondary-foreground: oklch(0.95 0.003 270);
-  --muted:             oklch(0.18 0.005 270);  /* bg-subtle */
+  --muted:             oklch(0.34 0.006 270);  /* bg-subtle */
   --muted-foreground:  oklch(0.58 0.008 270);  /* #8A8A95 — text-secondary */
-  --accent:            oklch(0.18 0.005 270);  /* bg-subtle — shadcn hover token */
+  --accent:            oklch(0.34 0.006 270);  /* bg-subtle — shadcn hover token */
   --accent-foreground: oklch(0.95 0.003 270);
 
   /* Borders & inputs */
-  --border:       oklch(0.21 0.006 270);   /* #2A2A30 — border-default */
-  --input:        oklch(0.21 0.006 270);
-  --ring:         oklch(0.30 0.009 270);   /* #3F3F48 — border-strong */
-  --border-strong: oklch(0.30 0.009 270);
-  --border-accent: oklch(0.503 0.26 27);   /* primary red — drawer active group */
+  --border:       oklch(0.38 0.007 270);   /* #2A2A30 — border-default */
+  --input:        oklch(0.38 0.007 270);
+  --ring:         oklch(0.46 0.008 270);   /* #3F3F48 — border-strong */
+  --border-strong: oklch(0.46 0.008 270);
+  --border-accent: oklch(0.50 0.20 22);   /* primary red — drawer active group */
 
   /* Primary — Ferrari Red / FIA timing red #E8002D */
-  --primary:          oklch(0.503 0.26 27);
+  --primary:          oklch(0.50 0.20 22);
   --primary-foreground: oklch(0.07 0 0);   /* text-inverse */
   --primary-muted:    oklch(0.17 0.10 15); /* #3D0010 */
   --primary-subtle:   oklch(0.09 0.06 15); /* #1A000A */
 
   /* Destructive — same as primary (error and urgency share the color intentionally) */
-  --destructive: oklch(0.503 0.26 27);
+  --destructive: oklch(0.50 0.20 22);
 
   /* Warning — mapped to racee-accent (yellow) for shadcn warning components */
   --warning:          oklch(0.86 0.19 95); /* #FFD700 */
@@ -141,13 +141,13 @@
   --text-inverse:   oklch(0.07 0 0);       /* #0A0A0B */
 
   /* Semantic race state colors */
-  --state-live:     oklch(0.503 0.26 27);  /* #E8002D — pulses red during race */
+  --state-live:     oklch(0.50 0.20 22);  /* #E8002D — pulses red during race */
   --state-locked:   oklch(0.35 0.009 270); /* #4A4A55 — prediction window closed */
   --state-open:     oklch(0.72 0.19 145);  /* #22C55E — prediction window open */
   --state-upcoming: oklch(0.62 0.19 248);  /* #3B82F6 — future session */
   --state-finished: oklch(0.58 0.008 270); /* #8A8A95 — race complete */
   --state-success:  oklch(0.72 0.19 145);  /* #22C55E — correct prediction */
-  --state-error:    oklch(0.503 0.26 27);  /* #E8002D — wrong prediction / form error */
+  --state-error:    oklch(0.50 0.20 22);  /* #E8002D — wrong prediction / form error */
 
   /* F1 team livery chart colors */
   --chart-1: oklch(0.69 0.19 52);   /* McLaren Papaya */
@@ -157,14 +157,14 @@
   --chart-5: oklch(0.53 0.09 166);  /* Aston Martin Green */
 
   /* Sidebar / drawer */
-  --sidebar:                  oklch(0.07 0 0);       /* bg-base */
+  --sidebar:                  oklch(0.22 0.003 270); /* bg-base — charcoal */
   --sidebar-foreground:       oklch(0.95 0.003 270);
-  --sidebar-primary:          oklch(0.503 0.26 27);
+  --sidebar-primary:          oklch(0.50 0.20 22);
   --sidebar-primary-foreground: oklch(0.07 0 0);
-  --sidebar-accent:           oklch(0.18 0.005 270); /* bg-subtle — hover */
+  --sidebar-accent:           oklch(0.34 0.006 270); /* bg-subtle — hover */
   --sidebar-accent-foreground: oklch(0.95 0.003 270);
-  --sidebar-border:           oklch(0.21 0.006 270); /* border-default */
-  --sidebar-ring:             oklch(0.30 0.009 270); /* border-strong */
+  --sidebar-border:           oklch(0.38 0.007 270); /* border-default */
+  --sidebar-ring:             oklch(0.46 0.008 270); /* border-strong */
 
   /* Radius — 0.5rem = 8px for cards; radius-md (~6px) for buttons */
   --radius: 0.5rem;
