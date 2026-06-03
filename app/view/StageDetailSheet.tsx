@@ -47,9 +47,18 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
           {selectedRow && (
             <div className="flex items-center gap-2">
               <div className="w-1 h-6 rounded-full shrink-0" style={{ backgroundColor: selectedRow.color }} />
-              <p className="font-heading text-[28px] font-bold leading-none text-foreground truncate">
-                {selectedRow.label}
-              </p>
+              {selectedRow.linkTo ? (
+                <Link href={selectedRow.linkTo} className="flex items-center gap-1 min-w-0" onClick={onClose}>
+                  <p className="font-heading text-[28px] font-bold leading-none text-foreground truncate">
+                    {selectedRow.label}
+                  </p>
+                  <ChevronRight className="size-5 text-muted-foreground shrink-0 mt-0.5" />
+                </Link>
+              ) : (
+                <p className="font-heading text-[28px] font-bold leading-none text-foreground truncate">
+                  {selectedRow.label}
+                </p>
+              )}
             </div>
           )}
           {selectedRow?.teamName && selectedRow.teamName !== selectedRow.label && (

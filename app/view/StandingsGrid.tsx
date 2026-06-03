@@ -60,7 +60,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     propTotal,
     raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.gridPoints + r.propPoints])),
     mulliganedRaceIds: getMulliganedRaceIds(raceScores, mulliganCount),
-    linkTo: `/picks/${userId}`,
+    linkTo: `/players/${userId}`,
     raceLinks: Object.fromEntries(
       raceScores.map((r) => [r.raceId, `/picks/${userId}?leagueId=${league.id}&raceId=${r.raceId}`])
     ),

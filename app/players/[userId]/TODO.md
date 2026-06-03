@@ -39,16 +39,6 @@ Deferred intentionally. The `trendLine` field is already in the DTO and populate
 
 ---
 
-## 3. Navigation — tappable standings rows
-
-Currently there's no way to reach `/players/[userId]` from within the app. The design intent is that tapping any player's row in the Standings tab pushes to their profile.
-
-**Where to add links:**
-- `app/view/StandingsGrid.tsx` (or wherever individual user rows render) — wrap the user row in a `<Link href={/players/${userId}}>` 
-- Also add it to Race Results Detail screens where player names appear
-
----
-
 ## 4. Empty states
 
 The page has a basic "Player not found" fallback but no designed empty state for a player with no graded races yet.

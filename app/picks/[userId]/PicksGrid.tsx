@@ -1,53 +1,92 @@
-import { type Racer } from "@/lib/schemas";
 import { RacerAvatar } from "@/components/RacerAvatar";
 import { cn } from "@/lib/utils";
+import type { RacerDTO } from "@/server/queries/user-race-picks/IUserRacePicksQuery";
 
 type Props = {
   prediction: string[];
-  racersById: Record<string, Racer>;
+  racersById: Record<string, RacerDTO>;
   keyOrder: string[] | null;
   driverPoints: Record<string, number> | null;
 };
 
-export function PicksGrid({ prediction, racersById, keyOrder, driverPoints }: Props) {
-  return (
-    <ul className="space-y-1">
-      {prediction.map((racerId, i) => {
-        const racer = racersById[racerId];
-        const predictedPos = i + 1;
-        const actualIdx = keyOrder?.indexOf(racerId) ?? -1;
-        const actualPos = actualIdx >= 0 ? actualIdx + 1 : null;
-        const delta = actualPos !== null ? predictedPos - actualPos : null;
-        const points = driverPoints?.[racerId];
+function AccuracyIndicator({ signedDelta, offset }: { signedDelta: number; offset: number }) {
+  if (offset === 0) {
+    return <span className="w-6 text-center text-accent">✦</span>;
+  }
+  const colorClass = offset <= 2 ? "text-secondary" : "text-tertiary";
+  const label = signedDelta > 0 ? `+${signedDelta}` : `${signedDelta}`;
+  return <span className={cn("w-6 text-center font-mono tabular-nums text-xs", colorClass)}>{label}</span>;
+}
 
-        return (
-          <li key={racerId} className="flex items-center gap-3 py-1">
-            <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: racer?.teamColor ?? "#6b7280" }} />
-            <RacerAvatar name={racer?.name ?? "?"} image={racer?.image} className="w-8 h-8 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-heading text-sm font-semibold truncate">{racer?.name ?? "Unknown"}</p>
-              <p className="text-xs text-muted-foreground truncate">{racer?.team ?? ""}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0 text-xs font-mono tabular-nums">
-              <span className="text-muted-foreground">P{predictedPos}</span>
-              <span className="text-muted-foreground">→</span>
-              <span className="font-semibold text-foreground">{actualPos !== null ? `P${actualPos}` : "—"}</span>
-              {delta !== null && delta !== 0 && (
-                <span className={cn("w-6 font-semibold",
-                  delta > 0 ? "text-state-success" : "text-state-error"
-                )}>
-                  {delta > 0 ? `+${delta}` : delta}
+export function PicksGrid({ prediction, racersById, keyOrder, driverPoints }: Props) {
+  const isGraded = keyOrder !== null;
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-xs font-mono font-medium uppercase tracking-[0.08em] text-secondary">
+          Grid Predictions
+        </p>
+        {!isGraded && (
+          <p className="mt-1 text-xs font-mono text-tertiary uppercase tracking-widest">
+            Awaiting Results
+          </p>
+        )}
+      </div>
+
+      <ul className="space-y-0.5">
+        {prediction.map((racerId, i) => {
+          const racer = racersById[racerId];
+          const predictedPos = i + 1;
+          const actualIdx = keyOrder?.indexOf(racerId) ?? -1;
+          const actualPos = actualIdx >= 0 ? actualIdx + 1 : null;
+          const signedDelta = actualPos !== null ? actualPos - predictedPos : null;
+          const offset = signedDelta !== null ? Math.abs(signedDelta) : null;
+          const points = driverPoints?.[racerId];
+          const hasPoints = points !== undefined && points > 0;
+
+          return (
+            <li
+              key={racerId}
+              className="flex items-center gap-3 px-2 py-1.5 rounded"
+            >
+              <div
+                className="w-0.5 self-stretch rounded-full shrink-0"
+                style={{ backgroundColor: racer?.teamColor ?? "#4A4A55" }}
+              />
+              <RacerAvatar name={racer?.name ?? "?"} image={racer?.image} className="w-8 h-8 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-heading text-sm font-semibold truncate text-primary">{racer?.name ?? "Unknown"}</p>
+                <p className="text-xs text-secondary truncate">{racer?.team ?? ""}</p>
+              </div>
+
+              {isGraded && (
+                <div className="flex items-center gap-1.5 shrink-0 text-xs font-mono tabular-nums">
+                  <span className="text-tertiary">P{predictedPos}</span>
+                  <span className="text-tertiary">→</span>
+                  <span className="text-primary font-semibold">
+                    {actualPos !== null ? `P${actualPos}` : "—"}
+                  </span>
+                  {offset !== null && signedDelta !== null && (
+                    <AccuracyIndicator signedDelta={signedDelta} offset={offset} />
+                  )}
+                </div>
+              )}
+
+              {isGraded && points !== undefined && (
+                <span
+                  className={cn(
+                    "text-xs font-mono tabular-nums shrink-0 w-10 text-right",
+                    hasPoints ? "text-state-success" : "text-tertiary",
+                  )}
+                >
+                  {points}pts
                 </span>
               )}
-            </div>
-            {points !== undefined && (
-              <span className="text-xs font-mono tabular-nums text-state-success shrink-0">
-                {points}pts
-              </span>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

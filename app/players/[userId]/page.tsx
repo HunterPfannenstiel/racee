@@ -28,7 +28,7 @@ export default function PlayerProfilePage() {
   }, [userId]);
 
   return (
-    <PageShell title="PILOT PROFILE">
+    <PageShell title="PROFILE">
       {loading ? (
         <div className="flex items-center gap-3 text-muted-foreground">
           <Spinner className="w-4 h-4" />

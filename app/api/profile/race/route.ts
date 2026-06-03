@@ -1,22 +1,7 @@
 import { NextResponse } from "next/server";
-import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
-import { BlobRaceRepository } from "@/server/repositories/blob/BlobRaceRepository";
-import { BlobRacerRepository } from "@/server/repositories/blob/BlobRacerRepository";
-import { BlobRacePredictionBookRepository } from "@/server/repositories/blob/BlobRacePredictionBookRepository";
-import { BlobLeagueStandingsRepository } from "@/server/repositories/blob/BlobLeagueStandingsRepository";
-import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
-import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
-import { PageInitService } from "@/server/services/PageInitService";
+import { BlobUserRacePicksQuery } from "@/server/queries/user-race-picks/BlobUserRacePicksQuery";
 
-const pageSvc = new PageInitService(
-  new BlobLeagueRepository(),
-  new BlobRaceRepository(),
-  new BlobRacerRepository(),
-  new BlobRacePredictionBookRepository(),
-  new BlobLeagueStandingsRepository(),
-  new BlobTeamRepository(),
-  new PrismaUserRepository(),
-);
+const query = new BlobUserRacePicksQuery();
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -28,5 +13,5 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "leagueId, raceId, and userId are required" }, { status: 400 });
   }
 
-  return NextResponse.json(await pageSvc.getProfileRace(leagueId, raceId, userId));
+  return NextResponse.json(await query.execute(leagueId, raceId, userId));
 }

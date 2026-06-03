@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { MockUserProfileStatsQuery } from "@/server/queries/user-profile-stats/MockUserProfileStatsQuery";
+import { BlobUserProfileStatsQuery } from "@/server/queries/user-profile-stats/BlobUserProfileStatsQuery";
+import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
 
-const query = new MockUserProfileStatsQuery();
+const query = new BlobUserProfileStatsQuery(new PrismaUserRepository());
 
 export async function GET(
   _: Request,
