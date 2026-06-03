@@ -1,8 +1,8 @@
 [
   {
-    "id": "d80e77c4-8a06-4ae8-88c4-d1de4962cf1e",
+    "id": "a814544c-9bbc-421f-943d-722424c51992",
     "commissionerId": "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J",
-    "name": "Shrek's F1 2026!",
+    "name": "Shrek's F1 2026",
     "placementPoints": [
       10,
       7,
@@ -10,7 +10,7 @@
     ],
     "mulliganCount": 2,
     "scoringDepth": 17,
-    "stageCount": 4,
+    "stageCount": 6,
     "propPointValues": {
       "driverOfDay": 5,
       "lapsLed": 5,
@@ -20,24 +20,6 @@
       "underAchiever": 5,
       "wrecker": 5
     },
-    "motorsportId": "4b2451d9-8676-42f5-b7a0-7ad9210389a7"
-  },
-  {
-    "id": "fbff3a53-9532-4200-b696-fa16f5a52b8f",
-    "commissionerId": "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J",
-    "name": "Test!!!",
-    "placementPoints": [],
-    "mulliganCount": 0,
-    "stageCount": 0,
-    "propPointValues": {
-      "driverOfDay": 0,
-      "lapsLed": 0,
-      "fastestPitStop": 0,
-      "fastestLap": 0,
-      "overAchiever": 0,
-      "underAchiever": 0,
-      "wrecker": 0
-    },
-    "motorsportId": "4b2451d9-8676-42f5-b7a0-7ad9210389a7"
+    "motorsportId": "c6a58052-5cb5-47c8-b0db-ad0c6678a394"
   }
 ]

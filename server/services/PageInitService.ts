@@ -123,14 +123,16 @@ export class PageInitService {
 
     const sortedRaces = [...races].sort((a, b) => a.date.localeCompare(b.date));
 
-    // Partition races into stages evenly
+    // Partition races into stages evenly; fall back to one stage with all races
     const stages: string[][] = stageCount > 0
       ? Array.from({ length: stageCount }, () => [] as string[])
-      : [];
+      : [[]];
     if (stageCount > 0) {
       sortedRaces.forEach((race, i) => {
         stages[Math.floor((i * stageCount) / sortedRaces.length)].push(race.raceId);
       });
+    } else {
+      sortedRaces.forEach(race => stages[0].push(race.raceId));
     }
 
     // Load users referenced by standings

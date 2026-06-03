@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/ui/page-shell";
-import { CalendarIcon, FlagIcon, UserIcon, UsersIcon, KeyRoundIcon, ShieldIcon } from "lucide-react";
+import { OverhaulNotice } from "@/components/ui/overhaul-notice";
+import { CalendarIcon, FlagIcon, UserIcon, KeyRoundIcon, ShieldIcon } from "lucide-react";
 import { getSession } from "@/server/auth/server";
 
 const CARDS = [
@@ -24,12 +25,6 @@ const CARDS = [
     description: "Manage the global driver roster.",
   },
   {
-    href: "/admin/teams",
-    icon: UsersIcon,
-    title: "Teams",
-    description: "Rename or remove player teams.",
-  },
-  {
     href: "/admin/results",
     icon: KeyRoundIcon,
     title: "Results",
@@ -48,6 +43,7 @@ export default async function AdminPage() {
   if (!session?.user.isAdmin) redirect("/");
   return (
     <PageShell title="Admin">
+      <OverhaulNotice />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {CARDS.map(({ href, icon: Icon, title, description }) => (
           <Link

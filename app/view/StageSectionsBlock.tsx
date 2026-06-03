@@ -5,6 +5,7 @@ type Props = {
   rows: StandingsRowData[];
   stages: string[][];
   currentRowId: string | null;
+  showStageLabel: boolean;
   onRowPress?: (rowId: string, stageIdx: number) => void;
 };
 
@@ -17,7 +18,7 @@ function computeStageTotals(rows: StandingsRowData[], raceIds: string[]) {
     .sort((a, b) => b.total - a.total);
 }
 
-export function StageSectionsBlock({ rows, stages, currentRowId, onRowPress }: Props) {
+export function StageSectionsBlock({ rows, stages, currentRowId, showStageLabel, onRowPress }: Props) {
   return (
     <div className="space-y-6">
       {stages.map((raceIds, stageIdx) => {
@@ -27,7 +28,7 @@ export function StageSectionsBlock({ rows, stages, currentRowId, onRowPress }: P
         return (
           <section key={stageIdx}>
             <p className="px-4 mb-2 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-              Stage {stageIdx + 1} · {raceIds.length} {raceIds.length === 1 ? "race" : "races"}
+              {showStageLabel ? `Stage ${stageIdx + 1} · ` : ""}{raceIds.length} {raceIds.length === 1 ? "race" : "races"}
             </p>
             <div className="rounded-lg border border-border overflow-hidden bg-surface">
               {sorted.map(({ row, total }, rankIdx) => {

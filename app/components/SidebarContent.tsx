@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Flag, BarChart2, Users, ShieldCheck, CircleUser } from "lucide-react";
+import { Flag, BarChart2, Users, Gavel, ShieldCheck, CircleUser } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
 import { cn } from "@/lib/utils";
 
 const BASE_NAV = [
-  { href: "/predict",  label: "Predict",   Icon: Flag },
-  { href: "/view",     label: "Standings",  Icon: BarChart2 },
-  { href: "/teams",    label: "Teams",      Icon: Users },
+  { href: "/predict",       label: "Predict",       Icon: Flag },
+  { href: "/view",          label: "Standings",      Icon: BarChart2 },
+  { href: "/teams",         label: "Teams",          Icon: Users },
+  { href: "/commissioner",  label: "Commissioner",   Icon: Gavel },
 ] as const;
 
 type Props = {

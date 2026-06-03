@@ -106,6 +106,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
           rows={rows}
           stages={stages}
           currentRowId={currentRowId}
+          showStageLabel={!!league.stageCount}
           onRowPress={(rowId, stageIdx) => setSheet({ rowId, stageIdx })}
         />
       )}
