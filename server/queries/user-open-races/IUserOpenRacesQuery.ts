@@ -32,5 +32,5 @@ export type UserOpenRacesResult = {
 };
 
 export interface IUserOpenRacesQuery {
-  execute(userId: string): Promise<UserOpenRacesResult>;
+  execute(userId: string, leagueId: string): Promise<UserOpenRacesResult>;
 }

@@ -59,7 +59,7 @@ const PredictionsReadSchema = z.object({
 // ─── Implementation ───────────────────────────────────────────────────────────
 
 export class BlobUserOpenRacesQuery implements IUserOpenRacesQuery {
-  async execute(userId: string): Promise<UserOpenRacesResult> {
+  async execute(userId: string, leagueId: string): Promise<UserOpenRacesResult> {
     const now = new Date();
 
     // Round 1: leagues + racers in parallel
@@ -71,37 +71,26 @@ export class BlobUserOpenRacesQuery implements IUserOpenRacesQuery {
     const leagues = z.array(LeagueReadSchema).parse(rawLeagues ?? []);
     const allRacers = z.array(RacerReadSchema).parse(rawRacers ?? []);
 
-    // Round 2: races per unique motorsport in parallel
-    const uniqueMotorsportIds = [
-      ...new Set(leagues.map((l) => l.motorsportId).filter(Boolean) as string[]),
-    ];
+    const league = leagues.find((l) => l.id === leagueId);
+    if (!league?.motorsportId) {
+      return { openRaces: [], racersById: {} };
+    }
 
-    const racesPerMotorsport = await Promise.all(
-      uniqueMotorsportIds.map(async (msId) => {
-        const raw = await blob.read<unknown>(motorsportRacesPath(msId));
-        return z.array(RaceReadSchema).parse(raw ?? []);
-      }),
-    );
+    // Round 2: races for this league's motorsport
+    const rawRaces = await blob.read<unknown>(motorsportRacesPath(league.motorsportId));
+    const races = z.array(RaceReadSchema).parse(rawRaces ?? []);
 
-    const racesByMotorsport = new Map(
-      uniqueMotorsportIds.map((msId, i) => [msId, racesPerMotorsport[i]]),
-    );
-
-    // Filter to open races per league
+    // Filter to open races
     type OpenEntry = { race: z.infer<typeof RaceReadSchema>; leagueId: string };
     const openEntries: OpenEntry[] = [];
 
-    for (const league of leagues) {
-      if (!league.motorsportId) continue;
-      const races = racesByMotorsport.get(league.motorsportId) ?? [];
-      for (const race of races) {
-        if (
-          race.startingGrid.length > 0 &&
-          (!race.lockTime || now < new Date(race.lockTime)) &&
-          race.keySetAt === null
-        ) {
-          openEntries.push({ race, leagueId: league.id });
-        }
+    for (const race of races) {
+      if (
+        race.startingGrid.length > 0 &&
+        (!race.lockTime || now < new Date(race.lockTime)) &&
+        race.keySetAt === null
+      ) {
+        openEntries.push({ race, leagueId });
       }
     }
 

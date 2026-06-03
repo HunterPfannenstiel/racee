@@ -3,10 +3,25 @@
 import { useState } from "react";
 import { type Race, type League, type Team, type User, type RaceScoreEntry } from "@/lib/schemas";
 import { getMulliganedRaceIds } from "@/lib/scoring";
-import { StandingsTable } from "./StandingsTable";
-import { type StandingsRowData } from "./StandingsRow";
-
+import { useUser } from "@/app/context/UserContext";
+import { SeasonStandingsSection } from "./SeasonStandingsSection";
+import { StageSectionsBlock } from "./StageSectionsBlock";
+import { StageDetailSheet } from "./StageDetailSheet";
 type Tab = "drivers" | "constructors";
+
+export type StandingsRowData = {
+  id: string;
+  label: string;
+  color: string;
+  teamName?: string;
+  total: number;
+  rawTotal: number;
+  propTotal: number;
+  raceScores: Record<string, number>;
+  mulliganedRaceIds: Set<string>;
+  linkTo?: string;
+  raceLinks?: Record<string, string>;
+};
 
 type DriverRow = { userId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
 type ConstructorRow = { teamId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
@@ -23,6 +38,8 @@ type StandingsGridProps = {
 
 export function StandingsGrid({ league, races, usersById, teams, driverRows, constructorRows, stages }: StandingsGridProps) {
   const [tab, setTab] = useState<Tab>("drivers");
+  const [sheet, setSheet] = useState<{ rowId: string; stageIdx: number } | null>(null);
+  const { user } = useUser();
 
   const mulliganCount = league.mulliganCount;
   const teamsById = Object.fromEntries(teams.map((t) => [t.id, t]));
@@ -43,9 +60,9 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     propTotal,
     raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.gridPoints + r.propPoints])),
     mulliganedRaceIds: getMulliganedRaceIds(raceScores, mulliganCount),
-    linkTo: `/profile/${userId}`,
+    linkTo: `/picks/${userId}`,
     raceLinks: Object.fromEntries(
-      raceScores.map((r) => [r.raceId, `/profile/${userId}?leagueId=${league.id}&raceId=${r.raceId}`])
+      raceScores.map((r) => [r.raceId, `/picks/${userId}?leagueId=${league.id}&raceId=${r.raceId}`])
     ),
   }));
 
@@ -61,16 +78,18 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     mulliganedRaceIds: getMulliganedRaceIds(raceScores, mulliganCount),
   }));
 
+  const currentUserTeamId = teams.find((t) => t.memberIds.includes(user?.id ?? ""))?.id ?? null;
+  const currentRowId = tab === "drivers" ? (user?.id ?? null) : currentUserTeamId;
   const rows = tab === "drivers" ? mappedDriverRows : mappedConstructorRows;
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex gap-1">
         {(["drivers", "constructors"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-md transition-colors ${
+            className={`font-mono text-sm font-semibold uppercase tracking-[0.06em] px-4 min-h-[44px] rounded-md transition-colors ${
               tab === t
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
@@ -81,11 +100,24 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
         ))}
       </div>
 
-      <StandingsTable
+      <SeasonStandingsSection rows={rows} currentRowId={currentRowId} />
+      {stages.length > 0 && (
+        <StageSectionsBlock
+          rows={rows}
+          stages={stages}
+          currentRowId={currentRowId}
+          onRowPress={(rowId, stageIdx) => setSheet({ rowId, stageIdx })}
+        />
+      )}
+
+      <StageDetailSheet
+        open={sheet !== null}
+        onClose={() => setSheet(null)}
         rows={rows}
-        races={races}
-        nameHeader={tab === "drivers" ? "Driver" : "Team"}
+        selectedRowId={sheet?.rowId ?? null}
+        stageIdx={sheet?.stageIdx ?? null}
         stages={stages}
+        races={races}
       />
     </div>
   );

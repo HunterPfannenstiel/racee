@@ -26,7 +26,7 @@ export function TabBar() {
             <Link
               key={href}
               href={href}
-              className="flex-1 flex flex-col items-center justify-center gap-1 relative"
+              className="flex-1 flex flex-col items-center justify-center gap-1 relative cursor-pointer"
             >
               {active && (
                 <span className="absolute top-0 inset-x-0 h-0.5 bg-primary" />

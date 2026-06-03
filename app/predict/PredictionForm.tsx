@@ -18,7 +18,9 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { type Racer, type PropName } from "@/lib/schemas";
+import { PROP_META } from "@/lib/props";
 import { useUser } from "@/app/context/UserContext";
+import { useToast } from "@/app/context/ToastContext";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
@@ -45,7 +47,6 @@ type Props = {
   existingPropPicks: Partial<Record<PropName, string>>;
   keyIsSet: boolean;
   onPredictionSave: (racerIds: string[], submittedAt: string, propPicks: Partial<Record<PropName, string>>) => void;
-  onError: (msg: string) => void;
 };
 
 function formatDate(dateStr: string) {
@@ -71,8 +72,11 @@ function formatCountdown(ms: number): string {
   return `${seconds}s`;
 }
 
-export function PredictionForm({ race, leagueId, racersById, existingPrediction, existingSubmittedAt, existingPropPicks, keyIsSet, onPredictionSave, onError }: Props) {
+const PROP_NAMES_ALL = Object.keys(PROP_META) as PropName[];
+
+export function PredictionForm({ race, leagueId, racersById, existingPrediction, existingSubmittedAt, existingPropPicks, keyIsSet, onPredictionSave }: Props) {
   const { user } = useUser();
+  const toast = useToast();
   const [orderedRacerIds, setOrderedRacerIds] = useState<string[]>(
     existingPrediction ?? race.startingGrid
   );
@@ -106,6 +110,7 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
   }, [race.lockTime]);
 
   const racers = race.startingGrid.map((id) => racersById[id]).filter((r): r is Racer => !!r);
+  const allPropsFilled = PROP_NAMES_ALL.every((p) => propPicks[p] != null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -131,14 +136,14 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ leagueId, raceId: race.id, userId: user.id, racerIds: orderedRacerIds, propPicks }),
       });
-      if (!res.ok) { onError("Failed to save prediction."); return; }
+      if (!res.ok) { toast.error("Failed to save prediction. Please try again."); return; }
       const now = new Date().toISOString();
       setSubmittedAt(now);
       onPredictionSave(orderedRacerIds, now, propPicks);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
-      onError("Failed to save prediction.");
+      toast.error("Failed to save prediction. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -210,8 +215,13 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
         disabled={saving || isLocked}
       />
 
-      <div className="sticky bottom-0 -mx-6 px-6 py-4 bg-background border-t border-border md:static md:mx-0 md:px-0 md:py-0 md:bg-transparent md:border-none">
-        <Button onClick={savePrediction} disabled={saving || saved || isLocked} className="w-full md:w-auto h-12 uppercase tracking-[0.06em] font-semibold">
+      <div className="sticky bottom-0 -mx-6 px-6 py-4 bg-background border-t border-border md:static md:mx-0 md:px-0 md:py-0 md:bg-transparent md:border-none space-y-2">
+        {!isLocked && !allPropsFilled && (
+          <p className="text-center text-[10px] font-mono uppercase tracking-[0.08em] text-text-tertiary">
+            Pick all props to submit
+          </p>
+        )}
+        <Button onClick={savePrediction} disabled={saving || saved || isLocked || !allPropsFilled} className="w-full h-12 uppercase tracking-[0.06em] font-semibold">
           {saving && <Spinner className="w-3 h-3 mr-1" />}
           {saved ? <><CheckIcon className="w-3 h-3 mr-1" />Submitted</> : "Submit Predictions"}
         </Button>

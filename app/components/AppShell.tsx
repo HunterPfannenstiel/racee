@@ -11,6 +11,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { SidebarContent } from "@/app/components/SidebarContent";
 import Header from "@/app/components/Header";
 import { TabBar } from "@/app/components/TabBar";
+import { ToastProvider } from "@/app/context/ToastContext";
+import { ToastContainer } from "@/components/ui/toast";
 
 const sidebarKey = (userId: string) => `racee_sidebar_collapsed:${userId}`;
 
@@ -93,7 +95,7 @@ function DesktopSidebar() {
                     <Link
                       href={href}
                       className={cn(
-                        "flex items-center justify-center h-10 rounded-sm transition-colors",
+                        "flex items-center justify-center h-10 rounded-sm transition-colors cursor-pointer",
                         active ? "text-primary bg-subtle" : "text-muted-foreground hover:text-foreground hover:bg-subtle"
                       )}
                     >
@@ -110,7 +112,7 @@ function DesktopSidebar() {
           <div className="px-2 py-2 border-t border-border shrink-0">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link href={user ? "/profile" : "/signin"} className="w-full flex items-center justify-center h-10 rounded-sm text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors">
+                <Link href={user ? "/profile" : "/signin"} className="w-full flex items-center justify-center h-10 rounded-sm text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors cursor-pointer">
                   <CircleUser className="size-5" />
                 </Link>
               </TooltipTrigger>
@@ -145,17 +147,20 @@ function DesktopSidebar() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-dvh overflow-hidden lg:justify-center">
-      <DesktopSidebar />
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header />
-        <div className="flex-1 overflow-y-auto">
-          {children}
-        </div>
-        <div className="lg:hidden">
-          <TabBar />
+    <ToastProvider>
+      <div className="flex h-dvh overflow-hidden lg:justify-center">
+        <DesktopSidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <Header />
+          <div className="flex-1 overflow-y-auto">
+            {children}
+          </div>
+          <div className="lg:hidden">
+            <TabBar />
+          </div>
         </div>
       </div>
-    </div>
+      <ToastContainer />
+    </ToastProvider>
   );
 }

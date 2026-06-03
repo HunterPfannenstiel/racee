@@ -7,6 +7,7 @@ import { type Racer, type PropName } from "@/lib/schemas";
 import { RequireUser } from "@/components/RequireUser";
 import { PredictionForm } from "./PredictionForm";
 import { PageShell } from "@/components/ui/page-shell";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { FlagIcon } from "lucide-react";
 
@@ -33,6 +34,38 @@ type InitData = {
   racersById: Record<string, Racer>;
 };
 
+function PredictPagePlaceholder() {
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-2">
+        <div className="h-14 w-24 rounded-sm bg-subtle" />
+        <div className="h-14 w-28 rounded-sm bg-subtle" />
+      </div>
+      <div className="space-y-2">
+        <div className="h-2.5 w-20 rounded-sm bg-subtle" />
+        <div className="h-7 w-44 rounded-sm bg-subtle" />
+      </div>
+      <Separator />
+      <div className="space-y-1">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="h-11 rounded-sm bg-subtle" />
+        ))}
+      </div>
+      <Separator />
+      <div>
+        <div className="h-2.5 w-16 rounded-sm bg-subtle mb-3" />
+        <div className="border border-border rounded-sm overflow-hidden">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className={cn("h-14 flex items-center px-4", i < 6 && "border-b border-border")}>
+              <div className="h-2.5 w-32 rounded-sm bg-subtle" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function formatChipDate(dateStr: string) {
   const [year, month, day] = dateStr.split("-").map(Number);
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" })
@@ -53,20 +86,20 @@ export default function PredictPage() {
   const { activeLeagueId } = useLeague();
   const [data, setData] = useState<InitData | null>(null);
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-    fetch("/api/predict/init")
+    if (!user || !activeLeagueId) return;
+    setData(null);
+    fetch(`/api/predict/init?leagueId=${activeLeagueId}`)
       .then((r) => r.json())
-      .then((d) => setData({ openRaces: d.openRaces, racersById: d.racersById }));
-  }, [user]);
-
-  useEffect(() => {
-    if (!data || !activeLeagueId) return;
-    const leagueRaces = data.openRaces.filter((r) => r.leagueId === activeLeagueId);
-    setSelectedRaceId(autoSelectRace(leagueRaces));
-  }, [activeLeagueId, data]);
+      .then((d) => {
+        setData({ openRaces: d.openRaces, racersById: d.racersById });
+        setSelectedRaceId((current) => {
+          if (current && d.openRaces.some((r: { id: string }) => r.id === current)) return current;
+          return autoSelectRace(d.openRaces);
+        });
+      });
+  }, [user, activeLeagueId]);
 
   function handlePredictionSave(racerIds: string[], submittedAt: string, propPicks: Partial<Record<PropName, string>>) {
     if (!selectedRaceId || !activeLeagueId) return;
@@ -83,18 +116,15 @@ export default function PredictPage() {
     });
   }
 
-  const leagueRaces = data?.openRaces.filter((r) => r.leagueId === activeLeagueId) ?? [];
-  const sortedRaces = [...leagueRaces].sort((a, b) => a.date.localeCompare(b.date));
-  const selectedRace = leagueRaces.find((r) => r.id === selectedRaceId) ?? null;
+  const openRaces = data?.openRaces ?? [];
+  const sortedRaces = [...openRaces].sort((a, b) => a.date.localeCompare(b.date));
+  const selectedRace = openRaces.find((r) => r.id === selectedRaceId) ?? null;
 
   return (
     <PageShell title="Predict">
       <RequireUser>
         {!data ? (
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs tracking-[0.08em] uppercase">Loading</span>
-          </div>
+          <PredictPagePlaceholder />
         ) : (
           <div className="space-y-5">
 
@@ -123,8 +153,6 @@ export default function PredictPage() {
               </div>
             )}
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
-
             {selectedRace ? (
               <PredictionForm
                 key={`${activeLeagueId}_${selectedRace.id}`}
@@ -136,7 +164,6 @@ export default function PredictPage() {
                 existingPropPicks={selectedRace.myPick?.propPicks ?? {}}
                 keyIsSet={selectedRace.keyIsSet}
                 onPredictionSave={handlePredictionSave}
-                onError={setError}
               />
             ) : (
               <div className="flex flex-col items-center text-center pt-12 gap-4">
