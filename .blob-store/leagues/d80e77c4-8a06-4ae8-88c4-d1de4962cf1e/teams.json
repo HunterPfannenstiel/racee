@@ -1,11 +1,12 @@
 [
   {
     "id": "19c6fb85-fd47-442b-b5e1-2cc23d135ced",
-    "name": "Swamp Dwells",
+    "name": "Swamp Dwellers",
     "memberIds": [
       "e983a72e-ed1c-4153-aba5-f83b5f591a08",
       "6d991872-a726-400b-bd70-d92ddf5cedc1",
-      "8738698b-ef07-4adb-8813-fb27649fa866"
+      "8738698b-ef07-4adb-8813-fb27649fa866",
+      "byekcG2HEnl2di6eZYzxJEfsFF9ZYsKr"
     ],
     "color": "#2b248f"
   },
@@ -23,9 +24,16 @@
     "id": "85021ae6-ad54-4826-b0d8-46087fed363a",
     "name": "Cyanide",
     "memberIds": [
-      "I9a3e5YFCKhzmxz9r0bwJlFiV2A6FSfx",
+      "I9a3e5YFCKhzmxz9r0bwJlFiV2A6FSfx"
+    ],
+    "color": "#1550c6"
+  },
+  {
+    "id": "23e69236-fbc6-4bbd-957a-4df82319ed7c",
+    "name": "New Team",
+    "memberIds": [
       "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J"
     ],
-    "color": "#6880b1"
+    "color": "#6b7280"
   }
 ]

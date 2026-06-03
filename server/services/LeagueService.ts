@@ -94,6 +94,14 @@ export class LeagueService {
     await this.teams.saveAll(teams);
   }
 
+  async unassignUser(leagueId: string, userId: string): Promise<void> {
+    const teams = await this.teams.findAllForLeague(leagueId);
+    for (const team of teams) {
+      team.removeMember(userId);
+    }
+    await this.teams.saveAll(teams);
+  }
+
   async initTeams(leagueId: string, assignments: Array<{ userId: string; teamId: string }>): Promise<void> {
     const teams = await this.teams.findAllForLeague(leagueId);
     // Clear all memberIds
