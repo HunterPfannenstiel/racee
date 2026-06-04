@@ -185,7 +185,7 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
 
       <Separator />
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} autoScroll={{ acceleration: 5, threshold: { x: 0.2, y: 0.2 } }}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} autoScroll={{ acceleration: 1, threshold: { x: 0.2, y: 0.2 } }}>
         <SortableContext items={orderedRacerIds} strategy={verticalListSortingStrategy}>
           <ul className="space-y-1">
             {orderedRacerIds.map((racerId, index) => {
