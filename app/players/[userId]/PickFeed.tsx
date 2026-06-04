@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import type { RacePickEntryDTO } from "@/server/queries/user-profile-stats/IUserProfileStatsQuery";
 import type { RacerDTO } from "@/server/queries/user-profile-stats/IUserProfileStatsQuery";
 import type { PropName } from "@/lib/schemas";
+import { PROP_META } from "@/lib/props";
 
 const PROP_LABELS: Record<PropName, string> = {
   driverOfDay: "Driver of Day",
@@ -95,43 +96,38 @@ export function PickFeed({ pickFeed, racersById }: PickFeedProps) {
 
               {/* Expanded picks */}
               {isExpanded && (
-                <div className="border-t border-border px-4 py-3 space-y-2">
+                <div className="border-t border-border divide-y divide-border">
                   {race.propPicks.map((pick) => {
-                    const answerName = racersById[pick.answer]?.name ?? pick.answer;
+                    const isConstructorProp = PROP_META[pick.propType].type === "constructor";
+                    const answerName = isConstructorProp ? pick.answer : (racersById[pick.answer]?.name ?? pick.answer);
 
                     return (
-                      <div key={pick.propType} className="flex items-start gap-3">
+                      <div key={pick.propType} className="flex items-start justify-between gap-3 px-4 py-2.5">
                         <span className="text-xs font-mono uppercase tracking-wide text-muted-foreground w-32 flex-shrink-0 pt-0.5">
                           {PROP_LABELS[pick.propType]}
                         </span>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm text-foreground">{answerName}</span>
-
-                            {pick.weight > 1 && (
-                              <span className="text-xs text-muted-foreground font-mono">
-                                ×{pick.weight}
-                              </span>
-                            )}
-
-                            {race.isGraded ? (
-                              pick.isCorrect ? (
-                                <span className="text-state-success text-sm">✓</span>
-                              ) : (
-                                <span className="text-state-error text-sm">✗</span>
-                              )
-                            ) : (
-                              <span className="text-muted-foreground text-sm">—</span>
-                            )}
-                          </div>
-
+                        <div className="flex-1 min-w-0 px-2">
+                          <span className="text-sm text-foreground">{answerName}</span>
+                          {pick.weight > 1 && (
+                            <span className="text-xs text-muted-foreground font-mono ml-1">×{pick.weight}</span>
+                          )}
                           {race.isGraded && !pick.isCorrect && pick.correctAnswers[0] && (
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              {racersById[pick.correctAnswers[0]]?.name ?? pick.correctAnswers[0]}
+                              {isConstructorProp ? pick.correctAnswers[0] : (racersById[pick.correctAnswers[0]]?.name ?? pick.correctAnswers[0])}
                             </p>
                           )}
                         </div>
+
+                        {race.isGraded ? (
+                          pick.isCorrect ? (
+                            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md text-state-success bg-state-success/10 shrink-0">✓</span>
+                          ) : (
+                            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md text-state-error bg-state-error/10 shrink-0">✗</span>
+                          )
+                        ) : (
+                          <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md text-muted-foreground bg-subtle shrink-0">—</span>
+                        )}
                       </div>
                     );
                   })}

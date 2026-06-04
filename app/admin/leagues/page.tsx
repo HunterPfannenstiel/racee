@@ -7,6 +7,7 @@ import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LeaguesSection } from "./LeaguesSection";
+import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 
 export default function AdminLeaguesPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
@@ -28,6 +29,7 @@ export default function AdminLeaguesPage() {
       <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
         ← Admin
       </Link>
+      <OverhaulNotice />
       {error && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">

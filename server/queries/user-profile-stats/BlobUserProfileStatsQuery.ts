@@ -189,6 +189,7 @@ export class BlobUserProfileStatsQuery implements IUserProfileStatsQuery {
       for (const { propType, answer, weight } of picks.values()) {
         referencedRacerIds.add(answer);
         const correctAnswers: string[] = isGraded && propKey?.[propType] ? propKey[propType]! : [];
+        for (const id of correctAnswers) referencedRacerIds.add(id);
         propPicks.push({
           propType,
           answer,

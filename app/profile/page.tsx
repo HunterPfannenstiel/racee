@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { RequireUser } from "@/components/RequireUser";
+import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 
 type LeagueMembership = {
   id: string;
@@ -64,6 +65,7 @@ export default function ProfilePage() {
 
   return (
     <PageShell title="Profile">
+      <OverhaulNotice />
       <RequireUser>
         <div className="space-y-4">
 

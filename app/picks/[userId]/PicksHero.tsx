@@ -13,7 +13,7 @@ export function PicksHero({ totalPoints, rank, totalParticipants, gridPoints, pr
         {totalPoints} PTS
       </p>
       {rank !== null && (
-        <p className="text-xs font-mono text-secondary uppercase tracking-widest">
+        <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
           #{rank} OF {totalParticipants}
         </p>
       )}

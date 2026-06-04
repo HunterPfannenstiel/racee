@@ -618,7 +618,7 @@ await blob.write("leagues.json", [{
   placementPoints: PLACEMENT_POINTS,
   mulliganCount: MULLIGAN_COUNT,
   scoringDepth: 17,
-  stageCount: 6,
+  stageCount: 4,
   propPointValues: PROP_POINT_VALUES,
   motorsportId,
 }]);

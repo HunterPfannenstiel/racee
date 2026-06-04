@@ -24,7 +24,7 @@ export function PicksGrid({ prediction, racersById, keyOrder, driverPoints }: Pr
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs font-mono font-medium uppercase tracking-[0.08em] text-secondary">
+        <p className="text-xs font-mono font-medium uppercase tracking-[0.08em] text-muted-foreground">
           Grid Predictions
         </p>
         {!isGraded && (
@@ -34,7 +34,7 @@ export function PicksGrid({ prediction, racersById, keyOrder, driverPoints }: Pr
         )}
       </div>
 
-      <ul className="space-y-0.5">
+      <div className="bg-surface border border-border rounded-lg overflow-hidden divide-y divide-border">
         {prediction.map((racerId, i) => {
           const racer = racersById[racerId];
           const predictedPos = i + 1;
@@ -46,9 +46,9 @@ export function PicksGrid({ prediction, racersById, keyOrder, driverPoints }: Pr
           const hasPoints = points !== undefined && points > 0;
 
           return (
-            <li
+            <div
               key={racerId}
-              className="flex items-center gap-3 px-2 py-1.5 rounded"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-subtle"
             >
               <div
                 className="w-0.5 self-stretch rounded-full shrink-0"
@@ -56,8 +56,8 @@ export function PicksGrid({ prediction, racersById, keyOrder, driverPoints }: Pr
               />
               <RacerAvatar name={racer?.name ?? "?"} image={racer?.image} className="w-8 h-8 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="font-heading text-sm font-semibold truncate text-primary">{racer?.name ?? "Unknown"}</p>
-                <p className="text-xs text-secondary truncate">{racer?.team ?? ""}</p>
+                <p className="font-heading text-sm font-semibold truncate text-white">{racer?.name ?? "Unknown"}</p>
+                <p className="text-xs text-muted-foreground truncate">{racer?.team ?? ""}</p>
               </div>
 
               {isGraded && (
@@ -76,17 +76,19 @@ export function PicksGrid({ prediction, racersById, keyOrder, driverPoints }: Pr
               {isGraded && points !== undefined && (
                 <span
                   className={cn(
-                    "text-xs font-mono tabular-nums shrink-0 w-10 text-right",
-                    hasPoints ? "text-state-success" : "text-tertiary",
+                    "text-xs font-mono font-bold px-2 py-0.5 rounded-md shrink-0",
+                    hasPoints
+                      ? "text-state-success bg-state-success/10"
+                      : "text-state-error bg-state-error/10",
                   )}
                 >
                   {points}pts
                 </span>
               )}
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
     </div>
   );
 }

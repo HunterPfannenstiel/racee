@@ -51,7 +51,7 @@ export function StatStrip({ summary, propAccuracy }: StatStripProps) {
         value={bestProp ? PROP_LABELS[bestProp.propType] : "—"}
         sublabel={bestProp ? (bestProp.accuracy * 100).toFixed(0) + "% accurate" : undefined}
       />
-      <StatChip label="Overall Acc" value={overallPct} />
+      <StatChip label="Overall Accuracy" value={overallPct} />
     </div>
   );
 }

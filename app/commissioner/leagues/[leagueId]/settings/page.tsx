@@ -9,6 +9,7 @@ import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LeagueConfigSection } from "../LeagueConfigSection";
+import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 
 export default function CommissionerLeagueSettingsPage() {
   const { leagueId } = useParams<{ leagueId: string }>();
@@ -34,6 +35,7 @@ export default function CommissionerLeagueSettingsPage() {
         <ChevronLeft className="size-3.5" />
         {league?.name ?? "League"}
       </Link>
+      <OverhaulNotice />
       {error && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">

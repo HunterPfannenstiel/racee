@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { KeyEditor } from "../KeyEditor";
+import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 
 export default function SetResultPage() {
   const { raceId } = useParams<{ raceId: string }>();
@@ -45,6 +46,7 @@ export default function SetResultPage() {
       <Link href="/admin/results" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
         ← Results
       </Link>
+      <OverhaulNotice />
 
       {error && (
         <Alert variant="destructive">

@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { RacesSection } from "./RacesSection";
+import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 
 export default function AdminRacesPage() {
   const [motorsport, setMotorsport] = useState<Motorsport | null>(null);
@@ -42,6 +43,7 @@ export default function AdminRacesPage() {
       <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
         ← Admin
       </Link>
+      <OverhaulNotice />
 
       {error && (
         <Alert variant="destructive">
