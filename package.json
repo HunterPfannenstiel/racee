@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "seed": "USE_LOCAL_BLOB=true node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts",
