@@ -16,21 +16,25 @@ type Props = {
 };
 
 export function SortableRacerRow({ racerId, index, racer, disabled, startingGridPosition }: Props) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: racerId });
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: racerId });
+
+  const dragListeners = disabled ? {} : listeners;
+  const dragCursor = disabled ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing";
 
   return (
     <li
       ref={setNodeRef}
-      {...(disabled ? {} : listeners)}
       {...attributes}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "flex items-center gap-3 min-h-12 py-1 rounded-sm select-none touch-none",
+        "flex items-center gap-3 min-h-12 py-1 rounded-sm select-none",
         isDragging ? "opacity-40 z-10" : "opacity-100",
-        disabled ? "cursor-not-allowed opacity-40" : "cursor-grab active:cursor-grabbing"
+        disabled && "opacity-40"
       )}
     >
-      <GripVerticalIcon className="size-5 p-0.5 shrink-0 text-muted-foreground" />
+      <div ref={setActivatorNodeRef} {...dragListeners} className={cn("touch-none shrink-0", dragCursor)}>
+        <GripVerticalIcon className="size-5 p-0.5 text-muted-foreground" />
+      </div>
       <span className="w-7 shrink-0 text-right text-xs font-mono font-semibold text-muted-foreground tabular-nums">
         P{index + 1}
       </span>

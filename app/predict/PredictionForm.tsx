@@ -215,7 +215,7 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
         disabled={saving || isLocked}
       />
 
-      <div className="sticky bottom-0 -mx-6 px-6 py-4 bg-background border-t border-border md:static md:mx-0 md:px-0 md:py-0 md:bg-transparent md:border-none space-y-2">
+      <div className="space-y-2">
         {!isLocked && !allPropsFilled && (
           <p className="text-center text-[10px] font-mono uppercase tracking-[0.08em] text-text-tertiary">
             Pick all props to submit
