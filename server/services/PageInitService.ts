@@ -148,7 +148,7 @@ export class PageInitService {
             mulliganed,
             rawTotal: scores.reduce((s, r) => s + r.gridPoints, 0),
             propTotal: scores.reduce((s, r) => s + r.propPoints, 0),
-            raceScores: scores.map(r => ({ raceId: r.raceId, gridPoints: r.gridPoints, propPoints: r.propPoints })),
+            raceScores: scores.map(r => ({ raceId: r.raceId, gridPoints: r.gridPoints, propPoints: r.propPoints, weeklyTeamPoints: r.weeklyTeamPoints })),
           };
         })
       : [];

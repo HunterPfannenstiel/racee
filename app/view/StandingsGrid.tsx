@@ -21,6 +21,7 @@ export type StandingsRowData = {
   mulliganedRaceIds: Set<string>;
   linkTo?: string;
   raceLinks?: Record<string, string>;
+  memberScores?: { name: string; total: number }[];
 };
 
 type DriverRow = { userId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
@@ -66,6 +67,10 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     ),
   }));
 
+  const driverTeamContributionByUserId = Object.fromEntries(
+    driverRows.map((r) => [r.userId, r.raceScores.reduce((sum, s) => sum + (s.weeklyTeamPoints ?? 0), 0)])
+  );
+
   const mappedConstructorRows: StandingsRowData[] = constructorRows.map(({ teamId, total, rawTotal, propTotal, raceScores }) => ({
     id: teamId,
     label: teamsById[teamId]?.name ?? teamId,
@@ -76,6 +81,9 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     propTotal,
     raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.weeklyTeamPoints])),
     mulliganedRaceIds: new Set(),
+    memberScores: (teamsById[teamId]?.memberIds ?? [])
+      .map((uid) => ({ name: usersById[uid]?.name ?? "Unknown", total: driverTeamContributionByUserId[uid] ?? 0 }))
+      .sort((a, b) => b.total - a.total),
   }));
 
   const teamScoringEnabled = (league.teamPositionPoints?.length ?? 0) > 0;
