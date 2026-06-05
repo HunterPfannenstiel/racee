@@ -111,7 +111,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
             }`}
             aria-label="Card view"
           >
-            <LayoutListIcon className="size-4" />
+            <TableIcon className="size-4" />
           </button>
           <button
             onClick={() => setViewMode("table")}
@@ -122,7 +122,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
             }`}
             aria-label="Table view"
           >
-            <TableIcon className="size-4" />
+            <LayoutListIcon className="size-4" />
           </button>
         </div>
       </div>
