@@ -74,10 +74,11 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     total,
     rawTotal,
     propTotal,
-    raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.gridPoints + r.propPoints])),
-    mulliganedRaceIds: getMulliganedRaceIds(raceScores, mulliganCount),
+    raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.weeklyTeamPoints])),
+    mulliganedRaceIds: new Set(),
   }));
 
+  const teamScoringEnabled = (league.teamPositionPoints?.length ?? 0) > 0;
   const currentUserTeamId = teams.find((t) => t.memberIds.includes(user?.id ?? ""))?.id ?? null;
   const currentRowId = tab === "drivers" ? (user?.id ?? null) : currentUserTeamId;
   const rows = tab === "drivers" ? mappedDriverRows : mappedConstructorRows;
@@ -100,15 +101,23 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
         ))}
       </div>
 
-      <SeasonStandingsSection rows={rows} currentRowId={currentRowId} />
-      {stages.length > 0 && (
-        <StageSectionsBlock
-          rows={rows}
-          stages={stages}
-          currentRowId={currentRowId}
-          showStageLabel={!!league.stageCount}
-          onRowPress={(rowId, stageIdx) => setSheet({ rowId, stageIdx })}
-        />
+      {tab === "constructors" && !teamScoringEnabled ? (
+        <p className="text-xs tracking-widest uppercase text-muted-foreground">
+          Team scoring is not set up for this league.
+        </p>
+      ) : (
+        <>
+          <SeasonStandingsSection rows={rows} currentRowId={currentRowId} />
+          {stages.length > 0 && (
+            <StageSectionsBlock
+              rows={rows}
+              stages={stages}
+              currentRowId={currentRowId}
+              showStageLabel={!!league.stageCount}
+              onRowPress={(rowId, stageIdx) => setSheet({ rowId, stageIdx })}
+            />
+          )}
+        </>
       )}
 
       <StageDetailSheet

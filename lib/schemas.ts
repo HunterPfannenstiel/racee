@@ -63,6 +63,7 @@ export const LeagueSchema = z.object({
   stageCount: z.number().int().min(0).optional(),
   propPointValues: PropPointValuesSchema,
   motorsportId: z.string().uuid(),
+  teamPositionPoints: z.array(z.number().min(0)).optional(),
 });
 
 export const RacerSchema = z.object({
@@ -158,6 +159,7 @@ export const RaceScoreEntrySchema = z.object({
   raceId: z.string().uuid(),
   gridPoints: z.number().int().min(0),
   propPoints: z.number().int().min(0),
+  weeklyTeamPoints: z.number().min(0).default(0),
 });
 
 export const UserLeagueScoresSchema = z.object({
@@ -187,6 +189,7 @@ export const ScoreEntrySchema = z.object({
   gridPoints: z.number().int().min(0),
   propPoints: z.number().int().min(0),
   medal: z.enum(["gold", "silver", "bronze"]).nullable(),
+  weeklyTeamPoints: z.number().min(0).default(0),
 });
 
 export const RaceScoresSchema = z.object({

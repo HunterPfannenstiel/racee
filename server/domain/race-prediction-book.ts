@@ -53,6 +53,7 @@ export class ScoreEntry {
     readonly gridPoints: number,
     readonly propPoints: number,
     readonly medal: "gold" | "silver" | "bronze" | null,
+    readonly weeklyTeamPoints: number = 0,
   ) {}
   get total() { return this.gridPoints + this.propPoints; }
 }
@@ -67,6 +68,7 @@ const RaceScoresPropsSchema = z.object({
     gridPoints: z.number().int().min(0),
     propPoints: z.number().int().min(0),
     medal: z.enum(["gold", "silver", "bronze"]).nullable(),
+    weeklyTeamPoints: z.number().min(0).default(0),
   })),
 });
 
@@ -83,7 +85,7 @@ export class RaceScores {
     this.leagueId = parsed.leagueId;
     this.raceTitle = parsed.raceTitle;
     this.raceDate = parsed.raceDate;
-    this.entries = parsed.entries.map(e => new ScoreEntry(e.userId, e.gridPoints, e.propPoints, e.medal));
+    this.entries = parsed.entries.map(e => new ScoreEntry(e.userId, e.gridPoints, e.propPoints, e.medal, e.weeklyTeamPoints));
   }
 
   entryFor(userId: string): ScoreEntry | undefined {
@@ -150,6 +152,7 @@ export class RacePredictionBook {
         propKey,
         league.propPointValues,
       ),
+      weeklyTeamPoints: 0,
     }));
 
     const graded = assignMedals(rawEntries);

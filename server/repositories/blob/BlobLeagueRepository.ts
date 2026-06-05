@@ -23,6 +23,7 @@ const LeaguePersistenceSchema = z.object({
     wrecker: z.number().int().min(0),
   }),
   motorsportId: z.string().uuid().optional(),
+  teamPositionPoints: z.array(z.number().min(0)).optional(),
 });
 type LeaguePersistence = z.infer<typeof LeaguePersistenceSchema>;
 
@@ -40,6 +41,7 @@ function toDomain(raw: LeaguePersistence): League {
     stageCount: raw.stageCount,
     propPointValues: raw.propPointValues,
     motorsportId: raw.motorsportId,
+    teamPositionPoints: raw.teamPositionPoints,
   });
 }
 
@@ -54,6 +56,7 @@ function toPersistence(league: League): LeaguePersistence {
     stageCount: league.stageCount,
     propPointValues: { ...league.propPointValues },
     motorsportId: league.motorsportId,
+    teamPositionPoints: league.teamPositionPoints ? [...league.teamPositionPoints] : undefined,
   };
 }
 

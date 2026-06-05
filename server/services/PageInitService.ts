@@ -21,6 +21,7 @@ export type ViewInitDto = {
     stageCount?: number;
     propPointValues: PropPointValues;
     placementPoints: number[];
+    teamPositionPoints?: number[];
   };
   races: Array<{
     id: string;
@@ -49,10 +50,9 @@ export type ViewInitDto = {
   constructorRows: Array<{
     teamId: string;
     total: number;
-    mulliganed: number;
     rawTotal: number;
     propTotal: number;
-    raceScores: Array<{ raceId: string; gridPoints: number; propPoints: number }>;
+    raceScores: Array<{ raceId: string; gridPoints: number; propPoints: number; weeklyTeamPoints: number }>;
   }>;
   gradedRaceIds: string[];
   stages: string[][];
@@ -141,7 +141,7 @@ export class PageInitService {
     const driverRows = standingsData
       ? standingsData.rankIndividual(mulliganCount).map(({ userId, total, mulliganed }) => {
           const raceScores = standingsData.individual.find(u => u.userId === userId)?.raceScores ?? [];
-          const scores = raceScores as Array<{ raceId: string; gridPoints: number; propPoints: number }>;
+          const scores = raceScores as Array<{ raceId: string; gridPoints: number; propPoints: number; weeklyTeamPoints: number }>;
           return {
             userId,
             total,
@@ -154,19 +154,21 @@ export class PageInitService {
       : [];
 
     const constructorRows = standingsData
-      ? standingsData.rankTeams(mulliganCount).map(({ teamId, total, mulliganed }) => {
+      ? standingsData.rankTeams().map(({ teamId, total }) => {
           const rawScores = standingsData.teams.find(t => t.teamId === teamId)?.raceScores ?? [];
-          // Aggregate per-member entries into one combined score per race
-          const byRace = new Map<string, { gridPoints: number; propPoints: number }>();
+          const byRace = new Map<string, { gridPoints: number; propPoints: number; weeklyTeamPoints: number }>();
           for (const s of rawScores) {
-            const prev = byRace.get(s.raceId) ?? { gridPoints: 0, propPoints: 0 };
-            byRace.set(s.raceId, { gridPoints: prev.gridPoints + s.gridPoints, propPoints: prev.propPoints + s.propPoints });
+            const prev = byRace.get(s.raceId) ?? { gridPoints: 0, propPoints: 0, weeklyTeamPoints: 0 };
+            byRace.set(s.raceId, {
+              gridPoints: prev.gridPoints + s.gridPoints,
+              propPoints: prev.propPoints + s.propPoints,
+              weeklyTeamPoints: prev.weeklyTeamPoints + s.weeklyTeamPoints,
+            });
           }
           const scores = [...byRace.entries()].map(([raceId, pts]) => ({ raceId, ...pts }));
           return {
             teamId,
             total,
-            mulliganed,
             rawTotal: scores.reduce((s, r) => s + r.gridPoints, 0),
             propTotal: scores.reduce((s, r) => s + r.propPoints, 0),
             raceScores: scores,
@@ -183,6 +185,7 @@ export class PageInitService {
         stageCount: league.stageCount,
         propPointValues: league.propPointValues,
         placementPoints: [...league.placementPoints],
+        teamPositionPoints: league.teamPositionPoints ? [...league.teamPositionPoints] : undefined,
       },
       races: sortedRaces.map(r => ({
         id: r.raceId,

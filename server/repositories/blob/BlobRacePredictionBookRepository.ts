@@ -35,6 +35,7 @@ const ScoresEntryPersistenceSchema = z.object({
   gridPoints: z.number().int().min(0),
   propPoints: z.number().int().min(0),
   medal: z.enum(["gold", "silver", "bronze"]).nullable(),
+  weeklyTeamPoints: z.number().min(0).default(0),
 });
 
 const ScoresPersistenceSchema = z.object({
@@ -83,6 +84,7 @@ function scoresToDomain(raw: ScoresPersistence): RaceScores {
       gridPoints: e.gridPoints,
       propPoints: e.propPoints,
       medal: e.medal,
+      weeklyTeamPoints: e.weeklyTeamPoints,
     })),
   });
 }
@@ -119,6 +121,7 @@ function scoresToPersistence(scores: RaceScores): ScoresPersistence {
       gridPoints: e.gridPoints,
       propPoints: e.propPoints,
       medal: e.medal,
+      weeklyTeamPoints: e.weeklyTeamPoints,
     })),
   };
 }

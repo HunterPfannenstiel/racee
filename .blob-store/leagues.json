@@ -20,6 +20,20 @@
       "underAchiever": 5,
       "wrecker": 5
     },
-    "motorsportId": "c6a58052-5cb5-47c8-b0db-ad0c6678a394"
+    "motorsportId": "c6a58052-5cb5-47c8-b0db-ad0c6678a394",
+    "teamPositionPoints": [
+      50,
+      23,
+      9,
+      10,
+      20,
+      30,
+      40,
+      50,
+      60,
+      70,
+      80,
+      90
+    ]
   }
 ]

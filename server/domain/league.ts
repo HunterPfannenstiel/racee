@@ -21,6 +21,7 @@ const LeaguePropsSchema = z.object({
   stageCount: z.number().int().min(0).optional(),
   propPointValues: PropPointValuesSchema,
   motorsportId: z.string().uuid(),
+  teamPositionPoints: z.array(z.number().min(0)).optional(),
 });
 
 
@@ -42,6 +43,7 @@ export class League {
   get stageCount() { return this.props.stageCount; }
   get propPointValues(): PropPointValues { return this.props.propPointValues; }
   get motorsportId() { return this.props.motorsportId; }
+  get teamPositionPoints(): readonly number[] | undefined { return this.props.teamPositionPoints; }
 
   rename(name: string): void {
     this.props = LeaguePropsSchema.parse({ ...this.props, name });

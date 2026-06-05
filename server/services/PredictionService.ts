@@ -5,8 +5,9 @@ import type {
   ILeagueStandingsRepository,
   ITeamRepository,
 } from "@/server/repositories/interfaces";
-import { RacePredictionBook } from "@/server/domain/race-prediction-book";
+import { RacePredictionBook, RaceScores } from "@/server/domain/race-prediction-book";
 import type { PropKey, PropName } from "@/server/domain/race-prediction-book";
+import { computeWeeklyTeamPoints } from "@/lib/scoring";
 import { LeagueStandings } from "@/server/domain/league-standings";
 import { NotFoundError } from "@/server/domain/errors";
 import type { Team } from "@/server/domain/team";
@@ -88,7 +89,7 @@ export class PredictionService {
     ]);
 
     const activeBook = book ?? RacePredictionBook.empty(league.leagueId, race.raceId);
-    const raceScores = activeBook.grade(league, race);
+    const raceScores = applyWeeklyTeamPoints(activeBook.grade(league, race), league.teamPositionPoints);
 
     const teamMembership = buildTeamMembership(teams);
     const activeTeamIds = new Set(teams.map(t => t.teamId));
@@ -108,4 +109,25 @@ function buildTeamMembership(teams: Team[]): Map<string, string> {
     for (const userId of team.memberIds) map.set(userId, team.teamId);
   }
   return map;
+}
+
+function applyWeeklyTeamPoints(scores: RaceScores, positionPoints: readonly number[] | undefined): RaceScores {
+  if (!positionPoints || positionPoints.length === 0) return scores;
+
+  const submitted = scores.entries.map(e => ({ userId: e.userId, total: e.total }));
+  const weeklyMap = computeWeeklyTeamPoints(submitted, positionPoints as number[]);
+
+  return new RaceScores({
+    raceId: scores.raceId,
+    leagueId: scores.leagueId,
+    raceTitle: scores.raceTitle,
+    raceDate: scores.raceDate,
+    entries: scores.entries.map(e => ({
+      userId: e.userId,
+      gridPoints: e.gridPoints,
+      propPoints: e.propPoints,
+      medal: e.medal,
+      weeklyTeamPoints: weeklyMap.get(e.userId) ?? 0,
+    })),
+  });
 }

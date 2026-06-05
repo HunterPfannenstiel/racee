@@ -5,6 +5,7 @@ const UserRaceScoreSchema = z.object({
   raceId: z.string().uuid(),
   gridPoints: z.number().int().min(0),
   propPoints: z.number().int().min(0),
+  weeklyTeamPoints: z.number().min(0).default(0),
 });
 export type UserRaceScore = z.infer<typeof UserRaceScoreSchema>;
 
@@ -65,7 +66,7 @@ export class LeagueStandings {
     }
 
     for (const entry of raceScores.entries) {
-      const newScore: UserRaceScore = { raceId, gridPoints: entry.gridPoints, propPoints: entry.propPoints };
+      const newScore: UserRaceScore = { raceId, gridPoints: entry.gridPoints, propPoints: entry.propPoints, weeklyTeamPoints: entry.weeklyTeamPoints };
       const existing = this._individual.get(entry.userId);
       this._individual.set(
         entry.userId,
@@ -91,9 +92,12 @@ export class LeagueStandings {
       .sort((a, b) => b.total - a.total);
   }
 
-  rankTeams(mulliganCount: number): Array<{ teamId: string; total: number; mulliganed: number }> {
+  rankTeams(): Array<{ teamId: string; total: number }> {
     return Array.from(this._teams.values())
-      .map(t => ({ teamId: t.teamId, ...applyMulligans(t.raceScores as UserRaceScore[], mulliganCount) }))
+      .map(t => ({
+        teamId: t.teamId,
+        total: (t.raceScores as UserRaceScore[]).reduce((sum, s) => sum + s.weeklyTeamPoints, 0),
+      }))
       .sort((a, b) => b.total - a.total);
   }
 }

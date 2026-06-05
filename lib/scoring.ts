@@ -77,6 +77,28 @@ export function computeTeamRaceScores(entries: ScoreEntry[], teams: Team[]) {
     });
 }
 
+export function computeWeeklyTeamPoints(
+  entries: Array<{ userId: string; total: number }>,
+  positionPoints: number[],
+): Map<string, number> {
+  const sorted = [...entries].sort((a, b) => b.total - a.total);
+  const result = new Map<string, number>();
+
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i;
+    while (j < sorted.length && sorted[j].total === sorted[i].total) j++;
+
+    const pool = positionPoints.slice(i, j).reduce((sum, v) => sum + v, 0);
+    const share = pool / (j - i);
+    for (let k = i; k < j; k++) result.set(sorted[k].userId, share);
+
+    i = j;
+  }
+
+  return result;
+}
+
 export function computeSeasonStandings(individual: UserLeagueScores[], mulliganCount: number) {
   return individual
     .map(({ userId, raceScores }) => ({ userId, ...applyMulligans(raceScores, mulliganCount) }))

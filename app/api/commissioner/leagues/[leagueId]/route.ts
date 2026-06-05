@@ -10,7 +10,7 @@ import type { League } from "@/server/domain/league";
 const svc = new LeagueService(new BlobLeagueRepository(), new BlobTeamRepository(), new PrismaUserRepository());
 
 function ser(l: League) {
-  return { id: l.leagueId, commissionerId: l.commissionerId, name: l.name, placementPoints: [...l.placementPoints], mulliganCount: l.mulliganCount, scoringDepth: l.scoringDepth, stageCount: l.stageCount, propPointValues: { ...l.propPointValues } };
+  return { id: l.leagueId, commissionerId: l.commissionerId, name: l.name, placementPoints: [...l.placementPoints], mulliganCount: l.mulliganCount, scoringDepth: l.scoringDepth, stageCount: l.stageCount, propPointValues: { ...l.propPointValues }, teamPositionPoints: l.teamPositionPoints ? [...l.teamPositionPoints] : undefined };
 }
 
 export async function GET(

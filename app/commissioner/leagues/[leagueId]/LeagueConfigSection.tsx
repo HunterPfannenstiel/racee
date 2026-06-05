@@ -8,6 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { PropPointValuesEditor } from "@/app/admin/leagues/PropPointValuesEditor";
 import { PlacementPointsEditor } from "@/app/admin/leagues/PlacementPointsEditor";
+import { TeamPositionPointsEditor } from "@/app/admin/leagues/TeamPositionPointsEditor";
 
 type Props = {
   leagueId: string;
@@ -23,12 +24,13 @@ export function LeagueConfigSection({ leagueId, league, onLeagueChange, onError 
   const [stageCount, setStageCount] = useState(league.stageCount ?? 0);
   const [scoringDepth, setScoringDepth] = useState<number | undefined>(league.scoringDepth);
   const [propPointValues, setPropPointValues] = useState<PropPointValues>(league.propPointValues);
+  const [teamPositionPoints, setTeamPositionPoints] = useState<number[] | undefined>(league.teamPositionPoints);
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
     const trimmed = name.trim();
     if (!trimmed) return;
-    const patch = { name: trimmed, placementPoints, mulliganCount, stageCount, scoringDepth, propPointValues };
+    const patch = { name: trimmed, placementPoints, mulliganCount, stageCount, scoringDepth, propPointValues, teamPositionPoints };
     setSaving(true);
     try {
       const res = await fetch(`/api/commissioner/leagues/${leagueId}`, {
@@ -62,37 +64,44 @@ export function LeagueConfigSection({ leagueId, league, onLeagueChange, onError 
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Mulligans</span>
           <Input
-            type="number"
-            min={0}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="w-16 text-right"
             value={mulliganCount}
-            onChange={(e) => setMulliganCount(Math.max(0, parseInt(e.target.value) || 0))}
+            onChange={(e) => setMulliganCount(Math.max(0, parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0))}
             disabled={saving}
           />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Stages</span>
           <Input
-            type="number"
-            min={0}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="w-16 text-right"
             value={stageCount}
-            onChange={(e) => setStageCount(Math.max(0, parseInt(e.target.value) || 0))}
+            onChange={(e) => setStageCount(Math.max(0, parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0))}
             disabled={saving}
           />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Scoring depth</span>
           <Input
-            type="number"
-            min={1}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="w-16 text-right"
             value={scoringDepth ?? ""}
-            onChange={(e) => setScoringDepth(e.target.value === "" ? undefined : Math.max(1, parseInt(e.target.value)))}
+            onChange={(e) => {
+              const v = e.target.value.replace(/[^0-9]/g, "");
+              setScoringDepth(v === "" ? undefined : Math.max(1, parseInt(v)));
+            }}
             disabled={saving}
           />
         </div>
         <PropPointValuesEditor values={propPointValues} onChange={setPropPointValues} disabled={saving} />
+        <TeamPositionPointsEditor value={teamPositionPoints} onChange={setTeamPositionPoints} disabled={saving} />
         <Button variant="outline" onClick={handleSave} disabled={saving || !name.trim()}>
           {saving && <Spinner className="w-3 h-3 mr-1" />}
           Save
