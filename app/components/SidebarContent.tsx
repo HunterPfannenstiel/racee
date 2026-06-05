@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const BASE_NAV = [
   { href: "/predict",       label: "Predict",       Icon: Flag },
-  { href: "/view",          label: "Standings",      Icon: BarChart2 },
+  { href: "/standings",      label: "Standings",      Icon: BarChart2 },
   { href: "/teams",         label: "Teams",          Icon: Users },
   { href: "/commissioner",  label: "Commissioner",   Icon: Gavel },
 ] as const;

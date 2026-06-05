@@ -18,7 +18,7 @@ const sidebarKey = (userId: string) => `racee_sidebar_collapsed:${userId}`;
 
 const BASE_NAV = [
   { href: "/predict",  label: "Predict",   Icon: Flag },
-  { href: "/view",     label: "Standings",  Icon: BarChart2 },
+  { href: "/standings", label: "Standings",  Icon: BarChart2 },
   { href: "/teams",    label: "Teams",      Icon: Users },
 ] as const;
 
