@@ -31,7 +31,7 @@ type StandingsGridProps = {
 
 export function StandingsGrid({ league, races, usersById, teams, driverRows, constructorRows, stages }: StandingsGridProps) {
   const [tab, setTab] = useState<Tab>("drivers");
-  const [viewMode, setViewMode] = useState<ViewMode>("cards");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [sheet, setSheet] = useState<{ rowId: string; stageIdx: number } | null>(null);
   const { user } = useUser();
 
@@ -103,17 +103,6 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
 
         <div className="ml-auto flex gap-1">
           <button
-            onClick={() => setViewMode("cards")}
-            className={`p-2.5 rounded-md transition-colors ${
-              viewMode === "cards"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-            aria-label="Card view"
-          >
-            <TableIcon className="size-4" />
-          </button>
-          <button
             onClick={() => setViewMode("table")}
             className={`p-2.5 rounded-md transition-colors ${
               viewMode === "table"
@@ -123,6 +112,17 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
             aria-label="Table view"
           >
             <LayoutListIcon className="size-4" />
+          </button>
+          <button
+            onClick={() => setViewMode("cards")}
+            className={`p-2.5 rounded-md transition-colors ${
+              viewMode === "cards"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            aria-label="Card view"
+          >
+            <TableIcon className="size-4" />
           </button>
         </div>
       </div>
