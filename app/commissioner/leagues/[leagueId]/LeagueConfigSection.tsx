@@ -4,6 +4,7 @@ import { useState } from "react";
 import { type League, type PropPointValues, type PlacementPoints } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { PropPointValuesEditor } from "@/app/admin/leagues/PropPointValuesEditor";
@@ -63,42 +64,15 @@ export function LeagueConfigSection({ leagueId, league, onLeagueChange, onError 
         <PlacementPointsEditor value={placementPoints} onChange={setPlacementPoints} disabled={saving} />
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Mulligans</span>
-          <Input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            className="w-16 text-right"
-            value={mulliganCount}
-            onChange={(e) => setMulliganCount(Math.max(0, parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0))}
-            disabled={saving}
-          />
+          <NumberInput value={mulliganCount} onChange={setMulliganCount} disabled={saving} />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Stages</span>
-          <Input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            className="w-16 text-right"
-            value={stageCount}
-            onChange={(e) => setStageCount(Math.max(0, parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0))}
-            disabled={saving}
-          />
+          <NumberInput value={stageCount} onChange={setStageCount} disabled={saving} />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Scoring depth</span>
-          <Input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            className="w-16 text-right"
-            value={scoringDepth ?? ""}
-            onChange={(e) => {
-              const v = e.target.value.replace(/[^0-9]/g, "");
-              setScoringDepth(v === "" ? undefined : Math.max(1, parseInt(v)));
-            }}
-            disabled={saving}
-          />
+          <NumberInput value={scoringDepth} onChange={setScoringDepth} min={1} nullable disabled={saving} />
         </div>
         <PropPointValuesEditor values={propPointValues} onChange={setPropPointValues} disabled={saving} />
         <TeamPositionPointsEditor value={teamPositionPoints} onChange={setTeamPositionPoints} disabled={saving} />

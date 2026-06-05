@@ -1,6 +1,6 @@
 [
   {
-    "id": "a814544c-9bbc-421f-943d-722424c51992",
+    "id": "e482f27d-eb44-4bc4-bb98-5045c8ec0a12",
     "commissionerId": "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J",
     "name": "Shrek's F1 2026",
     "placementPoints": [
@@ -10,7 +10,7 @@
     ],
     "mulliganCount": 2,
     "scoringDepth": 17,
-    "stageCount": 6,
+    "stageCount": 4,
     "propPointValues": {
       "driverOfDay": 5,
       "lapsLed": 5,
@@ -20,20 +20,14 @@
       "underAchiever": 5,
       "wrecker": 5
     },
-    "motorsportId": "c6a58052-5cb5-47c8-b0db-ad0c6678a394",
     "teamPositionPoints": [
-      50,
-      23,
-      9,
-      10,
-      20,
-      30,
-      40,
-      50,
-      60,
-      70,
-      80,
-      90
-    ]
+      6,
+      5,
+      4,
+      3,
+      0,
+      0
+    ],
+    "motorsportId": "0e093852-8d85-46c4-8a19-3104048c0203"
   }
 ]

@@ -5,6 +5,7 @@ import { HelpCircle } from "lucide-react";
 import { type League, type PropPointValues, type PlacementPoints } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -182,25 +183,11 @@ export function LeaguesSection({ leagues, motorsportId, onLeaguesChange, onError
               <PlacementPointsEditor value={newPlacementPoints} onChange={setNewPlacementPoints} disabled={busy} />
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Mulligans</span>
-                <Input
-                  type="number"
-                  min={0}
-                  className="w-16 text-right"
-                  value={newMulliganCount}
-                  onChange={(e) => setNewMulliganCount(Math.max(0, parseInt(e.target.value) || 0))}
-                  disabled={busy}
-                />
+                <NumberInput value={newMulliganCount} onChange={setNewMulliganCount} disabled={busy} />
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Stages</span>
-                <Input
-                  type="number"
-                  min={0}
-                  className="w-16 text-right"
-                  value={newStageCount}
-                  onChange={(e) => setNewStageCount(Math.max(0, parseInt(e.target.value) || 0))}
-                  disabled={busy}
-                />
+                <NumberInput value={newStageCount} onChange={setNewStageCount} disabled={busy} />
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1 flex items-center gap-1">
@@ -214,14 +201,7 @@ export function LeaguesSection({ leagues, motorsportId, onLeaguesChange, onError
                     <TooltipContent>Leave blank to score all finishing positions</TooltipContent>
                   </Tooltip>
                 </span>
-                <Input
-                  type="number"
-                  min={1}
-                  className="w-16 text-right"
-                  value={newScoringDepth ?? ""}
-                  onChange={(e) => setNewScoringDepth(e.target.value === "" ? undefined : Math.max(1, parseInt(e.target.value)))}
-                  disabled={busy}
-                />
+                <NumberInput value={newScoringDepth} onChange={setNewScoringDepth} min={1} nullable disabled={busy} />
               </div>
               <PropPointValuesEditor values={newPropPointValues} onChange={setNewPropPointValues} disabled={busy} />
               <div className="flex gap-2">
@@ -260,25 +240,11 @@ export function LeaguesSection({ leagues, motorsportId, onLeaguesChange, onError
               <PlacementPointsEditor value={editPlacementPoints} onChange={setEditPlacementPoints} disabled={busy} />
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Mulligans</span>
-                <Input
-                  type="number"
-                  min={0}
-                  className="w-16 text-right"
-                  value={editMulliganCount}
-                  onChange={(e) => setEditMulliganCount(Math.max(0, parseInt(e.target.value) || 0))}
-                  disabled={busy}
-                />
+                <NumberInput value={editMulliganCount} onChange={setEditMulliganCount} disabled={busy} />
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1">Stages</span>
-                <Input
-                  type="number"
-                  min={0}
-                  className="w-16 text-right"
-                  value={editStageCount}
-                  onChange={(e) => setEditStageCount(Math.max(0, parseInt(e.target.value) || 0))}
-                  disabled={busy}
-                />
+                <NumberInput value={editStageCount} onChange={setEditStageCount} disabled={busy} />
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex-1 flex items-center gap-1">
@@ -292,14 +258,7 @@ export function LeaguesSection({ leagues, motorsportId, onLeaguesChange, onError
                     <TooltipContent>Leave blank to score all finishing positions</TooltipContent>
                   </Tooltip>
                 </span>
-                <Input
-                  type="number"
-                  min={1}
-                  className="w-16 text-right"
-                  value={editScoringDepth ?? ""}
-                  onChange={(e) => setEditScoringDepth(e.target.value === "" ? undefined : Math.max(1, parseInt(e.target.value)))}
-                  disabled={busy}
-                />
+                <NumberInput value={editScoringDepth} onChange={setEditScoringDepth} min={1} nullable disabled={busy} />
               </div>
               <PropPointValuesEditor values={editPropPointValues} onChange={setEditPropPointValues} disabled={busy} />
               <div className="flex gap-2">

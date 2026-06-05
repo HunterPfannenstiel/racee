@@ -2,7 +2,7 @@
 
 import { type PlacementPoints } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 
 type Props = {
   value: PlacementPoints;
@@ -41,12 +41,9 @@ export function PlacementPointsEditor({ value, onChange, disabled }: Props) {
           {value.map((pts, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="text-sm flex-1">{label(i)}</span>
-              <Input
-                type="number"
-                min={0}
-                className="w-16 text-right"
+              <NumberInput
                 value={pts}
-                onChange={(e) => updateAt(i, Math.max(0, parseInt(e.target.value) || 0))}
+                onChange={(v) => updateAt(i, v)}
                 disabled={disabled}
               />
             </div>

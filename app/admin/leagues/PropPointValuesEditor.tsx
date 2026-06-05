@@ -2,7 +2,7 @@
 
 import { type PropPointValues, type PropName } from "@/lib/schemas";
 import { PROP_META } from "@/lib/props";
-import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 
 type Props = {
   values: PropPointValues;
@@ -20,14 +20,9 @@ export function PropPointValuesEditor({ values, onChange, disabled }: Props) {
         {(Object.keys(PROP_META) as PropName[]).map((prop) => (
           <div key={prop} className="flex items-center gap-2">
             <label className="text-sm flex-1">{PROP_META[prop].label}</label>
-            <Input
-              type="number"
-              min={0}
-              className="w-16 text-right"
+            <NumberInput
               value={values[prop]}
-              onChange={(e) =>
-                onChange({ ...values, [prop]: Math.max(0, parseInt(e.target.value) || 0) })
-              }
+              onChange={(v) => onChange({ ...values, [prop]: v })}
               disabled={disabled}
             />
           </div>

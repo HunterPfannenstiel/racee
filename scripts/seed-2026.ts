@@ -86,6 +86,8 @@ const allRacerIds = racers.map(r => r.id);
 const leagueId = randomUUID();
 const PLACEMENT_POINTS = [10, 7, 3];
 const MULLIGAN_COUNT = 2;
+// Weekly team points by finish rank — bottom 2 always earn 0
+const TEAM_POSITION_POINTS = [6, 5, 4, 3, 0, 0];
 const PROP_POINT_VALUES = {
   driverOfDay: 5,
   lapsLed: 5,
@@ -467,15 +469,17 @@ const PREDICTIONS: Record<RaceKey, Record<string, UserPrediction>> = {
                underAchiever: R["Charles Leclerc"], wrecker: R["Pierre Gasly"] },
     },
     [donkey.id]: {
-      order: [R["Lando Norris"], R["Kimi Antonelli"], R["Oscar Piastri"], R["George Russell"],
-              R["Lewis Hamilton"], R["Max Verstappen"], R["Charles Leclerc"], R["Franco Colapinto"],
-              R["Carlos Sainz Jr."], R["Alex Albon"], R["Oliver Bearman"], R["Esteban Ocon"],
-              R["Gabriel Bortoleto"], R["Arvid Lindblad"], R["Fernando Alonso"], R["Sergio Perez"],
-              R["Lance Stroll"], R["Nico Hulkenberg"], R["Valtteri Bottas"], R["Liam Lawson"],
+      // Identical to Farquaad — engineers a 2-way cross-team tie at weekly positions 2-3,
+      // demonstrating the pool-split mechanic: both get (5+4)/2 = 4.5 team points
+      order: [R["Kimi Antonelli"], R["Oscar Piastri"], R["Lando Norris"], R["George Russell"],
+              R["Max Verstappen"], R["Lewis Hamilton"], R["Franco Colapinto"], R["Charles Leclerc"],
+              R["Carlos Sainz Jr."], R["Alex Albon"], R["Oliver Bearman"], R["Gabriel Bortoleto"],
+              R["Esteban Ocon"], R["Arvid Lindblad"], R["Fernando Alonso"], R["Sergio Perez"],
+              R["Lance Stroll"], R["Valtteri Bottas"], R["Nico Hulkenberg"], R["Liam Lawson"],
               R["Pierre Gasly"], R["Isack Hadjar"]],
-      props: { lapsLed: R["Lando Norris"], fastestLap: R["Lando Norris"], driverOfDay: R["Alex Albon"],
-               fastestPitStop: "McLaren", overAchiever: R["Carlos Sainz Jr."],
-               underAchiever: R["Charles Leclerc"], wrecker: R["Isack Hadjar"] },
+      props: { lapsLed: R["Kimi Antonelli"], fastestLap: R["Max Verstappen"], driverOfDay: R["Franco Colapinto"],
+               fastestPitStop: "McLaren", overAchiever: R["Franco Colapinto"],
+               underAchiever: R["Charles Leclerc"], wrecker: R["Pierre Gasly"] },
     },
     [puss.id]: {
       order: [R["Kimi Antonelli"], R["Lando Norris"], R["George Russell"], R["Oscar Piastri"],
@@ -523,6 +527,24 @@ function computePropPoints(picks: Record<string, string>, propKey: Record<string
     if (winners.includes(picks[prop])) total += propPointValues[prop] ?? 0;
   }
   return total;
+}
+
+function computeWeeklyTeamPoints(
+  entries: { userId: string; total: number }[],
+  positionPoints: number[],
+): Map<string, number> {
+  const sorted = [...entries].sort((a, b) => b.total - a.total);
+  const result = new Map<string, number>();
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i;
+    while (j < sorted.length && sorted[j].total === sorted[i].total) j++;
+    const pool = positionPoints.slice(i, j).reduce((sum, v) => sum + v, 0);
+    const share = pool / (j - i);
+    for (let k = i; k < j; k++) result.set(sorted[k].userId, share);
+    i = j;
+  }
+  return result;
 }
 
 function assignMedals(entries: { userId: string; gridPoints: number; propPoints: number }[]) {
@@ -620,6 +642,7 @@ await blob.write("leagues.json", [{
   scoringDepth: 17,
   stageCount: 4,
   propPointValues: PROP_POINT_VALUES,
+  teamPositionPoints: TEAM_POSITION_POINTS,
   motorsportId,
 }]);
 console.log(`  ✓ Shrek's F1 2026 (${leagueId})`);
@@ -635,8 +658,8 @@ for (const team of leagueTeams) {
 
 // 7. Predictions + scores
 console.log("Seeding predictions and scores...");
-const standingsIndividual = new Map<string, { raceId: string; gridPoints: number; propPoints: number }[]>();
-const standingsTeams = new Map<string, { raceId: string; gridPoints: number; propPoints: number }[]>();
+const standingsIndividual = new Map<string, { raceId: string; gridPoints: number; propPoints: number; weeklyTeamPoints: number }[]>();
+const standingsTeams = new Map<string, { raceId: string; gridPoints: number; propPoints: number; weeklyTeamPoints: number }[]>();
 const gradedRaceIds: string[] = [];
 
 for (const key of GRADED_RACE_KEYS) {
@@ -674,24 +697,44 @@ for (const key of GRADED_RACE_KEYS) {
   }));
   const gradedEntries = assignMedals(rawEntries);
 
+  // Compute weekly team points — tied users split the points pool for their positions
+  const weeklyMap = computeWeeklyTeamPoints(
+    gradedEntries.map(e => ({ userId: e.userId, total: e.gridPoints + e.propPoints })),
+    TEAM_POSITION_POINTS,
+  );
+  const entriesWithTeamPoints = gradedEntries.map(e => ({
+    ...e,
+    weeklyTeamPoints: weeklyMap.get(e.userId) ?? 0,
+  }));
+
   await blob.write(`leagues/${leagueId}/races/${race.id}/scores.json`, {
     raceId: race.id,
     leagueId,
     raceTitle: race.title,
     raceDate: race.date,
-    entries: gradedEntries,
+    entries: entriesWithTeamPoints,
   });
 
   // Accumulate standings
   gradedRaceIds.push(race.id);
-  for (const entry of gradedEntries) {
+  for (const entry of entriesWithTeamPoints) {
     const existing = standingsIndividual.get(entry.userId) ?? [];
-    standingsIndividual.set(entry.userId, [...existing, { raceId: race.id, gridPoints: entry.gridPoints, propPoints: entry.propPoints }]);
+    standingsIndividual.set(entry.userId, [...existing, {
+      raceId: race.id,
+      gridPoints: entry.gridPoints,
+      propPoints: entry.propPoints,
+      weeklyTeamPoints: entry.weeklyTeamPoints,
+    }]);
 
     const teamId = teamMembership.get(entry.userId);
     if (teamId && activeTeamIds.has(teamId)) {
       const existingTeam = standingsTeams.get(teamId) ?? [];
-      standingsTeams.set(teamId, [...existingTeam, { raceId: race.id, gridPoints: entry.gridPoints, propPoints: entry.propPoints }]);
+      standingsTeams.set(teamId, [...existingTeam, {
+        raceId: race.id,
+        gridPoints: entry.gridPoints,
+        propPoints: entry.propPoints,
+        weeklyTeamPoints: entry.weeklyTeamPoints,
+      }]);
     }
   }
 
