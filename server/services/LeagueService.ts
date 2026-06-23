@@ -33,7 +33,7 @@ export class LeagueService {
 
   async listLeaguesByCommissioner(userId: string): Promise<League[]> {
     const all = await this.leagues.findAll();
-    return all.filter((l) => l.commissionerId === userId);
+    return all.filter((l) => l.canManage(userId));
   }
 
   async getLeague(leagueId: string): Promise<League> {
@@ -54,6 +54,18 @@ export class LeagueService {
     if (patch.name !== undefined) league.rename(patch.name);
     const { name: _n, ...scoringPatch } = patch;
     if (Object.keys(scoringPatch).length > 0) league.updateScoringConfig(scoringPatch);
+    await this.leagues.save(league);
+  }
+
+  async promoteToCoCommissioner(leagueId: string, userId: string): Promise<void> {
+    const league = await this.getLeague(leagueId);
+    league.promoteToCoCommissioner(userId);
+    await this.leagues.save(league);
+  }
+
+  async demoteCoCommissioner(leagueId: string, userId: string): Promise<void> {
+    const league = await this.getLeague(leagueId);
+    league.demoteCoCommissioner(userId);
     await this.leagues.save(league);
   }
 

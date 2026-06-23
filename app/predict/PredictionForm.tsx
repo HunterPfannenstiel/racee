@@ -27,6 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import { CheckIcon, LockIcon } from "lucide-react";
 import { PropPicker } from "./PropPicker";
 import { SortableRacerRow } from "@/components/SortableRacerRow";
+import { SubmissionAttribution } from "./teammate-lineup/SubmissionAttribution";
 
 type PredictRace = {
   id: string;
@@ -45,8 +46,13 @@ type Props = {
   existingPrediction: string[] | null;
   existingSubmittedAt: string | null;
   existingPropPicks: Partial<Record<PropName, string>>;
+  existingSubmittedByName?: string | null;
   keyIsSet: boolean;
   onPredictionSave: (racerIds: string[], submittedAt: string, propPicks: Partial<Record<PropName, string>>) => void;
+  isProxy?: boolean;
+  targetUserId?: string;
+  targetUserName?: string;
+  teamColor?: string;
 };
 
 function formatDate(dateStr: string) {
@@ -74,7 +80,7 @@ function formatCountdown(ms: number): string {
 
 const PROP_NAMES_ALL = Object.keys(PROP_META) as PropName[];
 
-export function PredictionForm({ race, leagueId, racersById, existingPrediction, existingSubmittedAt, existingPropPicks, keyIsSet, onPredictionSave }: Props) {
+export function PredictionForm({ race, leagueId, racersById, existingPrediction, existingSubmittedAt, existingPropPicks, existingSubmittedByName, keyIsSet, onPredictionSave, isProxy, targetUserId, targetUserName, teamColor }: Props) {
   const { user } = useUser();
   const toast = useToast();
   const [orderedRacerIds, setOrderedRacerIds] = useState<string[]>(
@@ -82,6 +88,7 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
   );
   const [propPicks, setPropPicks] = useState<Partial<Record<PropName, string>>>(existingPropPicks);
   const [submittedAt, setSubmittedAt] = useState<string | null>(existingSubmittedAt);
+  const [submittedByName, setSubmittedByName] = useState<string | null>(existingSubmittedByName ?? null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isLocked, setIsLocked] = useState(() =>
@@ -134,11 +141,12 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
       const res = await fetch("/api/predict/prediction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leagueId, raceId: race.id, userId: user.id, racerIds: orderedRacerIds, propPicks }),
+        body: JSON.stringify({ leagueId, raceId: race.id, userId: targetUserId ?? user.id, racerIds: orderedRacerIds, propPicks }),
       });
       if (!res.ok) { toast.error("Failed to save prediction. Please try again."); return; }
       const now = new Date().toISOString();
       setSubmittedAt(now);
+      if (isProxy) setSubmittedByName("You");
       onPredictionSave(orderedRacerIds, now, propPicks);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -174,6 +182,9 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
             </span>
             {submittedAt && (
               <span className="text-[10px] text-muted-foreground">{formatTimestamp(submittedAt)}</span>
+            )}
+            {submittedByName && (
+              <SubmissionAttribution submittedByName={submittedByName} teamColor={teamColor} />
             )}
           </div>
         ) : (
@@ -221,9 +232,19 @@ export function PredictionForm({ race, leagueId, racersById, existingPrediction,
             Pick all props to submit
           </p>
         )}
-        <Button onClick={savePrediction} disabled={saving || saved || isLocked || !allPropsFilled} className="w-full h-12 uppercase tracking-[0.06em] font-semibold">
+        <Button
+          onClick={savePrediction}
+          disabled={saving || saved || isLocked || !allPropsFilled}
+          className="w-full h-12 uppercase tracking-[0.06em] font-semibold"
+          variant={isProxy ? "outline" : "default"}
+          style={
+            isProxy && teamColor
+              ? { borderColor: teamColor, color: teamColor }
+              : undefined
+          }
+        >
           {saving && <Spinner className="w-3 h-3 mr-1" />}
-          {saved ? <><CheckIcon className="w-3 h-3 mr-1" />Submitted</> : "Submit Predictions"}
+          {saved ? <><CheckIcon className="w-3 h-3 mr-1" />Submitted</> : isProxy && targetUserName ? `Submit for ${targetUserName}` : "Submit Predictions"}
         </Button>
       </div>
     </section>

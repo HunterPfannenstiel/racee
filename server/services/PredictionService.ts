@@ -30,12 +30,13 @@ export class PredictionService {
     racerIds: string[],
     propPicks: Partial<Record<PropName, string>>,
     now: string,
+    submittedBy: string | null = null,
   ): Promise<void> {
     // 1. LOAD
     const book = (await this.books.findByRace(leagueId, raceId))
       ?? RacePredictionBook.empty(leagueId, raceId);
     // 2. EXECUTE
-    book.submitPrediction(userId, racerIds, propPicks, now);
+    book.submitPrediction(userId, racerIds, propPicks, now, submittedBy);
     // 3. PERSIST
     await this.books.save(book);
   }

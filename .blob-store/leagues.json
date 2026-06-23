@@ -2,6 +2,9 @@
   {
     "id": "e482f27d-eb44-4bc4-bb98-5045c8ec0a12",
     "commissionerId": "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J",
+    "coCommissionerIds": [
+      "byekcG2HEnl2di6eZYzxJEfsFF9ZYsKr"
+    ],
     "name": "Shrek's F1 2026",
     "placementPoints": [
       10,
@@ -20,6 +23,7 @@
       "underAchiever": 5,
       "wrecker": 5
     },
+    "motorsportId": "0e093852-8d85-46c4-8a19-3104048c0203",
     "teamPositionPoints": [
       6,
       5,
@@ -27,7 +31,6 @@
       3,
       0,
       0
-    ],
-    "motorsportId": "0e093852-8d85-46c4-8a19-3104048c0203"
+    ]
   }
 ]

@@ -26,6 +26,7 @@ const PropPicksPersistenceSchema = z.object({
 const PredictionsPersistenceSchema = z.object({
   predictions: z.record(z.string(), z.array(z.string().uuid())),
   submittedAt: z.record(z.string(), z.string()).optional(),
+  submittedBy: z.record(z.string(), z.string()).optional(),
   propPicks: z.record(z.string(), PropPicksPersistenceSchema),
 });
 type PredictionsPersistence = z.infer<typeof PredictionsPersistenceSchema>;
@@ -66,6 +67,7 @@ function predictionsToDomain(
         racerIds,
         propPicks: raw.propPicks[userId] ?? {},
         submittedAt: raw.submittedAt?.[userId] ?? null,
+        submittedBy: raw.submittedBy?.[userId] ?? null,
       }),
     );
   }
@@ -103,6 +105,11 @@ function predictionsToPersistence(book: RacePredictionBook): PredictionsPersiste
       allPredictions
         .filter((p) => p.submittedAt !== null)
         .map((p) => [p.userId, p.submittedAt!]),
+    ),
+    submittedBy: Object.fromEntries(
+      allPredictions
+        .filter((p) => p.submittedBy !== null)
+        .map((p) => [p.userId, p.submittedBy!]),
     ),
     propPicks: Object.fromEntries(
       allPredictions.map((p) => [p.userId, { ...p.propPicks }]),

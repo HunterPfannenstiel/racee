@@ -33,6 +33,7 @@ const UserPredictionPropsSchema = z.object({
     wrecker: z.string().optional(),
   }),
   submittedAt: z.string().nullable(),
+  submittedBy: z.string().nullable().default(null),
 });
 export type UserPredictionProps = z.infer<typeof UserPredictionPropsSchema>;
 
@@ -45,6 +46,7 @@ export class UserPrediction {
   get racerIds(): readonly string[] { return this.props.racerIds; }
   get propPicks(): Readonly<Partial<Record<PropName, string>>> { return this.props.propPicks; }
   get submittedAt() { return this.props.submittedAt; }
+  get submittedBy() { return this.props.submittedBy; }
 }
 
 export class ScoreEntry {
@@ -128,8 +130,8 @@ export class RacePredictionBook {
     return Array.from(this._predictions.values());
   }
 
-  submitPrediction(userId: string, racerIds: string[], propPicks: Partial<Record<PropName, string>>, submittedAt: string): void {
-    this._predictions.set(userId, new UserPrediction({ userId, racerIds, propPicks, submittedAt }));
+  submitPrediction(userId: string, racerIds: string[], propPicks: Partial<Record<PropName, string>>, submittedAt: string, submittedBy: string | null = null): void {
+    this._predictions.set(userId, new UserPrediction({ userId, racerIds, propPicks, submittedAt, submittedBy }));
   }
 
   grade(league: League, race: Race): RaceScores {

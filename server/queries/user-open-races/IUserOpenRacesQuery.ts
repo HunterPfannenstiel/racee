@@ -12,6 +12,13 @@ export type MyPickDTO = {
   racerIds: string[];
   propPicks: Partial<Record<PropName, string>>;
   submittedAt: string | null;
+  submittedBy: string | null;
+  submittedByName: string | null;
+};
+
+export type TeammateDTO = {
+  id: string;
+  name: string;
 };
 
 export type OpenRaceDTO = {
@@ -29,6 +36,9 @@ export type OpenRaceDTO = {
 export type UserOpenRacesResult = {
   openRaces: OpenRaceDTO[];
   racersById: Record<string, RacerDTO>;
+  teammates: TeammateDTO[];
+  teamColor?: string;
+  teammatePicks: Record<string, Record<string, MyPickDTO>>;
 };
 
 export interface IUserOpenRacesQuery {

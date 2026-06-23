@@ -27,6 +27,19 @@ export async function requireCommissioner(leagueId: string) {
     new PrismaUserRepository(),
   );
   const league = await svc.getLeague(leagueId);
+  if (!league.canManage(session.user.id)) throw new AuthError("Forbidden");
+  return { session, league };
+}
+
+export async function requireOwnerCommissioner(leagueId: string) {
+  const session = await getSession();
+  if (!session) throw new AuthError();
+  const svc = new LeagueService(
+    new BlobLeagueRepository(),
+    new BlobTeamRepository(),
+    new PrismaUserRepository(),
+  );
+  const league = await svc.getLeague(leagueId);
   if (league.commissionerId !== session.user.id) throw new AuthError("Forbidden");
   return { session, league };
 }

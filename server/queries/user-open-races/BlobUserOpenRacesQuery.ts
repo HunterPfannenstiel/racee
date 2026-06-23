@@ -5,13 +5,16 @@ import {
   RACERS_PATH,
   motorsportRacesPath,
   predictionsPath,
+  teamsPath,
 } from "@/lib/paths";
+import { prisma } from "@/server/db";
 import type {
   IUserOpenRacesQuery,
   UserOpenRacesResult,
   OpenRaceDTO,
   RacerDTO,
   MyPickDTO,
+  TeammateDTO,
 } from "./IUserOpenRacesQuery";
 
 // ─── Lightweight read schemas ─────────────────────────────────────────────────
@@ -53,7 +56,15 @@ const PropPicksReadSchema = z.object({
 const PredictionsReadSchema = z.object({
   predictions: z.record(z.string(), z.array(z.string())),
   submittedAt: z.record(z.string(), z.string()).optional(),
+  submittedBy: z.record(z.string(), z.string()).optional(),
   propPicks: z.record(z.string(), PropPicksReadSchema).optional(),
+});
+
+const TeamReadSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  memberIds: z.array(z.string()),
+  color: z.string().optional(),
 });
 
 // ─── Implementation ───────────────────────────────────────────────────────────
@@ -62,23 +73,45 @@ export class BlobUserOpenRacesQuery implements IUserOpenRacesQuery {
   async execute(userId: string, leagueId: string): Promise<UserOpenRacesResult> {
     const now = new Date();
 
-    // Round 1: leagues + racers in parallel
-    const [rawLeagues, rawRacers] = await Promise.all([
+    // Round 1: leagues + racers + teams in parallel
+    const [rawLeagues, rawRacers, rawTeams] = await Promise.all([
       blob.read<unknown>(LEAGUES_PATH),
       blob.read<unknown>(RACERS_PATH),
+      blob.read<unknown>(teamsPath(leagueId)),
     ]);
 
     const leagues = z.array(LeagueReadSchema).parse(rawLeagues ?? []);
     const allRacers = z.array(RacerReadSchema).parse(rawRacers ?? []);
+    const teams = z.array(TeamReadSchema).parse(rawTeams ?? []);
 
     const league = leagues.find((l) => l.id === leagueId);
     if (!league?.motorsportId) {
-      return { openRaces: [], racersById: {} };
+      return { openRaces: [], racersById: {}, teammates: [], teammatePicks: {} };
     }
 
-    // Round 2: races for this league's motorsport
-    const rawRaces = await blob.read<unknown>(motorsportRacesPath(league.motorsportId));
+    // Resolve team membership
+    const userTeam = teams.find((t) => t.memberIds.includes(userId));
+    const teammateIds = userTeam
+      ? userTeam.memberIds.filter((id) => id !== userId)
+      : [];
+    const teamColor = userTeam?.color;
+
+    // Round 2: races + teammate names in parallel
+    const [rawRaces, teammateUsers] = await Promise.all([
+      blob.read<unknown>(motorsportRacesPath(league.motorsportId)),
+      teammateIds.length > 0
+        ? prisma.user.findMany({
+            where: { id: { in: teammateIds } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
     const races = z.array(RaceReadSchema).parse(rawRaces ?? []);
+    const userNameMap = new Map(teammateUsers.map((u) => [u.id, u.name]));
+
+    const teammates: TeammateDTO[] = teammateIds
+      .map((id) => ({ id, name: userNameMap.get(id) ?? id }));
 
     // Filter to open races
     type OpenEntry = { race: z.infer<typeof RaceReadSchema>; leagueId: string };
@@ -101,20 +134,52 @@ export class BlobUserOpenRacesQuery implements IUserOpenRacesQuery {
       ),
     );
 
-    // Project to OpenRaceDTOs
+    // Build a name resolver for submittedBy (includes current user + teammates)
+    const allRelevantIds = [userId, ...teammateIds];
+    const resolveSubmitterName = (submitterId: string | undefined): string | null => {
+      if (!submitterId) return null;
+      if (!allRelevantIds.includes(submitterId)) return submitterId;
+      if (submitterId === userId) return null;
+      return userNameMap.get(submitterId) ?? submitterId;
+    };
+
+    const buildPickDTO = (
+      preds: z.infer<typeof PredictionsReadSchema> | null,
+      targetUserId: string,
+    ): MyPickDTO | null => {
+      if (!preds?.predictions[targetUserId]) return null;
+      const rawSubmitter = preds.submittedBy?.[targetUserId];
+      return {
+        racerIds: preds.predictions[targetUserId],
+        propPicks: preds.propPicks?.[targetUserId] ?? {},
+        submittedAt: preds.submittedAt?.[targetUserId] ?? null,
+        submittedBy: rawSubmitter ?? null,
+        submittedByName: resolveSubmitterName(rawSubmitter),
+      };
+    };
+
+    // Project to OpenRaceDTOs + teammatePicks
+    const teammatePicks: Record<string, Record<string, MyPickDTO>> = {};
+
     const openRaces: OpenRaceDTO[] = openEntries.map(({ race, leagueId }, i) => {
       const parsed = rawPredictions[i]
         ? PredictionsReadSchema.safeParse(rawPredictions[i])
         : null;
       const preds = parsed?.success ? parsed.data : null;
 
-      const myPick: MyPickDTO | null = preds?.predictions[userId]
-        ? {
-            racerIds: preds.predictions[userId],
-            propPicks: preds.propPicks?.[userId] ?? {},
-            submittedAt: preds.submittedAt?.[userId] ?? null,
-          }
-        : null;
+      const myPick = buildPickDTO(preds, userId);
+
+      // Extract teammate picks for this race
+      if (teammateIds.length > 0) {
+        const raceTeammatePicks: Record<string, MyPickDTO> = {};
+        for (const tmId of teammateIds) {
+          const pick = buildPickDTO(preds, tmId);
+          if (pick) raceTeammatePicks[tmId] = pick;
+        }
+        if (Object.keys(raceTeammatePicks).length > 0) {
+          teammatePicks[race.id] = raceTeammatePicks;
+        }
+      }
 
       return {
         id: race.id,
@@ -144,6 +209,6 @@ export class BlobUserOpenRacesQuery implements IUserOpenRacesQuery {
       }
     }
 
-    return { openRaces, racersById };
+    return { openRaces, racersById, teammates, teamColor, teammatePicks };
   }
 }

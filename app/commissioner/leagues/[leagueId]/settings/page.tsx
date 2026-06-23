@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LeagueConfigSection } from "../LeagueConfigSection";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
+import { ConnectedCoCommissioner } from "@/app/commissioner/co-commissioner/ConnectedCoCommissioner";
 
 export default function CommissionerLeagueSettingsPage() {
   const { leagueId } = useParams<{ leagueId: string }>();
@@ -45,12 +46,15 @@ export default function CommissionerLeagueSettingsPage() {
         </Alert>
       )}
       {league && (
-        <LeagueConfigSection
-          leagueId={leagueId}
-          league={league}
-          onLeagueChange={setLeague}
-          onError={setError}
-        />
+        <>
+          <LeagueConfigSection
+            leagueId={leagueId}
+            league={league}
+            onLeagueChange={setLeague}
+            onError={setError}
+          />
+          <ConnectedCoCommissioner leagueId={leagueId} />
+        </>
       )}
     </PageShell>
   );

@@ -6,6 +6,8 @@ import { useLeague } from "@/app/context/LeagueContext";
 import { type Racer, type PropName } from "@/lib/schemas";
 import { RequireUser } from "@/components/RequireUser";
 import { PredictionForm } from "./PredictionForm";
+import { TeammateSelector } from "./teammate-lineup/TeammateSelector";
+import { useTeammateSelector } from "./teammate-lineup/hooks/useTeammateSelector";
 import { PageShell } from "@/components/ui/page-shell";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -15,6 +17,8 @@ type MyPick = {
   racerIds: string[];
   propPicks: Partial<Record<PropName, string>>;
   submittedAt: string | null;
+  submittedBy: string | null;
+  submittedByName: string | null;
 };
 
 type OpenRace = {
@@ -32,6 +36,9 @@ type OpenRace = {
 type InitData = {
   openRaces: OpenRace[];
   racersById: Record<string, Racer>;
+  teammates: { id: string; name: string }[];
+  teamColor?: string;
+  teammatePicks: Record<string, Record<string, MyPick>>;
 };
 
 function PredictPagePlaceholder() {
@@ -86,6 +93,8 @@ export default function PredictPage() {
   const { activeLeagueId } = useLeague();
   const [data, setData] = useState<InitData | null>(null);
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
+  const { displayName, isProxy, selectedPlayerId, next, prev } =
+    useTeammateSelector(data?.teammates ?? []);
 
   useEffect(() => {
     if (!user || !activeLeagueId) return;
@@ -93,7 +102,13 @@ export default function PredictPage() {
     fetch(`/api/predict/init?leagueId=${activeLeagueId}`)
       .then((r) => r.json())
       .then((d) => {
-        setData({ openRaces: d.openRaces, racersById: d.racersById });
+        setData({
+          openRaces: d.openRaces,
+          racersById: d.racersById,
+          teammates: d.teammates ?? [],
+          teamColor: d.teamColor,
+          teammatePicks: d.teammatePicks ?? {},
+        });
         setSelectedRaceId((current) => {
           if (current && d.openRaces.some((r: { id: string }) => r.id === current)) return current;
           return autoSelectRace(d.openRaces);
@@ -105,11 +120,28 @@ export default function PredictPage() {
     if (!selectedRaceId || !activeLeagueId) return;
     setData((prev) => {
       if (!prev) return prev;
+      if (selectedPlayerId) {
+        const raceTeammatePicks = { ...prev.teammatePicks[selectedRaceId] };
+        raceTeammatePicks[selectedPlayerId] = {
+          racerIds,
+          propPicks,
+          submittedAt,
+          submittedBy: user?.id ?? null,
+          submittedByName: null,
+        };
+        return {
+          ...prev,
+          teammatePicks: {
+            ...prev.teammatePicks,
+            [selectedRaceId]: raceTeammatePicks,
+          },
+        };
+      }
       return {
         ...prev,
         openRaces: prev.openRaces.map((r) =>
           r.id === selectedRaceId && r.leagueId === activeLeagueId
-            ? { ...r, myPick: { racerIds, propPicks, submittedAt } }
+            ? { ...r, myPick: { racerIds, propPicks, submittedAt, submittedBy: null, submittedByName: null } }
             : r,
         ),
       };
@@ -119,6 +151,18 @@ export default function PredictPage() {
   const openRaces = data?.openRaces ?? [];
   const sortedRaces = [...openRaces].sort((a, b) => a.date.localeCompare(b.date));
   const selectedRace = openRaces.find((r) => r.id === selectedRaceId) ?? null;
+
+  const activePick = (() => {
+    if (!selectedRace || !data) return null;
+    if (selectedPlayerId) {
+      return data.teammatePicks[selectedRace.id]?.[selectedPlayerId] ?? null;
+    }
+    return selectedRace.myPick;
+  })();
+
+  const resolvedSubmittedByName = activePick?.submittedBy
+    ? (activePick.submittedByName ?? "You")
+    : null;
 
   return (
     <PageShell title="Predict">
@@ -153,17 +197,32 @@ export default function PredictPage() {
               </div>
             )}
 
+            {data.teammates.length > 0 && (
+              <TeammateSelector
+                displayName={displayName}
+                isProxy={isProxy}
+                teamColor={data.teamColor}
+                onNext={next}
+                onPrev={prev}
+              />
+            )}
+
             {selectedRace ? (
               <PredictionForm
-                key={`${activeLeagueId}_${selectedRace.id}`}
+                key={`${activeLeagueId}_${selectedRace.id}_${selectedPlayerId ?? user?.id}`}
                 race={selectedRace}
                 leagueId={activeLeagueId!}
                 racersById={data.racersById}
-                existingPrediction={selectedRace.myPick?.racerIds ?? null}
-                existingSubmittedAt={selectedRace.myPick?.submittedAt ?? null}
-                existingPropPicks={selectedRace.myPick?.propPicks ?? {}}
+                existingPrediction={activePick?.racerIds ?? null}
+                existingSubmittedAt={activePick?.submittedAt ?? null}
+                existingPropPicks={activePick?.propPicks ?? {}}
+                existingSubmittedByName={resolvedSubmittedByName}
                 keyIsSet={selectedRace.keyIsSet}
                 onPredictionSave={handlePredictionSave}
+                isProxy={isProxy}
+                targetUserId={selectedPlayerId ?? user?.id}
+                targetUserName={displayName}
+                teamColor={data.teamColor}
               />
             ) : (
               <div className="flex flex-col items-center text-center pt-12 gap-4">
