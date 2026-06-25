@@ -17,10 +17,11 @@ export function computePropPoints(
 export function computeGridPoints(userOrder: string[], keyOrder: string[], placementPoints: number[], scoringDepth: number | undefined): number {
   const depth = scoringDepth ?? keyOrder.length;
   let total = 0;
-  for (let keyPos = 0; keyPos < Math.min(keyOrder.length, depth); keyPos++) {
+  for (let keyPos = 0; keyPos < keyOrder.length; keyPos++) {
     const racerId = keyOrder[keyPos];
     const userPos = userOrder.indexOf(racerId);
     if (userPos === -1) continue;
+    if (userPos >= depth) continue;
     const diff = Math.abs(keyPos - userPos);
     total += diff < placementPoints.length ? placementPoints[diff] : 0;
   }

@@ -510,10 +510,11 @@ const PREDICTIONS: Record<RaceKey, Record<string, UserPrediction>> = {
 function computeGridPoints(userOrder: string[], keyOrder: string[], placementPoints: number[], scoringDepth?: number): number {
   const depth = scoringDepth ?? keyOrder.length;
   let total = 0;
-  for (let keyPos = 0; keyPos < Math.min(keyOrder.length, depth); keyPos++) {
+  for (let keyPos = 0; keyPos < keyOrder.length; keyPos++) {
     const racerId = keyOrder[keyPos];
     const userPos = userOrder.indexOf(racerId);
     if (userPos === -1) continue;
+    if (userPos >= depth) continue;
     const diff = Math.abs(keyPos - userPos);
     total += diff < placementPoints.length ? placementPoints[diff] : 0;
   }
@@ -692,7 +693,7 @@ for (const key of GRADED_RACE_KEYS) {
   // Compute scores
   const rawEntries = users.map(user => ({
     userId: user.id,
-    gridPoints: computeGridPoints(preds[user.id].order, keyOrder, PLACEMENT_POINTS),
+    gridPoints: computeGridPoints(preds[user.id].order, keyOrder, PLACEMENT_POINTS, 17),
     propPoints: computePropPoints(preds[user.id].props, propKey, PROP_POINT_VALUES),
   }));
   const gradedEntries = assignMedals(rawEntries);

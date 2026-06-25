@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
     "seed": "USE_LOCAL_BLOB=true node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts",
     "seed:remote": "USE_LOCAL_BLOB=false node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts"
   },
@@ -50,6 +51,8 @@
     "eslint-config-next": "16.2.6",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.9"
   }
 }
