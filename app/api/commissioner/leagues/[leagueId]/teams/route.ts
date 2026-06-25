@@ -6,10 +6,11 @@ import { LeagueService } from "@/server/services/LeagueService";
 import { BlobCommissionerTeamsQuery } from "@/server/queries/commissioner-teams/BlobCommissionerTeamsQuery";
 import { AuthError, requireCommissioner } from "@/server/auth/guards";
 
+const leagueRepo = new BlobLeagueRepository();
 const teamRepo = new BlobTeamRepository();
 const userRepo = new PrismaUserRepository();
-const svc = new LeagueService(new BlobLeagueRepository(), teamRepo, userRepo);
-const query = new BlobCommissionerTeamsQuery(teamRepo, userRepo);
+const svc = new LeagueService(leagueRepo, teamRepo, userRepo);
+const query = new BlobCommissionerTeamsQuery(teamRepo, userRepo, leagueRepo);
 
 export async function GET(
   _: Request,

@@ -1,4 +1,5 @@
 import { blob } from "../lib/blob/index.ts";
+import { prisma } from "../server/db.ts";
 
 type LeagueBlob = {
   id: string;
@@ -7,35 +8,16 @@ type LeagueBlob = {
   memberIds?: string[];
 };
 
-type TeamBlob = {
-  memberIds?: string[];
-};
+const [leagues, users] = await Promise.all([
+  blob.read<LeagueBlob[]>("leagues.json").then(r => r ?? []),
+  prisma.user.findMany({ select: { id: true } }),
+]);
 
-const leagues = await blob.read<LeagueBlob[]>("leagues.json").then(r => r ?? []);
+const allUserIds = users.map((u) => u.id);
 
-let migrated = 0;
+const updated = leagues.map((league) => ({ ...league, memberIds: allUserIds }));
 
-const updated = await Promise.all(
-  leagues.map(async (league) => {
-    if (league.memberIds && league.memberIds.length > 0) return league;
+await blob.write("leagues.json", updated);
+console.log(`set ${allUserIds.length} member(s) on ${leagues.length} league(s)`);
 
-    const teams = await blob.read<TeamBlob[]>(`leagues/${league.id}/teams.json`).then(r => r ?? []);
-
-    const memberSet = new Set<string>();
-    memberSet.add(league.commissionerId);
-    for (const id of league.coCommissionerIds ?? []) memberSet.add(id);
-    for (const team of teams) {
-      for (const id of team.memberIds ?? []) memberSet.add(id);
-    }
-
-    migrated++;
-    return { ...league, memberIds: [...memberSet] };
-  }),
-);
-
-if (migrated > 0) {
-  await blob.write("leagues.json", updated);
-  console.log(`migrated ${migrated} league(s) — memberIds backfilled`);
-} else {
-  console.log("no leagues needed migration");
-}
+await prisma.$disconnect();

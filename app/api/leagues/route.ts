@@ -5,6 +5,7 @@ import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepositor
 import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
 import { LeagueService } from "@/server/services/LeagueService";
 import { AuthError, requireAdmin } from "@/server/auth/guards";
+import { getSession } from "@/server/auth/server";
 import type { League } from "@/server/domain/league";
 
 const leagueRepo = new BlobLeagueRepository();
@@ -17,7 +18,9 @@ function ser(l: League) {
 }
 
 export async function GET() {
-  return NextResponse.json((await svc.listLeagues()).map(ser));
+  const session = await getSession();
+  if (!session) return NextResponse.json([]);
+  return NextResponse.json((await svc.listLeaguesForMember(session.user.id)).map(ser));
 }
 
 export async function POST(request: Request) {

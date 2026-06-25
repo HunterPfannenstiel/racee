@@ -31,6 +31,11 @@ export class LeagueService {
     return this.leagues.findAll();
   }
 
+  async listLeaguesForMember(userId: string): Promise<League[]> {
+    const all = await this.leagues.findAll();
+    return all.filter((l) => l.isMember(userId));
+  }
+
   async listLeaguesByCommissioner(userId: string): Promise<League[]> {
     const all = await this.leagues.findAll();
     return all.filter((l) => l.canManage(userId));

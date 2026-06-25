@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PredictionMutationSchema } from "@/lib/schemas";
-import { getSession } from "@/server/auth/server";
+import { AuthError, requireMember } from "@/server/auth/guards";
 import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
 import { BlobRaceRepository } from "@/server/repositories/blob/BlobRaceRepository";
 import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
@@ -19,13 +19,19 @@ const predSvc = new PredictionService(
 );
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const parsed = PredictionMutationSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const { leagueId, raceId, userId, racerIds, propPicks } = parsed.data;
+
+  let session: Awaited<ReturnType<typeof requireMember>>["session"];
+  try {
+    ({ session } = await requireMember(leagueId));
+  } catch (e) {
+    if (e instanceof AuthError) return NextResponse.json({ error: e.message }, { status: 401 });
+    throw e;
+  }
+
   const callerId = session.user.id;
   const isProxy = callerId !== userId;
 

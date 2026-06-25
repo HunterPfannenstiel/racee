@@ -5,12 +5,17 @@ import { PageShell } from "@/components/ui/page-shell";
 import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 
-export default function SigninPage() {
+export default function SigninPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   const [loading, setLoading] = useState(false);
 
   async function handleSignIn() {
     setLoading(true);
-    await signInWithGoogle();
+    const { next } = await searchParams;
+    await signInWithGoogle(next ?? "/");
     setLoading(false);
   }
 

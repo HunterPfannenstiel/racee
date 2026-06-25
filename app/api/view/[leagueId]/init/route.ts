@@ -7,6 +7,7 @@ import { BlobLeagueStandingsRepository } from "@/server/repositories/blob/BlobLe
 import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
 import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
 import { PageInitService } from "@/server/services/PageInitService";
+import { AuthError, requireMember } from "@/server/auth/guards";
 
 const pageSvc = new PageInitService(
   new BlobLeagueRepository(),
@@ -23,5 +24,11 @@ export async function GET(
   { params }: { params: Promise<{ leagueId: string }> },
 ) {
   const { leagueId } = await params;
+  try {
+    await requireMember(leagueId);
+  } catch (e) {
+    if (e instanceof AuthError) return NextResponse.json({ error: e.message }, { status: 401 });
+    throw e;
+  }
   return NextResponse.json(await pageSvc.getViewInit(leagueId));
 }

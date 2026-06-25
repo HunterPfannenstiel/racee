@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ChevronLeft, Settings2, Users } from "lucide-react";
 import { PageShell } from "@/components/ui/page-shell";
 import { requireCommissioner } from "@/server/auth/guards";
+import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
 import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
 import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
 import { BlobCommissionerTeamsQuery } from "@/server/queries/commissioner-teams/BlobCommissionerTeamsQuery";
@@ -39,6 +40,7 @@ export default async function CommissionerLeagueHubPage({
   const query = new BlobCommissionerTeamsQuery(
     new BlobTeamRepository(),
     new PrismaUserRepository(),
+    new BlobLeagueRepository(),
   );
   const { teams, users } = await query.execute(leagueId);
 

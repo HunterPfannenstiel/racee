@@ -31,6 +31,15 @@ export async function requireCommissioner(leagueId: string) {
   return { session, league };
 }
 
+export async function requireMember(leagueId: string) {
+  const session = await getSession();
+  if (!session) throw new AuthError();
+  const leagueRepo = new BlobLeagueRepository();
+  const league = await leagueRepo.findById(leagueId);
+  if (!league || !league.isMember(session.user.id)) throw new AuthError("Forbidden");
+  return { session, league };
+}
+
 export async function requireOwnerCommissioner(leagueId: string) {
   const session = await getSession();
   if (!session) throw new AuthError();
