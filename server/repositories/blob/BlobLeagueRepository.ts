@@ -9,6 +9,7 @@ const LeaguePersistenceSchema = z.object({
   id: z.string().uuid(),
   commissionerId: z.string(),
   coCommissionerIds: z.array(z.string()).default([]),
+  memberIds: z.array(z.string()).default([]),
   name: z.string().min(1),
   placementPoints: z.array(z.number().int().min(0)),
   mulliganCount: z.number().int().min(0),
@@ -25,6 +26,7 @@ const LeaguePersistenceSchema = z.object({
   }),
   motorsportId: z.string().uuid().optional(),
   teamPositionPoints: z.array(z.number().min(0)).optional(),
+  inviteToken: z.string().nullable().optional().default(null),
 });
 type LeaguePersistence = z.infer<typeof LeaguePersistenceSchema>;
 
@@ -36,6 +38,7 @@ function toDomain(raw: LeaguePersistence): League {
     leagueId: raw.id,
     commissionerId: raw.commissionerId,
     coCommissionerIds: raw.coCommissionerIds,
+    memberIds: raw.memberIds,
     name: raw.name,
     placementPoints: raw.placementPoints,
     mulliganCount: raw.mulliganCount,
@@ -44,6 +47,7 @@ function toDomain(raw: LeaguePersistence): League {
     propPointValues: raw.propPointValues,
     motorsportId: raw.motorsportId,
     teamPositionPoints: raw.teamPositionPoints,
+    inviteToken: raw.inviteToken,
   });
 }
 
@@ -52,6 +56,7 @@ function toPersistence(league: League): LeaguePersistence {
     id: league.leagueId,
     commissionerId: league.commissionerId,
     coCommissionerIds: [...league.coCommissionerIds],
+    memberIds: [...league.memberIds],
     name: league.name,
     placementPoints: [...league.placementPoints],
     mulliganCount: league.mulliganCount,
@@ -60,6 +65,7 @@ function toPersistence(league: League): LeaguePersistence {
     propPointValues: { ...league.propPointValues },
     motorsportId: league.motorsportId,
     teamPositionPoints: league.teamPositionPoints ? [...league.teamPositionPoints] : undefined,
+    inviteToken: league.inviteToken,
   };
 }
 
@@ -86,6 +92,12 @@ export class BlobLeagueRepository implements ILeagueRepository {
   async findById(leagueId: string): Promise<League | null> {
     const all = await readAll();
     const found = all.find((l) => l.id === leagueId);
+    return found ? toDomain(found) : null;
+  }
+
+  async findByInviteToken(token: string): Promise<League | null> {
+    const all = await readAll();
+    const found = all.find((l) => l.inviteToken === token);
     return found ? toDomain(found) : null;
   }
 

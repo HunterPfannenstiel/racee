@@ -1,7 +1,7 @@
 import type { ILeagueRepository, ITeamRepository, IUserRepository } from "@/server/repositories/interfaces";
 import { League } from "@/server/domain/league";
 import { Team } from "@/server/domain/team";
-import { NotFoundError } from "@/server/domain/errors";
+import { NotFoundError, AuthorizationError } from "@/server/domain/errors";
 import type { PropPointValues } from "@/server/domain/league";
 
 export class LeagueService {
@@ -22,7 +22,7 @@ export class LeagueService {
     propPointValues: PropPointValues;
     motorsportId: string;
   }): Promise<League> {
-    const league = new League(data);
+    const league = new League({ ...data, memberIds: [data.commissionerId] });
     await this.leagues.save(league);
     return league;
   }
@@ -69,6 +69,45 @@ export class LeagueService {
     await this.leagues.save(league);
   }
 
+  async addMember(leagueId: string, userId: string): Promise<void> {
+    const league = await this.getLeague(leagueId);
+    league.addMember(userId);
+    await this.leagues.save(league);
+  }
+
+  async removeMember(leagueId: string, userId: string): Promise<void> {
+    const league = await this.getLeague(leagueId);
+    league.removeMember(userId);
+    await this.leagues.save(league);
+
+    const teams = await this.teams.findAllForLeague(leagueId);
+    for (const team of teams) {
+      team.removeMember(userId);
+    }
+    await this.teams.saveAll(teams);
+  }
+
+  async generateInviteLink(leagueId: string): Promise<string> {
+    const league = await this.getLeague(leagueId);
+    const token = league.generateInviteToken();
+    await this.leagues.save(league);
+    return token;
+  }
+
+  async deactivateInviteLink(leagueId: string): Promise<void> {
+    const league = await this.getLeague(leagueId);
+    league.deactivateInviteToken();
+    await this.leagues.save(league);
+  }
+
+  async joinViaInvite(token: string, userId: string): Promise<string> {
+    const league = await this.leagues.findByInviteToken(token);
+    if (!league) throw new NotFoundError("InviteLink", token);
+    league.addMember(userId);
+    await this.leagues.save(league);
+    return league.leagueId;
+  }
+
   async deleteLeague(leagueId: string): Promise<void> {
     await this.leagues.remove(leagueId);
   }
@@ -96,6 +135,10 @@ export class LeagueService {
   }
 
   async joinTeam(leagueId: string, userId: string, targetTeamId: string): Promise<void> {
+    const league = await this.getLeague(leagueId);
+    if (!league.isMember(userId)) {
+      throw new AuthorizationError("User must be a league member to join a team");
+    }
     const teams = await this.teams.findAllForLeague(leagueId);
     for (const team of teams) {
       team.removeMember(userId);

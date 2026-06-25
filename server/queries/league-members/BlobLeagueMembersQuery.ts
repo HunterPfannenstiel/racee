@@ -8,6 +8,7 @@ const LeagueReadSchema = z.object({
   id: z.string(),
   commissionerId: z.string(),
   coCommissionerIds: z.array(z.string()).default([]),
+  memberIds: z.array(z.string()).default([]),
 });
 
 export class BlobLeagueMembersQuery implements ILeagueMembersQuery {
@@ -21,14 +22,16 @@ export class BlobLeagueMembersQuery implements ILeagueMembersQuery {
     const league = leagues.find((l) => l.id === leagueId);
     if (!league) return [];
 
+    const memberSet = new Set(league.memberIds);
     const coCommissionerSet = new Set(league.coCommissionerIds);
+    const userMap = new Map(users.map((u) => [u.id, u.name]));
 
-    return users
-      .filter((u) => u.id !== league.commissionerId)
-      .map((u) => ({
-        id: u.id,
-        name: u.name,
-        role: coCommissionerSet.has(u.id) ? "co-commissioner" as const : "member" as const,
+    return league.memberIds
+      .filter((id) => id !== league.commissionerId && memberSet.has(id))
+      .map((id) => ({
+        id,
+        name: userMap.get(id) ?? "Unknown",
+        role: coCommissionerSet.has(id) ? "co-commissioner" as const : "member" as const,
       }));
   }
 }

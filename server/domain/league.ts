@@ -15,6 +15,7 @@ const LeaguePropsSchema = z.object({
   leagueId: z.string().uuid(),
   commissionerId: z.string(),
   coCommissionerIds: z.array(z.string()).optional().default([]),
+  memberIds: z.array(z.string()).optional().default([]),
   name: z.string().min(1),
   placementPoints: z.array(z.number().int().min(0)),
   mulliganCount: z.number().int().min(0),
@@ -23,6 +24,7 @@ const LeaguePropsSchema = z.object({
   propPointValues: PropPointValuesSchema,
   motorsportId: z.string().uuid(),
   teamPositionPoints: z.array(z.number().min(0)).optional(),
+  inviteToken: z.string().nullable().optional().default(null),
 });
 
 
@@ -46,7 +48,40 @@ export class League {
   get stageCount() { return this.props.stageCount; }
   get propPointValues(): PropPointValues { return this.props.propPointValues; }
   get motorsportId() { return this.props.motorsportId; }
+  get memberIds(): readonly string[] { return this.props.memberIds; }
   get teamPositionPoints(): readonly number[] | undefined { return this.props.teamPositionPoints; }
+  get inviteToken(): string | null { return this.props.inviteToken; }
+
+  generateInviteToken(): string {
+    const token = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+    this.props = { ...this.props, inviteToken: token };
+    return token;
+  }
+
+  deactivateInviteToken(): void {
+    this.props = { ...this.props, inviteToken: null };
+  }
+
+  isMember(userId: string): boolean {
+    return this.props.memberIds.includes(userId);
+  }
+
+  addMember(userId: string): void {
+    if (!this.props.memberIds.includes(userId)) {
+      this.props = { ...this.props, memberIds: [...this.props.memberIds, userId] };
+    }
+  }
+
+  removeMember(userId: string): void {
+    if (userId === this.props.commissionerId) {
+      throw new Error("Cannot remove the commissioner from the league");
+    }
+    this.props = {
+      ...this.props,
+      memberIds: this.props.memberIds.filter(id => id !== userId),
+      coCommissionerIds: this.props.coCommissionerIds.filter(id => id !== userId),
+    };
+  }
 
   rename(name: string): void {
     this.props = LeaguePropsSchema.parse({ ...this.props, name });
@@ -64,6 +99,7 @@ export class League {
     if (userId === this.props.commissionerId) {
       throw new Error("Cannot promote the commissioner to co-commissioner");
     }
+    this.addMember(userId);
     if (this.props.coCommissionerIds.includes(userId)) return;
     this.props = { ...this.props, coCommissionerIds: [...this.props.coCommissionerIds, userId] };
   }

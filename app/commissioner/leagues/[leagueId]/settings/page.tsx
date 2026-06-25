@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { LeagueConfigSection } from "../LeagueConfigSection";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 import { ConnectedCoCommissioner } from "@/app/commissioner/co-commissioner/ConnectedCoCommissioner";
+import { ConnectedInviteLink } from "@/app/commissioner/invite-link/ConnectedInviteLink";
 
 export default function CommissionerLeagueSettingsPage() {
   const { leagueId } = useParams<{ leagueId: string }>();
@@ -53,6 +54,7 @@ export default function CommissionerLeagueSettingsPage() {
             onLeagueChange={setLeague}
             onError={setError}
           />
+          <ConnectedInviteLink leagueId={leagueId} />
           <ConnectedCoCommissioner leagueId={leagueId} />
         </>
       )}

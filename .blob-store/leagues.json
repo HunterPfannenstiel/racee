@@ -5,6 +5,7 @@
     "coCommissionerIds": [
       "byekcG2HEnl2di6eZYzxJEfsFF9ZYsKr"
     ],
+    "memberIds": [],
     "name": "Shrek's F1 2026",
     "placementPoints": [
       10,
@@ -31,6 +32,7 @@
       3,
       0,
       0
-    ]
+    ],
+    "inviteToken": "33cdf75ef7f4"
   }
 ]

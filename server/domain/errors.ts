@@ -12,6 +12,13 @@ export class NotFoundError extends DomainError {
   }
 }
 
+export class AuthorizationError extends DomainError {
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthorizationError";
+  }
+}
+
 export class ParseError extends DomainError {
   constructor(path: string, cause: unknown) {
     super(`Failed to parse blob at ${path}`, cause);
