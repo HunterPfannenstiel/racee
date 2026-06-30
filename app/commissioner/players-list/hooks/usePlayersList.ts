@@ -93,5 +93,19 @@ export function usePlayersList(leagueId: string) {
     }
   }
 
-  return { pending, members, loading, error, accept, deny, actionPending };
+  async function remove(id: string) {
+    addActionPending(id);
+    try {
+      const r = await fetch(
+        `/api/commissioner/leagues/${leagueId}/players/${id}/remove`,
+        { method: "POST" },
+      );
+      if (!r.ok) return;
+      setMembers((prev) => prev.filter((m) => m.id !== id));
+    } finally {
+      removeActionPending(id);
+    }
+  }
+
+  return { pending, members, loading, error, accept, deny, remove, actionPending };
 }

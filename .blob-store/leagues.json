@@ -2,12 +2,9 @@
   {
     "id": "e482f27d-eb44-4bc4-bb98-5045c8ec0a12",
     "commissionerId": "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J",
-    "coCommissionerIds": [
-      "byekcG2HEnl2di6eZYzxJEfsFF9ZYsKr"
-    ],
+    "coCommissionerIds": [],
     "memberIds": [
       "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J",
-      "byekcG2HEnl2di6eZYzxJEfsFF9ZYsKr",
       "Z31qcMJzGlU7qLkNijArFXb9j7cXsHgG",
       "4CVFS8ZmjqA8nK7aGw3K1WL5UWSupKPp",
       "cwVeKgqGcSNoiTlC03e0RqCiXQ5pg69l",
@@ -39,8 +36,10 @@
       "fNPil60PrdkKQOjZwMmG7XoDHNOqIJXH",
       "q2BRzNGHsde2Cs79FT07tS1piJ7VlZRl",
       "76Dg0Uf261SSJi8FwtFlrXEyrgIHlAOz",
-      "NHoznCe81FujdZqSjsxa7uvSEYnxTxlz"
+      "NHoznCe81FujdZqSjsxa7uvSEYnxTxlz",
+      "byekcG2HEnl2di6eZYzxJEfsFF9ZYsKr"
     ],
+    "pendingMemberIds": [],
     "name": "Shrek's F1 2026",
     "placementPoints": [
       10,
@@ -78,6 +77,7 @@
       "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J",
       "byekcG2HEnl2di6eZYzxJEfsFF9ZYsKr"
     ],
+    "pendingMemberIds": [],
     "name": "Test League",
     "placementPoints": [],
     "mulliganCount": 0,

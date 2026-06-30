@@ -11,7 +11,7 @@ type PlayersListProps = {
 };
 
 export function PlayersList({ leagueId }: PlayersListProps) {
-  const { pending, members, loading, error, accept, deny, actionPending } =
+  const { pending, members, loading, error, accept, deny, remove, actionPending } =
     usePlayersList(leagueId);
 
   if (loading) {
@@ -31,7 +31,7 @@ export function PlayersList({ leagueId }: PlayersListProps) {
           </h2>
         </CardHeader>
         <CardContent className="p-0">
-          <MembersSection members={members} />
+          <MembersSection members={members} onRemove={remove} actionPending={actionPending} />
         </CardContent>
       </Card>
 
