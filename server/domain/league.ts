@@ -16,6 +16,7 @@ const LeaguePropsSchema = z.object({
   commissionerId: z.string(),
   coCommissionerIds: z.array(z.string()).optional().default([]),
   memberIds: z.array(z.string()).optional().default([]),
+  pendingMemberIds: z.array(z.string()).optional().default([]),
   name: z.string().min(1),
   placementPoints: z.array(z.number().int().min(0)),
   mulliganCount: z.number().int().min(0),
@@ -49,6 +50,7 @@ export class League {
   get propPointValues(): PropPointValues { return this.props.propPointValues; }
   get motorsportId() { return this.props.motorsportId; }
   get memberIds(): readonly string[] { return this.props.memberIds; }
+  get pendingMemberIds(): readonly string[] { return this.props.pendingMemberIds; }
   get teamPositionPoints(): readonly number[] | undefined { return this.props.teamPositionPoints; }
   get inviteToken(): string | null { return this.props.inviteToken; }
 
@@ -66,10 +68,34 @@ export class League {
     return this.props.memberIds.includes(userId);
   }
 
+  isPending(userId: string): boolean {
+    return this.props.pendingMemberIds.includes(userId);
+  }
+
   addMember(userId: string): void {
     if (!this.props.memberIds.includes(userId)) {
       this.props = { ...this.props, memberIds: [...this.props.memberIds, userId] };
     }
+  }
+
+  addToPending(userId: string): void {
+    if (this.isMember(userId) || this.isPending(userId)) return;
+    this.props = { ...this.props, pendingMemberIds: [...this.props.pendingMemberIds, userId] };
+  }
+
+  acceptPending(userId: string): void {
+    this.props = {
+      ...this.props,
+      pendingMemberIds: this.props.pendingMemberIds.filter(id => id !== userId),
+    };
+    this.addMember(userId);
+  }
+
+  denyPending(userId: string): void {
+    this.props = {
+      ...this.props,
+      pendingMemberIds: this.props.pendingMemberIds.filter(id => id !== userId),
+    };
   }
 
   removeMember(userId: string): void {

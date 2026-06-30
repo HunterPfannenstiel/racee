@@ -10,6 +10,7 @@ const LeaguePersistenceSchema = z.object({
   commissionerId: z.string(),
   coCommissionerIds: z.array(z.string()).default([]),
   memberIds: z.array(z.string()).default([]),
+  pendingMemberIds: z.array(z.string()).default([]),
   name: z.string().min(1),
   placementPoints: z.array(z.number().int().min(0)),
   mulliganCount: z.number().int().min(0),
@@ -30,6 +31,7 @@ const LeaguePersistenceSchema = z.object({
 });
 type LeaguePersistence = z.infer<typeof LeaguePersistenceSchema>;
 
+
 function toDomain(raw: LeaguePersistence): League {
   if (!raw.motorsportId) {
     throw new Error(`League ${raw.id} is missing motorsportId — run the migration script`);
@@ -39,6 +41,7 @@ function toDomain(raw: LeaguePersistence): League {
     commissionerId: raw.commissionerId,
     coCommissionerIds: raw.coCommissionerIds,
     memberIds: raw.memberIds,
+    pendingMemberIds: raw.pendingMemberIds,
     name: raw.name,
     placementPoints: raw.placementPoints,
     mulliganCount: raw.mulliganCount,
@@ -57,6 +60,7 @@ function toPersistence(league: League): LeaguePersistence {
     commissionerId: league.commissionerId,
     coCommissionerIds: [...league.coCommissionerIds],
     memberIds: [...league.memberIds],
+    pendingMemberIds: [...league.pendingMemberIds],
     name: league.name,
     placementPoints: [...league.placementPoints],
     mulliganCount: league.mulliganCount,

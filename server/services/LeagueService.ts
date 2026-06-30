@@ -105,10 +105,28 @@ export class LeagueService {
     await this.leagues.save(league);
   }
 
+  async addToPending(leagueId: string, userId: string): Promise<void> {
+    const league = await this.getLeague(leagueId);
+    league.addToPending(userId);
+    await this.leagues.save(league);
+  }
+
+  async acceptPending(leagueId: string, userId: string): Promise<void> {
+    const league = await this.getLeague(leagueId);
+    league.acceptPending(userId);
+    await this.leagues.save(league);
+  }
+
+  async denyPending(leagueId: string, userId: string): Promise<void> {
+    const league = await this.getLeague(leagueId);
+    league.denyPending(userId);
+    await this.leagues.save(league);
+  }
+
   async joinViaInvite(token: string, userId: string): Promise<string> {
     const league = await this.leagues.findByInviteToken(token);
     if (!league) throw new NotFoundError("InviteLink", token);
-    league.addMember(userId);
+    league.addToPending(userId);
     await this.leagues.save(league);
     return league.leagueId;
   }
