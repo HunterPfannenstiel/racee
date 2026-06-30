@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,12 +24,13 @@ import {
 import type { Member } from "./hooks/usePlayersList";
 
 type MemberRowProps = {
+  leagueId: string;
   member: Member;
   onRemove: () => void;
   isRemovePending: boolean;
 };
 
-export function MemberRow({ member, onRemove, isRemovePending }: MemberRowProps) {
+export function MemberRow({ leagueId, member, onRemove, isRemovePending }: MemberRowProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
@@ -43,6 +45,11 @@ export function MemberRow({ member, onRemove, isRemovePending }: MemberRowProps)
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link href={`/commissioner/leagues/${leagueId}/players/${member.id}/lineup`}>
+                  Edit Lineup
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
                 onSelect={() => setConfirmOpen(true)}

@@ -31,7 +31,7 @@ export function PlayersList({ leagueId }: PlayersListProps) {
           </h2>
         </CardHeader>
         <CardContent className="p-0">
-          <MembersSection members={members} onRemove={remove} actionPending={actionPending} />
+          <MembersSection leagueId={leagueId} members={members} onRemove={remove} actionPending={actionPending} />
         </CardContent>
       </Card>
 

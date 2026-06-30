@@ -8,6 +8,7 @@ import { RequireUser } from "@/components/RequireUser";
 import { PredictionForm } from "./PredictionForm";
 import { TeammateSelector } from "./teammate-lineup/TeammateSelector";
 import { useTeammateSelector } from "./teammate-lineup/hooks/useTeammateSelector";
+import { RaceSelector } from "@/components/prediction/RaceSelector";
 import { PageShell } from "@/components/ui/page-shell";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -71,12 +72,6 @@ function PredictPagePlaceholder() {
       </div>
     </div>
   );
-}
-
-function formatChipDate(dateStr: string) {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" })
-    .format(new Date(year, month - 1, day));
 }
 
 function autoSelectRace(races: OpenRace[]): string | null {
@@ -172,30 +167,7 @@ export default function PredictPage() {
         ) : (
           <div className="space-y-5">
 
-            {sortedRaces.length > 1 && (
-              <div className="overflow-x-auto">
-                <div className="flex gap-2 pb-0.5">
-                  {sortedRaces.map((race) => {
-                    const active = selectedRaceId === race.id;
-                    return (
-                      <button
-                        key={race.id}
-                        onClick={() => setSelectedRaceId(race.id)}
-                        className={cn(
-                          "shrink-0 rounded-sm px-3 py-2 text-left transition-colors",
-                          active
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-subtle text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <p className="text-xs font-mono font-semibold leading-snug max-w-[120px] truncate">{race.title}</p>
-                        <p className={cn("text-[10px] font-mono", active ? "opacity-70" : "")}>{formatChipDate(race.date)}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            <RaceSelector races={sortedRaces} selectedRaceId={selectedRaceId} onSelect={setSelectedRaceId} />
 
             {data.teammates.length > 0 && (
               <TeammateSelector

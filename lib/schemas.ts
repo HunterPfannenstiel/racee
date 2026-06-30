@@ -147,6 +147,13 @@ export const PredictionMutationSchema = z.object({
 });
 export type PredictionMutation = z.infer<typeof PredictionMutationSchema>;
 
+export const CommissionerPredictionMutationSchema = z.object({
+  raceId: z.string().uuid(),
+  racerIds: z.array(z.string().uuid()),
+  propPicks: z.record(PropNameSchema, z.string()).optional(),
+});
+export type CommissionerPredictionMutation = z.infer<typeof CommissionerPredictionMutationSchema>;
+
 export const KeyMutationSchema = z.object({
   motorsportId: z.string().uuid(),
   raceId: z.string().uuid(),
