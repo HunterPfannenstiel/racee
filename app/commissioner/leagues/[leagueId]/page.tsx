@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronLeft, Settings2, Users, UserCheck } from "lucide-react";
+import { ChevronLeft, Settings2, Users, UserCheck, ClipboardCheck } from "lucide-react";
 import { PageShell } from "@/components/ui/page-shell";
 import { requireCommissioner } from "@/server/auth/guards";
 import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
@@ -26,6 +26,12 @@ const CARDS = [
     icon: UserCheck,
     title: "Players",
     description: "Review pending requests and manage league members.",
+  },
+  {
+    slug: "player-status",
+    icon: ClipboardCheck,
+    title: "Submission Status",
+    description: "See who's submitted and who's outstanding for a race.",
   },
 ];
 

@@ -105,17 +105,10 @@ export const MotorsportSchema = z.object({
   slug: z.string().min(1),
 });
 
-export const LeagueRaceConfigSchema = z.object({
-  leagueId: z.string().uuid(),
-  raceId: z.string().uuid(),
-  lockTime: z.string().datetime(),
-});
-
 export type League = z.infer<typeof LeagueSchema>;
 export type Racer = z.infer<typeof RacerSchema>;
 export type Race = z.infer<typeof RaceSchema>;
 export type Motorsport = z.infer<typeof MotorsportSchema>;
-export type LeagueRaceConfig = z.infer<typeof LeagueRaceConfigSchema>;
 
 export const RacesFileSchema = z.array(RaceSchema);
 export type RacesFile = z.infer<typeof RacesFileSchema>;

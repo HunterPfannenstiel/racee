@@ -6,10 +6,6 @@ export function motorsportRacesPath(motorsportId: string) {
   return `motorsports/${motorsportId}/races.json`;
 }
 
-export function leagueRaceConfigPath(leagueId: string, raceId: string) {
-  return `leagues/${leagueId}/races/${raceId}/config.json`;
-}
-
 export function teamsPath(leagueId: string) {
   return `leagues/${leagueId}/teams.json`;
 }
