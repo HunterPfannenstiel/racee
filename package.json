@@ -7,11 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run",
-    "seed": "USE_LOCAL_BLOB=true node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts",
-    "seed:remote": "USE_LOCAL_BLOB=false node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts",
-    "script": "USE_LOCAL_BLOB=true tsx --env-file=.env.local",
-    "script:remote": "USE_LOCAL_BLOB=false tsx --env-file=.env.local"
+    "test": "vitest run"
   },
   "dependencies": {
     "@better-fetch/fetch": "^1.1.21",

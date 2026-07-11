@@ -9,12 +9,13 @@ import { fileURLToPath } from "url";
 import { blob } from "../lib/blob/index.ts";
 import { PrismaClient } from "../server/generated/client.ts";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { withSchema } from "../server/db-url.ts";
 
 const __currentDir = dirname(fileURLToPath(import.meta.url));
 const APP_DIR = join(__currentDir, "..");
 
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.POOLER_DATABASE_URL! }),
+  adapter: new PrismaPg({ connectionString: withSchema(process.env.DATABASE_URL!, process.env.DATABASE_SCHEMA) }),
 });
 
 // ---- Fixed user IDs (stable across seed runs — lives in Prisma) ----
