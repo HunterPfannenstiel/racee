@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { type League, type Race, type Racer, type PropName } from "@/lib/schemas";
+import { useQuery } from "@tanstack/react-query";
+import { type Race, type Racer, type PropName } from "@/lib/schemas";
+import { orpc } from "@/lib/orpc/client";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,6 +16,7 @@ import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 export default function SetResultPage() {
   const { raceId } = useParams<{ raceId: string }>();
   const router = useRouter();
+  const leaguesQuery = useQuery(orpc.leagues.list.queryOptions());
   const [race, setRace] = useState<Race | null>(null);
   const [motorsportId, setMotorsportId] = useState<string | null>(null);
   const [racersById, setRacersById] = useState<Record<string, Racer>>({});
@@ -21,25 +24,33 @@ export default function SetResultPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/leagues")
-      .then((r) => r.json())
-      .then(async (leagues: League[]) => {
-        if (leagues.length === 0) throw new Error("No leagues");
-        const msId = leagues[0].motorsportId;
-        setMotorsportId(msId);
+    if (leaguesQuery.isPending) return;
+    if (leaguesQuery.isError) {
+      setError("Failed to load race data.");
+      setLoading(false);
+      return;
+    }
+    const leagues = leaguesQuery.data ?? [];
+    if (leagues.length === 0) {
+      setError("Failed to load race data.");
+      setLoading(false);
+      return;
+    }
+    const msId = leagues[0].motorsportId;
+    setMotorsportId(msId);
 
-        const [raceList, racerList] = await Promise.all([
-          fetch(`/api/races?motorsportId=${msId}`).then((r) => r.json() as Promise<Race[]>),
-          fetch("/api/racers").then((r) => r.json() as Promise<Racer[]>),
-        ]);
-
+    Promise.all([
+      fetch(`/api/races?motorsportId=${msId}`).then((r) => r.json() as Promise<Race[]>),
+      fetch("/api/racers").then((r) => r.json() as Promise<Racer[]>),
+    ])
+      .then(([raceList, racerList]) => {
         const found = raceList.find((r) => r.id === raceId) ?? null;
         setRace(found);
         setRacersById(Object.fromEntries(racerList.map((r) => [r.id, r])));
       })
       .catch(() => setError("Failed to load race data."))
       .finally(() => setLoading(false));
-  }, [raceId]);
+  }, [raceId, leaguesQuery.isPending, leaguesQuery.isError, leaguesQuery.data]);
 
   return (
     <PageShell title="Set Result">

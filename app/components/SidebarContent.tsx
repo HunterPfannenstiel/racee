@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Flag, BarChart2, Users, Gavel, ShieldCheck, CircleUser } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
+import { orpc } from "@/lib/orpc/client";
 import { cn } from "@/lib/utils";
 
 const BASE_NAV = [
@@ -20,7 +22,8 @@ type Props = {
 
 export function SidebarContent({ onNavigate }: Props) {
   const { user, isAdmin } = useUser();
-  const { leagues, activeLeagueId, setActiveLeagueId } = useLeague();
+  const { activeLeagueId, setActiveLeagueId } = useLeague();
+  const { data: leagues = [] } = useQuery(orpc.leagues.list.queryOptions({ enabled: !!user }));
   const pathname = usePathname();
 
   const nav = [

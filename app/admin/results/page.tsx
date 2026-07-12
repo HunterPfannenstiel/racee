@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { type League, type Race } from "@/lib/schemas";
+import { useQuery } from "@tanstack/react-query";
+import { type Race } from "@/lib/schemas";
+import { orpc } from "@/lib/orpc/client";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -11,6 +13,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 
 export default function AdminResultsPage() {
+  const leaguesQuery = useQuery(orpc.leagues.list.queryOptions());
   const [motorsportId, setMotorsportId] = useState<string | null>(null);
   const [races, setRaces] = useState<Race[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,18 +21,25 @@ export default function AdminResultsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/leagues")
+    if (leaguesQuery.isPending) return;
+    if (leaguesQuery.isError) {
+      setError("Failed to load data.");
+      setLoading(false);
+      return;
+    }
+    const leagues = leaguesQuery.data ?? [];
+    if (leagues.length === 0) {
+      setLoading(false);
+      return;
+    }
+    const msId = leagues[0].motorsportId;
+    setMotorsportId(msId);
+    fetch(`/api/races?motorsportId=${msId}`)
       .then((r) => r.json())
-      .then(async (leagues: League[]) => {
-        if (leagues.length === 0) return;
-        const msId = leagues[0].motorsportId;
-        setMotorsportId(msId);
-        const raceList: Race[] = await fetch(`/api/races?motorsportId=${msId}`).then((r) => r.json());
-        setRaces(raceList.sort((a, b) => a.date.localeCompare(b.date)));
-      })
+      .then((raceList: Race[]) => setRaces(raceList.sort((a, b) => a.date.localeCompare(b.date))))
       .catch(() => setError("Failed to load data."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [leaguesQuery.isPending, leaguesQuery.isError, leaguesQuery.data]);
 
   async function handleRecalculate(raceId: string) {
     if (!motorsportId) return;

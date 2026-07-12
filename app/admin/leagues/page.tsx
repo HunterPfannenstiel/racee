@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type League, type Motorsport } from "@/lib/schemas";
+import { orpc } from "@/lib/orpc/client";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -10,19 +12,22 @@ import { LeaguesSection } from "./LeaguesSection";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 
 export default function AdminLeaguesPage() {
-  const [leagues, setLeagues] = useState<League[]>([]);
+  const queryClient = useQueryClient();
+  const { data: leagues = [] } = useQuery(orpc.leagues.list.queryOptions());
   const [motorsportId, setMotorsportId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/leagues").then((r) => r.json()),
-      fetch("/api/motorsports").then((r) => r.json()),
-    ]).then(([leagueList, motorsports]: [League[], Motorsport[]]) => {
-      setLeagues(leagueList);
-      if (motorsports.length > 0) setMotorsportId(motorsports[0].id);
-    });
+    fetch("/api/motorsports")
+      .then((r) => r.json())
+      .then((motorsports: Motorsport[]) => {
+        if (motorsports.length > 0) setMotorsportId(motorsports[0].id);
+      });
   }, []);
+
+  function handleLeaguesChange(next: League[]) {
+    queryClient.setQueryData(orpc.leagues.list.queryKey(), next);
+  }
 
   return (
     <PageShell title="Leagues">
@@ -38,7 +43,7 @@ export default function AdminLeaguesPage() {
           </AlertDescription>
         </Alert>
       )}
-      <LeaguesSection leagues={leagues} motorsportId={motorsportId} onLeaguesChange={setLeagues} onError={setError} />
+      <LeaguesSection leagues={leagues} motorsportId={motorsportId} onLeaguesChange={handleLeaguesChange} onError={setError} />
     </PageShell>
   );
 }

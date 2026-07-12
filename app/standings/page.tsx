@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { type League, type User, type Team, type Race, type RaceScoreEntry } from "@/lib/schemas";
 import { PageShell } from "@/components/ui/page-shell";
+import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
+import { orpc } from "@/lib/orpc/client";
 import { StandingsGrid } from "./StandingsGrid";
 
 type DriverRow = { userId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
@@ -20,7 +23,9 @@ type LeagueData = {
 };
 
 export default function ViewPage() {
-  const { activeLeagueId, isLoading: leagueLoading } = useLeague();
+  const { user } = useUser();
+  const { activeLeagueId } = useLeague();
+  const { isLoading: leagueLoading } = useQuery(orpc.leagues.list.queryOptions({ enabled: !!user }));
   const [data, setData] = useState<LeagueData | null>(null);
   const [loadingData, setLoadingData] = useState(false);
 
