@@ -1,67 +1,58 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { type League, type User, type Team, type Race, type RaceScoreEntry } from "@/lib/schemas";
 import { PageShell } from "@/components/ui/page-shell";
+import { QueryError } from "@/components/ui/query-state";
 import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
 import { orpc } from "@/lib/orpc/client";
 import { StandingsGrid } from "./StandingsGrid";
 
-type DriverRow = { userId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
-type ConstructorRow = { teamId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
-
-type LeagueData = {
-  league: League | null;
-  races: Race[];
-  usersById: Record<string, User>;
-  teams: Team[];
-  driverRows: DriverRow[];
-  constructorRows: ConstructorRow[];
-  stages: string[][];
-};
-
 export default function ViewPage() {
-  const { user } = useUser();
+  const { user, isLoading: userLoading } = useUser();
   const { activeLeagueId } = useLeague();
-  const { isLoading: leagueLoading } = useQuery(orpc.leagues.list.queryOptions({ enabled: !!user }));
-  const [data, setData] = useState<LeagueData | null>(null);
-  const [loadingData, setLoadingData] = useState(false);
+  const enabled = !!user && !!activeLeagueId;
+  const leagueInput = { leagueId: activeLeagueId ?? "" };
 
-  useEffect(() => {
-    if (!activeLeagueId) return;
-    setLoadingData(true);
-    setData(null);
-    fetch(`/api/view/${activeLeagueId}/init`)
-      .then((r) => r.json())
-      .then((d) => {
-        setData(d);
-        setLoadingData(false);
-      });
-  }, [activeLeagueId]);
+  const leagueQuery = useQuery(orpc.leagues.get.queryOptions({ input: leagueInput, enabled }));
+  const teamsQuery = useQuery(orpc.leagues.teams.list.queryOptions({ input: leagueInput, enabled }));
+  const racesQuery = useQuery(orpc.races.list.queryOptions({ input: leagueInput, enabled }));
+  const standingsQuery = useQuery(orpc.standings.get.queryOptions({ input: leagueInput, enabled }));
+
+  const queries = [leagueQuery, teamsQuery, racesQuery, standingsQuery];
+  const isPending = queries.some((q) => q.isPending);
+  const firstError = queries.find((q) => q.isError);
+
+  // The legacy init payload returned races date-sorted; races.list doesn't
+  // sort, and the stage arrays reference raceIds positionally, so the same
+  // ordering must be re-established here.
+  const sortedRaces = useMemo(
+    () => (racesQuery.data ? [...racesQuery.data].sort((a, b) => a.date.localeCompare(b.date)) : []),
+    [racesQuery.data],
+  );
 
   return (
     <PageShell title="Standings">
-      {leagueLoading || loadingData ? (
+      {userLoading || (enabled && isPending && !firstError) ? (
         <div className="flex items-center gap-3 text-muted-foreground">
           <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <span className="text-xs tracking-widest uppercase">Loading</span>
         </div>
       ) : !activeLeagueId ? (
         <p className="text-xs tracking-widest uppercase text-muted-foreground">No leagues yet.</p>
-      ) : data?.league ? (
+      ) : firstError ? (
+        <QueryError error={firstError.error} onRetry={() => queries.forEach((q) => q.refetch())} />
+      ) : leagueQuery.data && teamsQuery.data && standingsQuery.data ? (
         <StandingsGrid
-          league={data.league}
-          races={data.races}
-          usersById={data.usersById}
-          teams={data.teams}
-          driverRows={data.driverRows}
-          constructorRows={data.constructorRows}
-          stages={data.stages}
+          league={leagueQuery.data}
+          races={sortedRaces}
+          usersById={standingsQuery.data.usersById}
+          teams={teamsQuery.data}
+          driverRows={standingsQuery.data.driverRows}
+          constructorRows={standingsQuery.data.constructorRows}
+          stages={standingsQuery.data.stages}
         />
-      ) : data ? (
-        <p className="text-xs tracking-widest uppercase text-muted-foreground">No scores yet.</p>
       ) : null}
     </PageShell>
   );
