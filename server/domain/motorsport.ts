@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-const MotorsportPropsSchema = z.object({
+export const MotorsportPropsSchema = z.object({
   motorsportId: z.string().uuid(),
   name: z.string().min(1),
   slug: z.string().min(1),
 });
-type MotorsportProps = z.infer<typeof MotorsportPropsSchema>;
+export type MotorsportProps = z.infer<typeof MotorsportPropsSchema>;
 
 export class Motorsport {
   private props: MotorsportProps;

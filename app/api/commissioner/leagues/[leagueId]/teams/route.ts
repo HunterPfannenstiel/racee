@@ -5,6 +5,8 @@ import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRep
 import { LeagueService } from "@/server/services/LeagueService";
 import { BlobCommissionerTeamsQuery } from "@/server/queries/commissioner-teams/BlobCommissionerTeamsQuery";
 import { AuthError, requireCommissioner } from "@/server/auth/guards";
+import { getSession } from "@/server/auth/server";
+import { AuthorizationError, NotFoundError } from "@/server/domain/errors";
 
 const leagueRepo = new BlobLeagueRepository();
 const teamRepo = new BlobTeamRepository();
@@ -18,10 +20,15 @@ export async function GET(
 ) {
   try {
     const { leagueId } = await params;
-    await requireCommissioner(leagueId);
-    return NextResponse.json(await query.execute(leagueId));
+    const session = await getSession();
+    if (!session) throw new AuthError();
+    // Resource-scoped "is this user the commissioner of this league" check
+    // now lives inside the query (via Roles), not here.
+    return NextResponse.json(await query.execute(leagueId, session.user.id));
   } catch (e) {
     if (e instanceof AuthError) return NextResponse.json({ error: e.message }, { status: 401 });
+    if (e instanceof AuthorizationError) return NextResponse.json({ error: e.message }, { status: 403 });
+    if (e instanceof NotFoundError) return NextResponse.json({ error: e.message }, { status: 404 });
     throw e;
   }
 }

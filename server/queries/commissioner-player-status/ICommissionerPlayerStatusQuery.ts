@@ -10,5 +10,5 @@ export type CommissionerPlayerStatusResult = {
 };
 
 export interface ICommissionerPlayerStatusQuery {
-  execute(leagueId: string, raceId: string): Promise<CommissionerPlayerStatusResult>;
+  execute(leagueId: string, raceId: string, actorUserId: string): Promise<CommissionerPlayerStatusResult>;
 }

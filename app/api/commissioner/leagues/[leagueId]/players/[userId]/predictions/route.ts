@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { CommissionerPredictionMutationSchema } from "@/lib/schemas";
 import { AuthError, requireCommissioner } from "@/server/auth/guards";
+import { getSession } from "@/server/auth/server";
+import { AuthorizationError, NotFoundError } from "@/server/domain/errors";
 import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
 import { BlobRaceRepository } from "@/server/repositories/blob/BlobRaceRepository";
 import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
@@ -9,15 +11,16 @@ import { BlobLeagueStandingsRepository } from "@/server/repositories/blob/BlobLe
 import { PredictionService } from "@/server/services/PredictionService";
 import { BlobCommissionerPlayerPredictionsQuery } from "@/server/queries/commissioner-player-predictions/BlobCommissionerPlayerPredictionsQuery";
 
+const leagueRepo = new BlobLeagueRepository();
 const raceRepo = new BlobRaceRepository();
 const predSvc = new PredictionService(
-  new BlobLeagueRepository(),
+  leagueRepo,
   raceRepo,
   new BlobRacePredictionBookRepository(),
   new BlobLeagueStandingsRepository(),
   new BlobTeamRepository(),
 );
-const playerPredictionsQuery = new BlobCommissionerPlayerPredictionsQuery();
+const playerPredictionsQuery = new BlobCommissionerPlayerPredictionsQuery(leagueRepo);
 
 export async function GET(
   _: Request,
@@ -25,10 +28,15 @@ export async function GET(
 ) {
   try {
     const { leagueId, userId } = await params;
-    await requireCommissioner(leagueId);
-    return NextResponse.json(await playerPredictionsQuery.execute(leagueId, userId));
+    const session = await getSession();
+    if (!session) throw new AuthError();
+    // Resource-scoped "is this user the commissioner of this league" check
+    // now lives inside the query (via Roles), not here.
+    return NextResponse.json(await playerPredictionsQuery.execute(leagueId, userId, session.user.id));
   } catch (e) {
     if (e instanceof AuthError) return NextResponse.json({ error: e.message }, { status: 401 });
+    if (e instanceof AuthorizationError) return NextResponse.json({ error: e.message }, { status: 403 });
+    if (e instanceof NotFoundError) return NextResponse.json({ error: e.message }, { status: 404 });
     throw e;
   }
 }

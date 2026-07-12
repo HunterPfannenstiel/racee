@@ -43,8 +43,11 @@ export default async function CommissionerLeagueHubPage({
   const { leagueId } = await params;
 
   let league: Awaited<ReturnType<typeof requireCommissioner>>["league"];
+  let actorUserId: string;
   try {
-    ({ league } = await requireCommissioner(leagueId));
+    const result = await requireCommissioner(leagueId);
+    league = result.league;
+    actorUserId = result.session.user.id;
   } catch {
     redirect("/commissioner");
   }
@@ -54,7 +57,7 @@ export default async function CommissionerLeagueHubPage({
     new PrismaUserRepository(),
     new BlobLeagueRepository(),
   );
-  const { teams, users } = await query.execute(leagueId);
+  const { teams, users } = await query.execute(leagueId, actorUserId);
 
   const assignedIds = new Set(teams.flatMap((t) => t.memberIds));
   const playerCount = assignedIds.size;

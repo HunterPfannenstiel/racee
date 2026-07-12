@@ -1,13 +1,13 @@
 import { z } from "zod";
 
-const TeamPropsSchema = z.object({
+export const TeamPropsSchema = z.object({
   teamId: z.string().uuid(),
   leagueId: z.string().uuid(),
   name: z.string().min(1),
   memberIds: z.array(z.string()).default([]),
   color: z.string().optional(),
 });
-type TeamProps = z.infer<typeof TeamPropsSchema>;
+export type TeamProps = z.infer<typeof TeamPropsSchema>;
 
 export class Team {
   private props: TeamProps;

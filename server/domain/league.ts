@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const PropPointValuesSchema = z.object({
+export const PropPointValuesSchema = z.object({
   driverOfDay: z.number().int().min(0),
   lapsLed: z.number().int().min(0),
   fastestPitStop: z.number().int().min(0),
@@ -11,7 +11,7 @@ const PropPointValuesSchema = z.object({
 });
 export type PropPointValues = z.infer<typeof PropPointValuesSchema>;
 
-const LeaguePropsSchema = z.object({
+export const LeaguePropsSchema = z.object({
   leagueId: z.string().uuid(),
   commissionerId: z.string(),
   coCommissionerIds: z.array(z.string()).optional().default([]),
@@ -29,7 +29,7 @@ const LeaguePropsSchema = z.object({
 });
 
 
-type LeagueProps = z.infer<typeof LeaguePropsSchema>;
+export type LeagueProps = z.infer<typeof LeaguePropsSchema>;
 type LeagueInput = z.input<typeof LeaguePropsSchema>;
 
 export class League {

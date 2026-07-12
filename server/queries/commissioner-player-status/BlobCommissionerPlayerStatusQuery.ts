@@ -1,17 +1,14 @@
 import { z } from "zod";
 import { blob } from "@/lib/blob";
-import { LEAGUES_PATH, motorsportRacesPath, predictionsPath } from "@/lib/paths";
+import { motorsportRacesPath, predictionsPath } from "@/lib/paths";
 import { NotFoundError } from "@/server/domain/errors";
+import { Roles } from "@/server/roles/Roles";
+import type { ILeagueRepository } from "@/server/repositories/interfaces/ILeagueRepository";
 import type { ILeagueMembersQuery } from "@/server/queries/league-members/ILeagueMembersQuery";
 import type {
   ICommissionerPlayerStatusQuery,
   CommissionerPlayerStatusResult,
 } from "./ICommissionerPlayerStatusQuery";
-
-const LeagueReadSchema = z.object({
-  id: z.string(),
-  motorsportId: z.string().optional(),
-});
 
 const RaceReadSchema = z.object({
   id: z.string(),
@@ -24,13 +21,15 @@ const PredictionsReadSchema = z.object({
 });
 
 export class BlobCommissionerPlayerStatusQuery implements ICommissionerPlayerStatusQuery {
-  constructor(private readonly members: ILeagueMembersQuery) {}
+  constructor(
+    private readonly members: ILeagueMembersQuery,
+    private readonly leagues: ILeagueRepository,
+  ) {}
 
-  async execute(leagueId: string, raceId: string): Promise<CommissionerPlayerStatusResult> {
-    const rawLeagues = await blob.read<unknown>(LEAGUES_PATH);
-    const leagues = z.array(LeagueReadSchema).parse(rawLeagues ?? []);
-    const league = leagues.find((l) => l.id === leagueId);
-    if (!league?.motorsportId) throw new NotFoundError("League", leagueId);
+  async execute(leagueId: string, raceId: string, actorUserId: string): Promise<CommissionerPlayerStatusResult> {
+    const league = await this.leagues.findById(leagueId);
+    if (!league) throw new NotFoundError("League", leagueId);
+    Roles.assertLeagueCommissioner(actorUserId, league);
 
     const [rawRaces, rawPredictions, memberList] = await Promise.all([
       blob.read<unknown>(motorsportRacesPath(league.motorsportId)),

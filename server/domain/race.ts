@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { PropKeySchema, type PropKey } from "@/lib/schemas";
+import { PropKeySchema, type PropKey } from "./race-prediction-book";
 
-const RacePropsSchema = z.object({
+export const RacePropsSchema = z.object({
   raceId: z.string().uuid(),
   motorsportId: z.string().uuid(),
   title: z.string().min(1),
@@ -13,7 +13,7 @@ const RacePropsSchema = z.object({
   propKey: PropKeySchema.nullable().default(null),
   keySetAt: z.string().nullable().default(null),
 });
-type RaceProps = z.infer<typeof RacePropsSchema>;
+export type RaceProps = z.infer<typeof RacePropsSchema>;
 
 export class Race {
   private props: RaceProps;

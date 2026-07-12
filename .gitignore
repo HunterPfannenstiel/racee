@@ -39,6 +39,9 @@ yarn-error.log*
 # local blob store
 .blob-store/
 
+# generated migration output (regeneratable from source spreadsheets)
+/scripts/migration/output/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

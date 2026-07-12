@@ -16,5 +16,5 @@ export type CommissionerTeamsResult = {
 };
 
 export interface ICommissionerTeamsQuery {
-  execute(leagueId: string): Promise<CommissionerTeamsResult>;
+  execute(leagueId: string, actorUserId: string): Promise<CommissionerTeamsResult>;
 }

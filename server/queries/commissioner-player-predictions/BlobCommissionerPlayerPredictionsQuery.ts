@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { blob } from "@/lib/blob";
-import { LEAGUES_PATH, RACERS_PATH, motorsportRacesPath, predictionsPath } from "@/lib/paths";
+import { RACERS_PATH, motorsportRacesPath, predictionsPath } from "@/lib/paths";
+import { NotFoundError } from "@/server/domain/errors";
+import { Roles } from "@/server/roles/Roles";
+import type { ILeagueRepository } from "@/server/repositories/interfaces/ILeagueRepository";
 import type {
   ICommissionerPlayerPredictionsQuery,
   CommissionerPlayerPredictionsResult,
@@ -10,11 +13,6 @@ import type {
 } from "./ICommissionerPlayerPredictionsQuery";
 
 // ─── Lightweight read schemas ─────────────────────────────────────────────────
-
-const LeagueReadSchema = z.object({
-  id: z.string(),
-  motorsportId: z.string().optional(),
-});
 
 const RaceReadSchema = z.object({
   id: z.string(),
@@ -57,19 +55,19 @@ const PredictionsReadSchema = z.object({
 export class BlobCommissionerPlayerPredictionsQuery
   implements ICommissionerPlayerPredictionsQuery
 {
-  async execute(leagueId: string, userId: string): Promise<CommissionerPlayerPredictionsResult> {
-    const [rawLeagues, rawRacers] = await Promise.all([
-      blob.read<unknown>(LEAGUES_PATH),
-      blob.read<unknown>(RACERS_PATH),
-    ]);
+  constructor(private readonly leagues: ILeagueRepository) {}
 
-    const leagues = z.array(LeagueReadSchema).parse(rawLeagues ?? []);
+  async execute(
+    leagueId: string,
+    userId: string,
+    actorUserId: string,
+  ): Promise<CommissionerPlayerPredictionsResult> {
+    const league = await this.leagues.findById(leagueId);
+    if (!league) throw new NotFoundError("League", leagueId);
+    Roles.assertLeagueCommissioner(actorUserId, league);
+
+    const rawRacers = await blob.read<unknown>(RACERS_PATH);
     const allRacers = z.array(RacerReadSchema).parse(rawRacers ?? []);
-
-    const league = leagues.find((l) => l.id === leagueId);
-    if (!league?.motorsportId) {
-      return { races: [], racersById: {} };
-    }
 
     const rawRaces = await blob.read<unknown>(motorsportRacesPath(league.motorsportId));
     const races = z.array(RaceReadSchema).parse(rawRaces ?? []);

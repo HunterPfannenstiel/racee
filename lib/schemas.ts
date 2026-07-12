@@ -1,15 +1,34 @@
 import { z } from "zod";
+import { TeamPropsSchema } from "@/server/domain/team";
+import { LeaguePropsSchema, PropPointValuesSchema } from "@/server/domain/league";
+import { RacerPropsSchema } from "@/server/domain/racer";
+import { RacePropsSchema } from "@/server/domain/race";
+import { MotorsportPropsSchema } from "@/server/domain/motorsport";
+import { UserRaceScoreSchema } from "@/server/domain/league-standings";
+import {
+  PropNameSchema,
+  PropKeySchema,
+  PropPicksSchema,
+  ScoreEntryPropsSchema,
+  RaceScoresPropsSchema,
+} from "@/server/domain/race-prediction-book";
 
+// NOTE: server/domain/user.ts's User is a plain Prisma-managed interface ({ userId, name, isAdmin }),
+// not a zod schema — nothing to derive from. This DTO also intentionally strips isAdmin and renames
+// userId -> id, so it stays hand-written.
 export const UserSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
 });
 
-export const TeamSchema = z.object({
+// Derived from TeamPropsSchema. id is a rename of the domain's teamId, and leagueId is intentionally
+// dropped (teams are already scoped by league wherever this DTO is used) — both kept hand-written.
+export const TeamSchema = TeamPropsSchema.pick({
+  name: true,
+  memberIds: true,
+  color: true,
+}).extend({
   id: z.string().uuid(),
-  name: z.string().min(1),
-  memberIds: z.array(z.string()),
-  color: z.string().optional(),
 });
 
 export const ParticipantsSchema = z.object({
@@ -29,80 +48,70 @@ export type Team = z.infer<typeof TeamSchema>;
 export type Participants = z.infer<typeof ParticipantsSchema>;
 export type TeamJoin = z.infer<typeof TeamJoinSchema>;
 
-export const PlacementPointsSchema = z.array(z.number().int().min(0));
+export const PlacementPointsSchema = LeaguePropsSchema.shape.placementPoints;
 export type PlacementPoints = z.infer<typeof PlacementPointsSchema>;
 
-export const PropNameSchema = z.enum([
-  "driverOfDay",
-  "lapsLed",
-  "fastestPitStop",
-  "fastestLap",
-  "overAchiever",
-  "underAchiever",
-  "wrecker",
-]);
+export { PropNameSchema };
 export type PropName = z.infer<typeof PropNameSchema>;
 
-export const PropPointValuesSchema = z.object({
-  driverOfDay: z.number().int().min(0),
-  lapsLed: z.number().int().min(0),
-  fastestPitStop: z.number().int().min(0),
-  fastestLap: z.number().int().min(0),
-  overAchiever: z.number().int().min(0),
-  underAchiever: z.number().int().min(0),
-  wrecker: z.number().int().min(0),
-});
+export { PropPointValuesSchema };
 export type PropPointValues = z.infer<typeof PropPointValuesSchema>;
 
-export const LeagueSchema = z.object({
+// Derived from LeaguePropsSchema. id is a rename of the domain's leagueId. commissionerId,
+// coCommissionerIds, memberIds, pendingMemberIds and inviteToken are internal membership/invite
+// state that this DTO intentionally never exposes to clients — kept out rather than picked.
+export const LeagueSchema = LeaguePropsSchema.pick({
+  name: true,
+  placementPoints: true,
+  mulliganCount: true,
+  scoringDepth: true,
+  stageCount: true,
+  propPointValues: true,
+  motorsportId: true,
+  teamPositionPoints: true,
+}).extend({
   id: z.string().uuid(),
-  name: z.string().min(1),
-  placementPoints: PlacementPointsSchema,
-  mulliganCount: z.number().int().min(0),
-  scoringDepth: z.number().int().min(1).optional(),
-  stageCount: z.number().int().min(0).optional(),
-  propPointValues: PropPointValuesSchema,
-  motorsportId: z.string().uuid(),
-  teamPositionPoints: z.array(z.number().min(0)).optional(),
 });
 
+// Derived field-by-field from RacerPropsSchema (via .shape, not .pick/.omit — the domain field is
+// literally named "constructor", which collides with TS's implicit Object.prototype.constructor and
+// breaks pick/omit's Mask typing). id is a rename of the domain's racerId. "team" is a rename of the
+// domain's "constructor" field — racer.ts deliberately calls it constructor to avoid confusion with
+// the Team aggregate; this DTO predates that distinction and keeps its own name, so it stays hand-written.
 export const RacerSchema = z.object({
   id: z.string().uuid(),
-  name: z.string().min(1),
+  name: RacerPropsSchema.shape.name,
   team: z.string().min(1),
-  motorsportId: z.string().uuid(),
-  image: z.string().url().optional(),
-  teamColor: z.string().optional(),
+  motorsportId: RacerPropsSchema.shape.motorsportId,
+  image: RacerPropsSchema.shape.image,
+  teamColor: RacerPropsSchema.shape.teamColor,
 });
 
-export const PropKeySchema = z.object({
-  driverOfDay: z.array(z.string()).nullable(),
-  lapsLed: z.array(z.string()).nullable(),
-  fastestPitStop: z.array(z.string()).nullable(),
-  fastestLap: z.array(z.string()).nullable(),
-  overAchiever: z.array(z.string()).nullable(),
-  underAchiever: z.array(z.string()).nullable(),
-  wrecker: z.array(z.string()).nullable(),
-});
+export { PropKeySchema };
 export type PropKey = z.infer<typeof PropKeySchema>;
 
-export const RaceSchema = z.object({
+// Derived from RacePropsSchema. id is a rename of the domain's raceId. keyOrder/propKey/keySetAt are
+// kept hand-written: the domain defaults them to null (always present after parse), while this DTO
+// makes them optional-or-null to support partial/pre-key API payloads.
+export const RaceSchema = RacePropsSchema.pick({
+  motorsportId: true,
+  title: true,
+  label: true,
+  date: true,
+  lockTime: true,
+  startingGrid: true,
+}).extend({
   id: z.string().uuid(),
-  motorsportId: z.string().uuid(),
-  title: z.string().min(1),
-  label: z.string().optional(),
-  date: z.string().min(1),
-  lockTime: z.string().datetime().optional(),
-  startingGrid: z.array(z.string().uuid()),
   keyOrder: z.array(z.string().uuid()).nullable().optional(),
   propKey: PropKeySchema.nullable().optional(),
   keySetAt: z.string().nullable().optional(),
 });
 
-export const MotorsportSchema = z.object({
+// Derived from MotorsportPropsSchema. id is a rename of the domain's motorsportId.
+export const MotorsportSchema = MotorsportPropsSchema.omit({
+  motorsportId: true,
+}).extend({
   id: z.string().uuid(),
-  name: z.string().min(1),
-  slug: z.string().min(1),
 });
 
 export type League = z.infer<typeof LeagueSchema>;
@@ -119,15 +128,7 @@ export const PredictionsFileSchema = z.object({
   predictions: z.record(z.string(), z.array(z.string().uuid())),
   submittedAt: z.record(z.string(), z.string()).optional(),
   propKey: PropKeySchema,
-  propPicks: z.record(z.string(), z.object({
-    driverOfDay: z.string().optional(),
-    lapsLed: z.string().optional(),
-    fastestPitStop: z.string().optional(),
-    fastestLap: z.string().optional(),
-    overAchiever: z.string().optional(),
-    underAchiever: z.string().optional(),
-    wrecker: z.string().optional(),
-  })),
+  propPicks: z.record(z.string(), PropPicksSchema),
 });
 export type PredictionsFile = z.infer<typeof PredictionsFileSchema>;
 
@@ -155,50 +156,39 @@ export const KeyMutationSchema = z.object({
 });
 export type KeyMutation = z.infer<typeof KeyMutationSchema>;
 
-export const RaceScoreEntrySchema = z.object({
-  raceId: z.string().uuid(),
-  gridPoints: z.number().int().min(0),
-  propPoints: z.number().int().min(0),
-  weeklyTeamPoints: z.number().min(0).default(0),
-});
+// Re-exported directly from league-standings.ts — identical shape, just a different export name.
+export const RaceScoreEntrySchema = UserRaceScoreSchema;
+export type RaceScoreEntry = z.infer<typeof RaceScoreEntrySchema>;
 
+// server/domain/league-standings.ts's UserLeagueScores is a class with no zod props schema of its
+// own (constructor takes primitives directly), so the object shape stays hand-written; the nested
+// raceScores entry type is still derived from the domain's UserRaceScoreSchema.
 export const UserLeagueScoresSchema = z.object({
   userId: z.string(),
   raceScores: z.array(RaceScoreEntrySchema),
 });
+export type UserLeagueScores = z.infer<typeof UserLeagueScoresSchema>;
 
+// Same rationale as UserLeagueScoresSchema — TeamLeagueScores is a class, no props schema to derive from.
 export const TeamLeagueScoresSchema = z.object({
   teamId: z.string().uuid(),
   raceScores: z.array(RaceScoreEntrySchema),
 });
+export type TeamLeagueScores = z.infer<typeof TeamLeagueScoresSchema>;
 
+// LeagueStandings is likewise a class with no props schema; shape hand-written, nested schemas derived.
 export const LeagueStandingsSchema = z.object({
   leagueId: z.string().uuid(),
   gradedRaceIds: z.array(z.string().uuid()),
   individual: z.array(UserLeagueScoresSchema),
   teams: z.array(TeamLeagueScoresSchema),
 });
-
-export type RaceScoreEntry = z.infer<typeof RaceScoreEntrySchema>;
-export type UserLeagueScores = z.infer<typeof UserLeagueScoresSchema>;
-export type TeamLeagueScores = z.infer<typeof TeamLeagueScoresSchema>;
 export type LeagueStandings = z.infer<typeof LeagueStandingsSchema>;
 
-export const ScoreEntrySchema = z.object({
-  userId: z.string(),
-  gridPoints: z.number().int().min(0),
-  propPoints: z.number().int().min(0),
-  medal: z.enum(["gold", "silver", "bronze"]).nullable(),
-  weeklyTeamPoints: z.number().min(0).default(0),
-});
-
-export const RaceScoresSchema = z.object({
-  raceId: z.string().uuid(),
-  leagueId: z.string().uuid(),
-  raceTitle: z.string(),
-  raceDate: z.string(),
-  entries: z.array(ScoreEntrySchema),
-});
-
+// Re-exported directly from race-prediction-book.ts.
+export const ScoreEntrySchema = ScoreEntryPropsSchema;
 export type ScoreEntry = z.infer<typeof ScoreEntrySchema>;
+
+// Re-exported directly from race-prediction-book.ts.
+export const RaceScoresSchema = RaceScoresPropsSchema;
 export type RaceScores = z.infer<typeof RaceScoresSchema>;

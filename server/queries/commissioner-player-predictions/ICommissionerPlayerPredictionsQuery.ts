@@ -32,5 +32,5 @@ export type CommissionerPlayerPredictionsResult = {
 };
 
 export interface ICommissionerPlayerPredictionsQuery {
-  execute(leagueId: string, userId: string): Promise<CommissionerPlayerPredictionsResult>;
+  execute(leagueId: string, userId: string, actorUserId: string): Promise<CommissionerPlayerPredictionsResult>;
 }
