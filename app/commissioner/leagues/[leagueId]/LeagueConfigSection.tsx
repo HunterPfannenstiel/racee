@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type League, type PropPointValues, type PlacementPoints } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { orpc } from "@/lib/orpc/client";
 import { PropPointValuesEditor } from "@/app/admin/leagues/PropPointValuesEditor";
 import { PlacementPointsEditor } from "@/app/admin/leagues/PlacementPointsEditor";
 import { TeamPositionPointsEditor } from "@/app/admin/leagues/TeamPositionPointsEditor";
@@ -14,11 +16,11 @@ import { TeamPositionPointsEditor } from "@/app/admin/leagues/TeamPositionPoints
 type Props = {
   leagueId: string;
   league: League;
-  onLeagueChange: (league: League) => void;
   onError: (msg: string) => void;
 };
 
-export function LeagueConfigSection({ leagueId, league, onLeagueChange, onError }: Props) {
+export function LeagueConfigSection({ leagueId, league, onError }: Props) {
+  const queryClient = useQueryClient();
   const [name, setName] = useState(league.name);
   const [placementPoints, setPlacementPoints] = useState<PlacementPoints>(league.placementPoints);
   const [mulliganCount, setMulliganCount] = useState(league.mulliganCount);
@@ -26,26 +28,25 @@ export function LeagueConfigSection({ leagueId, league, onLeagueChange, onError 
   const [scoringDepth, setScoringDepth] = useState<number | undefined>(league.scoringDepth);
   const [propPointValues, setPropPointValues] = useState<PropPointValues>(league.propPointValues);
   const [teamPositionPoints, setTeamPositionPoints] = useState<number[] | undefined>(league.teamPositionPoints);
-  const [saving, setSaving] = useState(false);
 
-  async function handleSave() {
+  const updateMutation = useMutation(
+    orpc.leagues.update.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: orpc.leagues.get.key({ input: { leagueId } }) });
+        queryClient.invalidateQueries({ queryKey: orpc.leagues.list.key() });
+      },
+      onError: () => onError("Failed to save league."),
+    }),
+  );
+  const saving = updateMutation.isPending;
+
+  function handleSave() {
     const trimmed = name.trim();
     if (!trimmed) return;
-    const patch = { name: trimmed, placementPoints, mulliganCount, stageCount, scoringDepth, propPointValues, teamPositionPoints };
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/commissioner/leagues/${leagueId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
-      });
-      if (!res.ok) { onError("Failed to save league."); return; }
-      onLeagueChange({ ...league, ...patch });
-    } catch {
-      onError("Failed to save league.");
-    } finally {
-      setSaving(false);
-    }
+    updateMutation.mutate({
+      leagueId,
+      patch: { name: trimmed, placementPoints, mulliganCount, stageCount, scoringDepth, propPointValues, teamPositionPoints },
+    });
   }
 
   return (

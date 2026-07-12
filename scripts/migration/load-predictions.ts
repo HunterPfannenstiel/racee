@@ -1,6 +1,6 @@
 // Phase B load script — writes the finalized prediction payloads
 // (scripts/migration/output/payloads/*.payloads.json) into blob storage via the
-// real PredictionService/domain classes, then triggers real grading.
+// real domain/repository classes, then triggers real grading.
 //
 // Run (dry-run, default — no writes anywhere):
 //   VERCEL=1 BUCKET_NAME=<bucket> SUPABASE_URL=<url> SUPABASE_SECRET_KEY=<key> \
@@ -46,7 +46,7 @@ console.log("=".repeat(72));
 const { blob } = await import("../../lib/blob/index.ts");
 const { RACERS_PATH, LEAGUES_PATH, motorsportRacesPath, teamsPath, predictionsPath } =
   await import("../../lib/paths.ts");
-const { PredictionService } = await import("../../server/services/PredictionService.ts");
+const { RacePredictionBook } = await import("../../server/domain/race-prediction-book.ts");
 const { RecalculateRaceCommand } = await import("../../server/commands/recalculate-race/RecalculateRaceCommand.ts");
 const { BlobLeagueRepository } = await import("../../server/repositories/league/BlobLeagueRepository.ts");
 const { BlobRaceRepository } = await import("../../server/repositories/race/BlobRaceRepository.ts");
@@ -220,7 +220,6 @@ if (!preflightOk) {
 console.log("\n--- Writing (--write) ---\n");
 
 const bookRepo = new BlobRacePredictionBookRepository();
-const predictionService = new PredictionService(bookRepo);
 const recalculateRaceCommand = new RecalculateRaceCommand(
   new BlobRaceRepository(),
   new BlobLeagueRepository(),
@@ -235,15 +234,10 @@ for (const r of RACES) {
   const payloads = loadPayloads(r.payloadFile);
   console.log(`\n${r.label} (${payloads.length} payloads):`);
   for (const p of payloads) {
-    await predictionService.submitPrediction(
-      p.leagueId,
-      p.raceId,
-      p.userId,
-      p.racerIds,
-      p.propPicks ?? {},
-      now,
-      null,
-    );
+    const book = (await bookRepo.findByRace(p.leagueId, p.raceId))
+      ?? RacePredictionBook.empty(p.leagueId, p.raceId);
+    book.submitPrediction(p.userId, p.racerIds, p.propPicks ?? {}, now, null);
+    await bookRepo.save(book);
     console.log(`  submitted ${p.userId}`);
   }
   console.log(`  recalculating grades for ${r.label}...`);

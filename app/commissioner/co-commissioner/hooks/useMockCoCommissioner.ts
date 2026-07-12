@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Member } from "./useCoCommissioner";
+import type { Member } from "../co-commissioner";
 
 const MOCK_CO_COMMISSIONERS: Member[] = [
   { id: "co-1", name: "Sebastian Vettel" },

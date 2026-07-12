@@ -4,7 +4,7 @@ import { motorsportRacesPath, predictionsPath } from "@/lib/paths";
 import { NotFoundError } from "@/server/domain/errors";
 import { assertLeagueCommissioner } from "@/server/roles/league";
 import type { ILeagueRepository } from "@/server/repositories/league/ILeagueRepository";
-import type { ILeagueMembersQuery } from "@/server/queries/league-members/ILeagueMembersQuery";
+import type { IUserRepository } from "@/server/repositories/user/IUserRepository";
 import type {
   ICommissionerPlayerStatusQuery,
   CommissionerPlayerStatusResult,
@@ -22,8 +22,8 @@ const PredictionsReadSchema = z.object({
 
 export class BlobCommissionerPlayerStatusQuery implements ICommissionerPlayerStatusQuery {
   constructor(
-    private readonly members: ILeagueMembersQuery,
     private readonly leagues: ILeagueRepository,
+    private readonly users: IUserRepository,
   ) {}
 
   async execute(leagueId: string, raceId: string, actorUserId: string): Promise<CommissionerPlayerStatusResult> {
@@ -31,11 +31,17 @@ export class BlobCommissionerPlayerStatusQuery implements ICommissionerPlayerSta
     if (!league) throw new NotFoundError("League", leagueId);
     assertLeagueCommissioner(actorUserId, league);
 
-    const [rawRaces, rawPredictions, memberList] = await Promise.all([
+    // Roster comes straight off the loaded league entity (members minus the
+    // owning commissioner), matching what the members query exposes — but
+    // without its owner-only assert, since submission status is commissioner-level.
+    const memberIds = league.memberIds.filter((id) => id !== league.commissionerId);
+    const [rawRaces, rawPredictions, users] = await Promise.all([
       blob.read<unknown>(motorsportRacesPath(league.motorsportId)),
       blob.read<unknown>(predictionsPath(leagueId, raceId)),
-      this.members.execute(leagueId),
+      memberIds.length > 0 ? this.users.findByIds([...memberIds]) : Promise.resolve([]),
     ]);
+    const nameById = new Map(users.map((u) => [u.userId, u.name]));
+    const memberList = memberIds.map((id) => ({ id, name: nameById.get(id) ?? "Unknown" }));
 
     const races = z.array(RaceReadSchema).parse(rawRaces ?? []);
     const race = races.find((r) => r.id === raceId);

@@ -1,7 +1,7 @@
 "use client";
 
 import { MemberRow } from "./MemberRow";
-import type { Member } from "./hooks/useCoCommissioner";
+import type { Member } from "./co-commissioner";
 
 type MemberListProps = {
   title: string;

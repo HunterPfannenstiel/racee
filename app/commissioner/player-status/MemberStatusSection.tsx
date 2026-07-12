@@ -3,7 +3,7 @@
 import { CheckCircle2Icon } from "lucide-react";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { MembersList } from "./MembersList";
-import type { MemberSubmission } from "./hooks/usePlayerStatus";
+import type { MemberSubmission } from "./types";
 
 type MemberStatusSectionProps = {
   countLabel: string;

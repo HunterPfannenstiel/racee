@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import type { PendingPlayer } from "./hooks/usePlayersList";
+import type { PendingPlayer } from "./types";
 
 type PendingRowProps = {
   player: PendingPlayer;
