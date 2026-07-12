@@ -1,22 +1,14 @@
 import { NextResponse } from "next/server";
 import { PredictionMutationSchema } from "@/lib/schemas";
 import { AuthError, requireMember } from "@/server/auth/guards";
-import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
-import { BlobRaceRepository } from "@/server/repositories/blob/BlobRaceRepository";
-import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
-import { BlobRacePredictionBookRepository } from "@/server/repositories/blob/BlobRacePredictionBookRepository";
-import { BlobLeagueStandingsRepository } from "@/server/repositories/blob/BlobLeagueStandingsRepository";
+import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepository";
+import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
+import { BlobRacePredictionBookRepository } from "@/server/repositories/race-prediction-book/BlobRacePredictionBookRepository";
 import { PredictionService } from "@/server/services/PredictionService";
 
 const raceRepo = new BlobRaceRepository();
 const teamRepo = new BlobTeamRepository();
-const predSvc = new PredictionService(
-  new BlobLeagueRepository(),
-  raceRepo,
-  new BlobRacePredictionBookRepository(),
-  new BlobLeagueStandingsRepository(),
-  teamRepo,
-);
+const predSvc = new PredictionService(new BlobRacePredictionBookRepository());
 
 export async function POST(request: Request) {
   const parsed = PredictionMutationSchema.safeParse(await request.json());

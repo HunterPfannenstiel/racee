@@ -1,7 +1,6 @@
-import { LeagueService } from "@/server/services/LeagueService";
-import type { ITeamRepository } from "@/server/repositories/interfaces";
+import type { ILeagueRepository, ITeamRepository } from "@/server/repositories";
 import { NotFoundError } from "@/server/domain/errors";
-import { Roles } from "@/server/roles/Roles";
+import { assertLeagueCommissioner } from "@/server/roles/league";
 import type { Team as TeamEntity } from "@/server/domain/team";
 import type { Team as TeamDTO } from "@/lib/schemas";
 import type { IUpdateTeamCommand, UpdateTeamPayload } from "./IUpdateTeamCommand";
@@ -16,23 +15,26 @@ function toTeamDTO(team: TeamEntity): TeamDTO {
 }
 
 /**
- * Applies a partial update and returns the resulting team. Composes LeagueService (for
- * the update itself) and ITeamRepository (to re-read the team afterward), so this
+ * Applies a partial update and returns the resulting team. Commissioner-only. Composes
+ * ILeagueRepository (for the commissioner check) and ITeamRepository, so this
  * implementation is unprefixed per server/commands/AGENTS.md.
  */
 export class UpdateTeamCommand implements IUpdateTeamCommand {
   constructor(
-    private readonly leagues: LeagueService,
+    private readonly leagues: ILeagueRepository,
     private readonly teams: ITeamRepository,
   ) {}
 
   async execute(payload: UpdateTeamPayload): Promise<TeamDTO> {
-    const league = await this.leagues.getLeague(payload.leagueId);
-    Roles.assertLeagueCommissioner(payload.actorUserId, league);
+    const league = await this.leagues.findById(payload.leagueId);
+    if (!league) throw new NotFoundError("League", payload.leagueId);
+    assertLeagueCommissioner(payload.actorUserId, league);
 
-    await this.leagues.updateTeam(payload.leagueId, payload.teamId, payload.patch);
     const team = await this.teams.findById(payload.leagueId, payload.teamId);
     if (!team) throw new NotFoundError("Team", payload.teamId);
+    if (payload.patch.name !== undefined) team.rename(payload.patch.name);
+    if ("color" in payload.patch) team.updateColor(payload.patch.color);
+    await this.teams.save(team);
     return toTeamDTO(team);
   }
 }

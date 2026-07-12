@@ -1,8 +1,8 @@
-import type { ITeamRepository } from "@/server/repositories/interfaces/ITeamRepository";
-import type { IUserRepository } from "@/server/repositories/interfaces/IUserRepository";
-import type { ILeagueRepository } from "@/server/repositories/interfaces/ILeagueRepository";
+import type { ITeamRepository } from "@/server/repositories/team/ITeamRepository";
+import type { IUserRepository } from "@/server/repositories/user/IUserRepository";
+import type { ILeagueRepository } from "@/server/repositories/league/ILeagueRepository";
 import { NotFoundError } from "@/server/domain/errors";
-import { Roles } from "@/server/roles/Roles";
+import { assertLeagueCommissioner } from "@/server/roles/league";
 import type { ICommissionerTeamsQuery, CommissionerTeamsResult } from "./ICommissionerTeamsQuery";
 
 export class BlobCommissionerTeamsQuery implements ICommissionerTeamsQuery {
@@ -15,7 +15,7 @@ export class BlobCommissionerTeamsQuery implements ICommissionerTeamsQuery {
   async execute(leagueId: string, actorUserId: string): Promise<CommissionerTeamsResult> {
     const league = await this.leagues.findById(leagueId);
     if (!league) throw new NotFoundError("League", leagueId);
-    Roles.assertLeagueCommissioner(actorUserId, league);
+    assertLeagueCommissioner(actorUserId, league);
 
     const teams = await this.teams.findAllForLeague(leagueId);
     const memberIds = league.memberIds;

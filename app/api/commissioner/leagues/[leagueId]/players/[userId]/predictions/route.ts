@@ -3,23 +3,22 @@ import { CommissionerPredictionMutationSchema } from "@/lib/schemas";
 import { AuthError, requireCommissioner } from "@/server/auth/guards";
 import { getSession } from "@/server/auth/server";
 import { AuthorizationError, NotFoundError } from "@/server/domain/errors";
-import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
-import { BlobRaceRepository } from "@/server/repositories/blob/BlobRaceRepository";
-import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
-import { BlobRacePredictionBookRepository } from "@/server/repositories/blob/BlobRacePredictionBookRepository";
-import { BlobLeagueStandingsRepository } from "@/server/repositories/blob/BlobLeagueStandingsRepository";
+import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
+import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepository";
+import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
+import { BlobRacePredictionBookRepository } from "@/server/repositories/race-prediction-book/BlobRacePredictionBookRepository";
+import { BlobLeagueStandingsRepository } from "@/server/repositories/league-standings/BlobLeagueStandingsRepository";
 import { PredictionService } from "@/server/services/PredictionService";
+import { RecalculateRaceCommand } from "@/server/commands/recalculate-race/RecalculateRaceCommand";
 import { BlobCommissionerPlayerPredictionsQuery } from "@/server/queries/commissioner-player-predictions/BlobCommissionerPlayerPredictionsQuery";
 
 const leagueRepo = new BlobLeagueRepository();
 const raceRepo = new BlobRaceRepository();
-const predSvc = new PredictionService(
-  leagueRepo,
-  raceRepo,
-  new BlobRacePredictionBookRepository(),
-  new BlobLeagueStandingsRepository(),
-  new BlobTeamRepository(),
-);
+const teamRepo = new BlobTeamRepository();
+const bookRepo = new BlobRacePredictionBookRepository();
+const standingsRepo = new BlobLeagueStandingsRepository();
+const predSvc = new PredictionService(bookRepo);
+const recalculateRaceCommand = new RecalculateRaceCommand(raceRepo, leagueRepo, bookRepo, standingsRepo, teamRepo);
 const playerPredictionsQuery = new BlobCommissionerPlayerPredictionsQuery(leagueRepo);
 
 export async function GET(
@@ -68,7 +67,7 @@ export async function POST(
     );
 
     if (race.keySetAt !== null) {
-      await predSvc.recalculate(race.motorsportId, raceId);
+      await recalculateRaceCommand.execute({ motorsportId: race.motorsportId, raceId });
     }
 
     return NextResponse.json({ ok: true });

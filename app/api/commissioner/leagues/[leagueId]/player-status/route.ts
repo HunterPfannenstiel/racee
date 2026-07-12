@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { AuthError } from "@/server/auth/guards";
 import { getSession } from "@/server/auth/server";
 import { AuthorizationError, NotFoundError } from "@/server/domain/errors";
-import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
+import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
 import { BlobCommissionerPlayerStatusQuery } from "@/server/queries/commissioner-player-status/BlobCommissionerPlayerStatusQuery";
 import { BlobLeagueMembersQuery } from "@/server/queries/league-members/BlobLeagueMembersQuery";
 

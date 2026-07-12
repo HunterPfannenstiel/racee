@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { BlobUserProfileStatsQuery } from "@/server/queries/user-profile-stats/BlobUserProfileStatsQuery";
-import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
+import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
 
 const query = new BlobUserProfileStatsQuery(new PrismaUserRepository());
 

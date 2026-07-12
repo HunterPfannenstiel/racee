@@ -7,7 +7,7 @@ import {
   predictionsPath,
 } from "@/lib/paths";
 import { type PropName } from "@/lib/schemas";
-import type { IUserRepository } from "@/server/repositories/interfaces/IUserRepository";
+import type { IUserRepository } from "@/server/repositories/user/IUserRepository";
 import type {
   IUserProfileStatsQuery,
   UserProfileStatsResult,

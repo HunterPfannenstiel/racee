@@ -17,7 +17,9 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type Race, type Racer, type PropName } from "@/lib/schemas";
+import { orpc } from "@/lib/orpc/client";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
@@ -36,9 +38,16 @@ type Props = {
 };
 
 export function KeyEditor({ race, motorsportId, racersById, existingKey, existingPropKey, onSave, onCancel, onError }: Props) {
+  const queryClient = useQueryClient();
   const [orderedIds, setOrderedIds] = useState<string[]>(existingKey ?? race.startingGrid);
   const [propResults, setPropResults] = useState<Partial<Record<PropName, string[] | null>>>(existingPropKey);
-  const [saving, setSaving] = useState(false);
+
+  const setKeyMutation = useMutation(
+    orpc.races.setKey.mutationOptions({
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: orpc.races.list.key() }),
+    }),
+  );
+  const saving = setKeyMutation.isPending;
 
   const racers = race.startingGrid.map((id) => racersById[id]).filter((r): r is Racer => !!r);
 
@@ -58,28 +67,20 @@ export function KeyEditor({ race, motorsportId, racersById, existingKey, existin
   }
 
   async function handleSave() {
-    setSaving(true);
+    const propKey = {
+      driverOfDay:    propResults.driverOfDay    ?? null,
+      lapsLed:        propResults.lapsLed        ?? null,
+      fastestPitStop: propResults.fastestPitStop ?? null,
+      fastestLap:     propResults.fastestLap     ?? null,
+      overAchiever:   propResults.overAchiever   ?? null,
+      underAchiever:  propResults.underAchiever  ?? null,
+      wrecker:        propResults.wrecker        ?? null,
+    };
     try {
-      const propKey = {
-        driverOfDay:    propResults.driverOfDay    ?? null,
-        lapsLed:        propResults.lapsLed        ?? null,
-        fastestPitStop: propResults.fastestPitStop ?? null,
-        fastestLap:     propResults.fastestLap     ?? null,
-        overAchiever:   propResults.overAchiever   ?? null,
-        underAchiever:  propResults.underAchiever  ?? null,
-        wrecker:        propResults.wrecker        ?? null,
-      };
-      const res = await fetch("/api/races/key", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ motorsportId, raceId: race.id, racerIds: orderedIds, propKey }),
-      });
-      if (!res.ok) { onError("Failed to save result."); return; }
+      await setKeyMutation.mutateAsync({ motorsportId, raceId: race.id, racerIds: orderedIds, propKey });
       onSave();
     } catch {
       onError("Failed to save result.");
-    } finally {
-      setSaving(false);
     }
   }
 

@@ -1,6 +1,7 @@
-import type { ILeagueRepository } from "@/server/repositories/interfaces";
+import type { ILeagueRepository } from "@/server/repositories";
 import type { League as LeagueEntity } from "@/server/domain/league";
 import type { League as LeagueDTO } from "@/lib/schemas";
+import { NotFoundError } from "@/server/domain/errors";
 import type { ILeagueQuery } from "./ILeagueQuery";
 
 function toLeagueDTO(league: LeagueEntity): LeagueDTO {
@@ -20,8 +21,11 @@ function toLeagueDTO(league: LeagueEntity): LeagueDTO {
 export class BlobLeagueQuery implements ILeagueQuery {
   constructor(private readonly leagues: ILeagueRepository) {}
 
-  async execute(leagueId: string): Promise<LeagueDTO | null> {
+  async execute(leagueId: string): Promise<LeagueDTO> {
     const league = await this.leagues.findById(leagueId);
-    return league ? toLeagueDTO(league) : null;
+    if (!league) {
+      throw new NotFoundError("League", leagueId);
+    }
+    return toLeagueDTO(league);
   }
 }

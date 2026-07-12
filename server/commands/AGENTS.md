@@ -4,9 +4,9 @@
 * Two files per command:
     * I<Name>Command.ts — defines the command payload and the command interface
     * <Source><Name>Command.ts — the implementation, prefixed by its backing data source (Blob, Prisma)
-* If a command composes more than one repository or service (no single backing source), the implementation is unprefixed: <Name>Command.ts
+* The implementation is unprefixed when it touches more than one repository — a single-repository command stays prefixed by that repository's source (Blob, Prisma) even if it also calls a service function.
 * There is exactly one implementation per command, ever — migrating to a new data source means replacing this file, not adding a second one alongside it
-* A command may call a service when it needs domain logic shared with another command or query; otherwise it may call a repository directly
+* A command always loads what it needs via repositories and persists the result via repositories — that never changes. When logic spans multiple entities and is reused by another command or query, the command calls a service function with the entities it already loaded; otherwise it just calls entity methods directly.
 * Whatever calls the command imports the implementation class directly — no central registry
 * A command is not a service — a command is one specific use case, a service is domain logic reused across use cases
 

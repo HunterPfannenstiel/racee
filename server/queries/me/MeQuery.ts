@@ -1,5 +1,4 @@
-import type { IUserRepository } from "@/server/repositories/interfaces";
-import type { LeagueService } from "@/server/services/LeagueService";
+import type { IUserRepository, ILeagueRepository } from "@/server/repositories";
 import type { League } from "@/server/domain/league";
 import { NotFoundError } from "@/server/domain/errors";
 import type { IMeQuery, MeResult, MeLeagueDTO } from "./IMeQuery";
@@ -21,18 +20,20 @@ function serializeLeague(l: League): MeLeagueDTO {
 export class MeQuery implements IMeQuery {
   constructor(
     private users: IUserRepository,
-    private leagues: LeagueService,
+    private leagues: ILeagueRepository,
   ) {}
 
   async execute(userId: string): Promise<MeResult> {
-    const [user, leagues] = await Promise.all([
+    const [user, allLeagues] = await Promise.all([
       this.users.findById(userId),
-      this.leagues.listLeaguesForMember(userId),
+      this.leagues.findAll(),
     ]);
 
     if (!user) {
       throw new NotFoundError("User", userId);
     }
+
+    const leagues = allLeagues.filter((l) => l.isMember(userId));
 
     return {
       id: user.userId,

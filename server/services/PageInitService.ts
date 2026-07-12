@@ -6,8 +6,7 @@ import type {
   ILeagueStandingsRepository,
   ITeamRepository,
   IUserRepository,
-} from "@/server/repositories/interfaces";
-import type { PropKey, PropName } from "@/server/domain/race-prediction-book";
+} from "@/server/repositories";
 import type { PropPointValues } from "@/server/domain/league";
 
 // DTO types — JSON-serializable shapes returned by each page init method
@@ -56,23 +55,6 @@ export type ViewInitDto = {
   }>;
   gradedRaceIds: string[];
   stages: string[][];
-};
-
-export type ProfileRaceDto = {
-  prediction: string[] | null;
-  key: string[] | null;
-  propPicks: Partial<Record<PropName, string>>;
-  propKey: PropKey | null;
-  scores: {
-    userId: string;
-    gridPoints: number;
-    propPoints: number;
-    medal: "gold" | "silver" | "bronze" | null;
-  } | null;
-  rank: number | null;
-  totalParticipants: number;
-  placementPoints: number[];
-  propPointValues: PropPointValues | null;
 };
 
 export type CreateInitDto = {
@@ -207,49 +189,6 @@ export class PageInitService {
       constructorRows,
       gradedRaceIds: sortedRaces.filter(r => r.keySetAt !== null).map(r => r.raceId),
       stages,
-    };
-  }
-
-  async getProfileRace(leagueId: string, raceId: string, userId: string): Promise<ProfileRaceDto> {
-    const [book, league] = await Promise.all([
-      this.books.findByRace(leagueId, raceId),
-      this.leagues.findById(leagueId),
-    ]);
-
-    const race = league ? await this.races.findById(league.motorsportId, raceId) : null;
-
-    const pred = book?.predictionFor(userId);
-    const scores = book?.scores ?? null;
-
-    // Sort all scored entries descending to determine rank
-    const sortedEntries = scores
-      ? [...scores.entries].sort((a, b) => b.total - a.total)
-      : [];
-
-    const rawRankIndex = scores
-      ? sortedEntries.findIndex(e => e.userId === userId)
-      : -1;
-    const rank = rawRankIndex >= 0 ? rawRankIndex + 1 : null;
-
-    const userEntry = scores?.entryFor(userId) ?? null;
-
-    return {
-      prediction: pred ? [...pred.racerIds] : null,
-      key: race?.keyOrder ? [...race.keyOrder] : null,
-      propPicks: pred ? { ...pred.propPicks } : {},
-      propKey: race?.propKey ?? null,
-      scores: userEntry
-        ? {
-            userId,
-            gridPoints: userEntry.gridPoints,
-            propPoints: userEntry.propPoints,
-            medal: userEntry.medal,
-          }
-        : null,
-      rank,
-      totalParticipants: sortedEntries.length,
-      placementPoints: league ? [...league.placementPoints] : [],
-      propPointValues: league?.propPointValues ?? null,
     };
   }
 

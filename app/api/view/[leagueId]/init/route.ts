@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
-import { BlobRaceRepository } from "@/server/repositories/blob/BlobRaceRepository";
-import { BlobRacerRepository } from "@/server/repositories/blob/BlobRacerRepository";
-import { BlobRacePredictionBookRepository } from "@/server/repositories/blob/BlobRacePredictionBookRepository";
-import { BlobLeagueStandingsRepository } from "@/server/repositories/blob/BlobLeagueStandingsRepository";
-import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
-import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
+import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
+import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepository";
+import { BlobRacerRepository } from "@/server/repositories/racer/BlobRacerRepository";
+import { BlobRacePredictionBookRepository } from "@/server/repositories/race-prediction-book/BlobRacePredictionBookRepository";
+import { BlobLeagueStandingsRepository } from "@/server/repositories/league-standings/BlobLeagueStandingsRepository";
+import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
+import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
 import { PageInitService } from "@/server/services/PageInitService";
 import { AuthError, requireMember } from "@/server/auth/guards";
 

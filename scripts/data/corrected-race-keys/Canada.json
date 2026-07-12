@@ -1,0 +1,90 @@
+{
+  "raceId": "f523c448-c776-4c29-973c-fbd5c22014c9",
+  "title": "Canada",
+  "label": "CNA",
+  "date": "2026-05-24",
+  "correctedFields": [
+    "grid",
+    "props"
+  ],
+  "keyOrder": [
+    "43e1c520-2968-428b-bff2-6212ef882f76",
+    "0e084705-3246-4481-a7a6-a5583ebfd114",
+    "f12b5f53-c37f-4d43-8a92-a56c6d663694",
+    "4489d7a8-170e-46d3-a3e7-4c51f3fc8a8f",
+    "fefc3b7e-b50d-4e86-b431-a5bd4ad61fce",
+    "196d67a1-bcf1-4966-8d43-1b1661265ff4",
+    "2c30d3a0-5545-4997-ae24-085888f4fe51",
+    "edbab2ea-0f34-406c-87d4-83b1672fe7e2",
+    "3884b85d-2f57-4591-82db-442b3885d41c",
+    "3e6182e4-57a6-4e8f-b59b-2e5aef55b87e",
+    "82f78ba5-70dd-445f-91a8-c54542703960",
+    "7ed8e047-cf05-4c42-8042-04f0b1dbc391",
+    "47a81cde-48bd-49ce-ba9d-8296ca355459",
+    "b1dd95a9-cdca-4220-a8c0-6e2dc9a48609",
+    "2bf02225-7359-45ed-b9f7-37cf3d08f22e",
+    "c74cb723-be0e-4feb-8f96-796b347dbc1e",
+    "026b855f-1711-4c49-9b47-f8ba5bd0eae1",
+    "b24bd3a6-8ac7-46fd-bb40-cc14c52d3317",
+    "1685fb81-80a0-40b8-bd46-2a2379fdb4a9",
+    "88670d12-999d-46c1-af5b-7251bc781de7",
+    "c1144918-f072-4c59-aad2-787be00d9b99",
+    "e58038f4-1b94-4846-8ebb-b45ee603334e"
+  ],
+  "propKey": {
+    "driverOfDay": [
+      "0e084705-3246-4481-a7a6-a5583ebfd114"
+    ],
+    "lapsLed": [
+      "43e1c520-2968-428b-bff2-6212ef882f76"
+    ],
+    "fastestPitStop": [
+      "Racing Bulls"
+    ],
+    "fastestLap": [
+      "43e1c520-2968-428b-bff2-6212ef882f76"
+    ],
+    "overAchiever": [
+      "edbab2ea-0f34-406c-87d4-83b1672fe7e2"
+    ],
+    "underAchiever": [
+      "82f78ba5-70dd-445f-91a8-c54542703960"
+    ],
+    "wrecker": [
+      "c1144918-f072-4c59-aad2-787be00d9b99"
+    ]
+  },
+  "previousKeyOrder": [
+    "f12b5f53-c37f-4d43-8a92-a56c6d663694",
+    "fefc3b7e-b50d-4e86-b431-a5bd4ad61fce",
+    "1685fb81-80a0-40b8-bd46-2a2379fdb4a9",
+    "43e1c520-2968-428b-bff2-6212ef882f76",
+    "4489d7a8-170e-46d3-a3e7-4c51f3fc8a8f",
+    "0e084705-3246-4481-a7a6-a5583ebfd114",
+    "b24bd3a6-8ac7-46fd-bb40-cc14c52d3317",
+    "82f78ba5-70dd-445f-91a8-c54542703960",
+    "88670d12-999d-46c1-af5b-7251bc781de7",
+    "2bf02225-7359-45ed-b9f7-37cf3d08f22e",
+    "c1144918-f072-4c59-aad2-787be00d9b99",
+    "3884b85d-2f57-4591-82db-442b3885d41c",
+    "edbab2ea-0f34-406c-87d4-83b1672fe7e2",
+    "196d67a1-bcf1-4966-8d43-1b1661265ff4",
+    "47a81cde-48bd-49ce-ba9d-8296ca355459",
+    "7ed8e047-cf05-4c42-8042-04f0b1dbc391",
+    "b1dd95a9-cdca-4220-a8c0-6e2dc9a48609",
+    "3e6182e4-57a6-4e8f-b59b-2e5aef55b87e",
+    "2c30d3a0-5545-4997-ae24-085888f4fe51",
+    "e58038f4-1b94-4846-8ebb-b45ee603334e",
+    "026b855f-1711-4c49-9b47-f8ba5bd0eae1",
+    "c74cb723-be0e-4feb-8f96-796b347dbc1e"
+  ],
+  "previousPropKey": {
+    "driverOfDay": null,
+    "lapsLed": null,
+    "fastestPitStop": null,
+    "fastestLap": null,
+    "overAchiever": null,
+    "underAchiever": null,
+    "wrecker": null
+  }
+}

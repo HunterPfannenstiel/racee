@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { type Race } from "@/lib/schemas";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc/client";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,51 +12,39 @@ import { Spinner } from "@/components/ui/spinner";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 
 export default function AdminResultsPage() {
+  const queryClient = useQueryClient();
   const leaguesQuery = useQuery(orpc.leagues.list.queryOptions());
-  const [motorsportId, setMotorsportId] = useState<string | null>(null);
-  const [races, setRaces] = useState<Race[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [recalculating, setRecalculating] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const motorsportId = leaguesQuery.data?.[0]?.motorsportId ?? null;
+  const racesQuery = useQuery(
+    orpc.races.list.queryOptions({
+      input: { motorsportId: motorsportId ?? "" },
+      enabled: !!motorsportId,
+    }),
+  );
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [dismissedLoadError, setDismissedLoadError] = useState(false);
 
-  useEffect(() => {
-    if (leaguesQuery.isPending) return;
-    if (leaguesQuery.isError) {
-      setError("Failed to load data.");
-      setLoading(false);
-      return;
-    }
-    const leagues = leaguesQuery.data ?? [];
-    if (leagues.length === 0) {
-      setLoading(false);
-      return;
-    }
-    const msId = leagues[0].motorsportId;
-    setMotorsportId(msId);
-    fetch(`/api/races?motorsportId=${msId}`)
-      .then((r) => r.json())
-      .then((raceList: Race[]) => setRaces(raceList.sort((a, b) => a.date.localeCompare(b.date))))
-      .catch(() => setError("Failed to load data."))
-      .finally(() => setLoading(false));
-  }, [leaguesQuery.isPending, leaguesQuery.isError, leaguesQuery.data]);
+  const recalculateMutation = useMutation(
+    orpc.races.recalculate.mutationOptions({
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: orpc.races.list.key() }),
+    }),
+  );
 
   async function handleRecalculate(raceId: string) {
     if (!motorsportId) return;
-    setRecalculating(raceId);
-    setError(null);
+    setMutationError(null);
     try {
-      const res = await fetch(`/api/races/${raceId}/recalculate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ motorsportId }),
-      });
-      if (!res.ok) { setError("Recalculate failed."); return; }
+      await recalculateMutation.mutateAsync({ motorsportId, raceId });
     } catch {
-      setError("Recalculate failed.");
-    } finally {
-      setRecalculating(null);
+      setMutationError("Recalculate failed.");
     }
   }
+
+  const loading = leaguesQuery.isPending || (!!motorsportId && racesQuery.isPending);
+  const races = racesQuery.data ?? [];
+  const recalculatingId = recalculateMutation.isPending ? (recalculateMutation.variables?.raceId ?? null) : null;
+  const loadFailed = leaguesQuery.isError || racesQuery.isError;
+  const error = mutationError ?? (loadFailed && !dismissedLoadError ? "Failed to load data." : null);
 
   return (
     <PageShell title="Results">
@@ -70,7 +57,16 @@ export default function AdminResultsPage() {
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
             {error}
-            <Button variant="ghost" size="sm" onClick={() => setError(null)}>✕</Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setMutationError(null);
+                setDismissedLoadError(true);
+              }}
+            >
+              ✕
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -86,8 +82,8 @@ export default function AdminResultsPage() {
         <div className="space-y-8">
           {(() => {
             const today = new Date().toISOString().split("T")[0];
-            const asc = (a: Race, b: Race) => a.date.localeCompare(b.date);
-            const desc = (a: Race, b: Race) => b.date.localeCompare(a.date);
+            const asc = (a: typeof races[number], b: typeof races[number]) => a.date.localeCompare(b.date);
+            const desc = (a: typeof races[number], b: typeof races[number]) => b.date.localeCompare(a.date);
 
             const awaiting = races.filter((r) => r.date < today && !r.keySetAt).sort(desc);
             const upcoming = races.filter((r) => r.date >= today && !r.keySetAt).sort(asc);
@@ -105,7 +101,7 @@ export default function AdminResultsPage() {
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {sectionRaces.map((race) => {
                     const isGraded = !!race.keySetAt;
-                    const isRecalculating = recalculating === race.id;
+                    const isRecalculating = recalculatingId === race.id;
                     return (
                       <Card key={race.id} size="sm" className="flex flex-col gap-3 px-4 py-3">
                         <div className="flex-1">
@@ -122,7 +118,7 @@ export default function AdminResultsPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              disabled={recalculating !== null}
+                              disabled={recalculateMutation.isPending}
                               onClick={() => handleRecalculate(race.id)}
                               className="flex-1"
                             >

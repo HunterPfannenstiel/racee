@@ -7,8 +7,13 @@ import { createClient } from "@supabase/supabase-js";
 
 config({ path: ".env.local" });
 
-const BACKUP_BUCKET = process.env.BACKUP_BUCKET;
-if (!BACKUP_BUCKET) throw new Error("BACKUP_BUCKET is not set");
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not set`);
+  return value;
+}
+
+const BACKUP_BUCKET = requireEnv("BACKUP_BUCKET");
 
 const RETAIN = Number(process.env.BACKUP_RETENTION);
 if (!Number.isInteger(RETAIN) || RETAIN < 1) {
@@ -17,8 +22,7 @@ if (!Number.isInteger(RETAIN) || RETAIN < 1) {
 
 const BACKUP_DATABASE_SCHEMA = process.env.BACKUP_DATABASE_SCHEMA;
 
-const sourceBucket = process.env.BACKUP_SOURCE_BUCKET;
-if (!sourceBucket) throw new Error("BACKUP_SOURCE_BUCKET is not set");
+const sourceBucket = requireEnv("BACKUP_SOURCE_BUCKET");
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,

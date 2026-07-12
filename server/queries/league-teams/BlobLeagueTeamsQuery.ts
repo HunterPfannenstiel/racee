@@ -1,4 +1,4 @@
-import type { ITeamRepository } from "@/server/repositories/interfaces";
+import type { ITeamRepository } from "@/server/repositories";
 import type { Team as TeamEntity } from "@/server/domain/team";
 import type { Team as TeamDTO } from "@/lib/schemas";
 import type { ILeagueTeamsQuery } from "./ILeagueTeamsQuery";

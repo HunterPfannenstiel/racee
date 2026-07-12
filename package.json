@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "backup": "tsx scripts/backup.ts"
+    "backup": "tsx scripts/backup.ts",
+    "apply-race-keys": "tsx scripts/apply-corrected-race-keys.ts"
   },
   "dependencies": {
     "@better-fetch/fetch": "^1.1.21",

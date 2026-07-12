@@ -1,4 +1,4 @@
-import type { ILeagueRepository, ITeamRepository, IUserRepository } from "@/server/repositories/interfaces";
+import type { ILeagueRepository, ITeamRepository, IUserRepository } from "@/server/repositories";
 import { League } from "@/server/domain/league";
 import { Team } from "@/server/domain/team";
 import { NotFoundError, AuthorizationError } from "@/server/domain/errors";
@@ -71,12 +71,6 @@ export class LeagueService {
   async demoteCoCommissioner(leagueId: string, userId: string): Promise<void> {
     const league = await this.getLeague(leagueId);
     league.demoteCoCommissioner(userId);
-    await this.leagues.save(league);
-  }
-
-  async addMember(leagueId: string, userId: string): Promise<void> {
-    const league = await this.getLeague(leagueId);
-    league.addMember(userId);
     await this.leagues.save(league);
   }
 
@@ -180,19 +174,4 @@ export class LeagueService {
     await this.teams.saveAll(teams);
   }
 
-  async initTeams(leagueId: string, assignments: Array<{ userId: string; teamId: string }>): Promise<void> {
-    const teams = await this.teams.findAllForLeague(leagueId);
-    // Clear all memberIds
-    for (const team of teams) {
-      for (const userId of [...team.memberIds]) {
-        team.removeMember(userId);
-      }
-    }
-    // Apply assignments
-    for (const { userId, teamId } of assignments) {
-      const team = teams.find(t => t.teamId === teamId);
-      if (team) team.addMember(userId);
-    }
-    await this.teams.saveAll(teams);
-  }
 }

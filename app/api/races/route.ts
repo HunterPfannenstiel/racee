@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
-import { RaceSchema } from "@/lib/schemas";
-import { BlobRaceRepository } from "@/server/repositories/blob/BlobRaceRepository";
-import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
-import { RaceService } from "@/server/services/RaceService";
-import { NotFoundError } from "@/server/domain/errors";
+import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepository";
+import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
 import type { Race } from "@/server/domain/race";
 
-const svc = new RaceService(new BlobRaceRepository());
+// Legacy route handler — allowed to touch repositories directly (not an oRPC
+// procedure). Still consumed by app/commissioner/leagues/[leagueId]/player-status/hooks/usePlayerStatus.ts
+// and app/admin/results/{page.tsx,[raceId]/page.tsx} until later migration phases port
+// them onto orpc.races.list. The POST handler that used to live here (race creation)
+// has moved to orpc.races.create — see server/rpc/routers/races.ts.
+const raceRepo = new BlobRaceRepository();
 const leagueRepo = new BlobLeagueRepository();
 
 function ser(r: Race) {
@@ -19,22 +21,14 @@ export async function GET(request: Request) {
   const leagueId = searchParams.get("leagueId");
 
   if (motorsportId) {
-    return NextResponse.json((await svc.listRaces(motorsportId)).map(ser));
+    return NextResponse.json((await raceRepo.findAllForMotorsport(motorsportId)).map(ser));
   }
 
   if (leagueId) {
     const league = await leagueRepo.findById(leagueId);
-    if (!league) throw new NotFoundError("League", leagueId);
-    return NextResponse.json((await svc.listRaces(league.motorsportId)).map(ser));
+    if (!league) return NextResponse.json({ error: `League not found: ${leagueId}` }, { status: 404 });
+    return NextResponse.json((await raceRepo.findAllForMotorsport(league.motorsportId)).map(ser));
   }
 
   return NextResponse.json({ error: "Missing motorsportId or leagueId" }, { status: 400 });
-}
-
-export async function POST(request: Request) {
-  const parsed = RaceSchema.safeParse(await request.json());
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const d = parsed.data;
-  await svc.createRace({ raceId: d.id, motorsportId: d.motorsportId, title: d.title, label: d.label, date: d.date, lockTime: d.lockTime, startingGrid: d.startingGrid });
-  return NextResponse.json({ ok: true });
 }

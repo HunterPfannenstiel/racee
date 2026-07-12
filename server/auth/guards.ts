@@ -1,9 +1,9 @@
 import { getSession } from "./server";
-import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
+import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
 import { LeagueService } from "@/server/services/LeagueService";
-import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
-import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
-import { Roles } from "@/server/roles/Roles";
+import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
+import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
+import { isLeagueCommissioner, isLeagueOwner } from "@/server/roles/league";
 
 export class AuthError extends Error {
   constructor(message = "Unauthorized") {
@@ -28,7 +28,7 @@ export async function requireCommissioner(leagueId: string) {
     new PrismaUserRepository(),
   );
   const league = await svc.getLeague(leagueId);
-  if (!Roles.isLeagueCommissioner(session.user.id, league)) throw new AuthError("Forbidden");
+  if (!isLeagueCommissioner(session.user.id, league)) throw new AuthError("Forbidden");
   return { session, league };
 }
 
@@ -50,6 +50,6 @@ export async function requireOwnerCommissioner(leagueId: string) {
     new PrismaUserRepository(),
   );
   const league = await svc.getLeague(leagueId);
-  if (!Roles.isLeagueOwner(session.user.id, league)) throw new AuthError("Forbidden");
+  if (!isLeagueOwner(session.user.id, league)) throw new AuthError("Forbidden");
   return { session, league };
 }

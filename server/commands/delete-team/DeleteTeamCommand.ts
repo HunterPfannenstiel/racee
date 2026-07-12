@@ -1,15 +1,20 @@
-import { LeagueService } from "@/server/services/LeagueService";
-import { Roles } from "@/server/roles/Roles";
+import type { ILeagueRepository, ITeamRepository } from "@/server/repositories";
+import { NotFoundError } from "@/server/domain/errors";
+import { assertLeagueCommissioner } from "@/server/roles/league";
 import type { IDeleteTeamCommand, DeleteTeamPayload } from "./IDeleteTeamCommand";
 
-/** Deletes a team. */
+/** Deletes a team. Commissioner-only. */
 export class DeleteTeamCommand implements IDeleteTeamCommand {
-  constructor(private readonly leagues: LeagueService) {}
+  constructor(
+    private readonly leagues: ILeagueRepository,
+    private readonly teams: ITeamRepository,
+  ) {}
 
   async execute(payload: DeleteTeamPayload): Promise<void> {
-    const league = await this.leagues.getLeague(payload.leagueId);
-    Roles.assertLeagueCommissioner(payload.actorUserId, league);
+    const league = await this.leagues.findById(payload.leagueId);
+    if (!league) throw new NotFoundError("League", payload.leagueId);
+    assertLeagueCommissioner(payload.actorUserId, league);
 
-    await this.leagues.deleteTeam(payload.leagueId, payload.teamId);
+    await this.teams.remove(payload.leagueId, payload.teamId);
   }
 }

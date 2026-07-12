@@ -1,4 +1,4 @@
-import type { ILeagueRepository } from "@/server/repositories/interfaces";
+import type { ILeagueRepository } from "@/server/repositories";
 import type { League as LeagueEntity } from "@/server/domain/league";
 import type { League as LeagueDTO } from "@/lib/schemas";
 import type { IUserLeaguesQuery } from "./IUserLeaguesQuery";

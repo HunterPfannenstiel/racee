@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type Race, type Racer } from "@/lib/schemas";
+import { orpc } from "@/lib/orpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -19,15 +21,22 @@ type Props = {
   motorsportId: string | null;
   races: Race[];
   racers: Racer[];
-  onRacesChange: (races: Race[]) => void;
   onError: (msg: string) => void;
 };
 
-export function RacesSection({ motorsportId, races, racers, onRacesChange, onError }: Props) {
+export function RacesSection({ motorsportId, races, racers, onError }: Props) {
+  const queryClient = useQueryClient();
   const [editor, setEditor] = useState<Editor | null>(null);
-  const [loadingOp, setLoadingOp] = useState<string | null>(null);
 
-  const busy = loadingOp !== null;
+  function invalidateRaces() {
+    queryClient.invalidateQueries({ queryKey: orpc.races.list.key() });
+  }
+
+  const createMutation = useMutation(orpc.races.create.mutationOptions({ onSuccess: invalidateRaces }));
+  const updateMutation = useMutation(orpc.races.update.mutationOptions({ onSuccess: invalidateRaces }));
+  const deleteMutation = useMutation(orpc.races.delete.mutationOptions({ onSuccess: invalidateRaces }));
+
+  const busy = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   function openEditor(race?: Race) {
     if (race) {
@@ -47,43 +56,34 @@ export function RacesSection({ motorsportId, races, racers, onRacesChange, onErr
 
   async function commitRace() {
     if (!editor || !editor.title.trim() || !editor.date || !motorsportId) return;
-    const race: Race = {
-      id: editor.raceId,
-      motorsportId,
-      title: editor.title.trim(),
-      date: editor.date,
-      startingGrid: editor.startingGrid,
-    };
-    const isNew = !races.some((r) => r.id === race.id);
-    setLoadingOp("save");
+    const isNew = !races.some((r) => r.id === editor.raceId);
     try {
-      const res = isNew
-        ? await fetch("/api/races", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(race) })
-        : await fetch(`/api/races/${race.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(race) });
-      if (!res.ok) { onError("Failed to save race."); return; }
-      onRacesChange(isNew ? [...races, race] : races.map((r) => (r.id === race.id ? race : r)));
+      if (isNew) {
+        await createMutation.mutateAsync({
+          id: editor.raceId,
+          motorsportId,
+          title: editor.title.trim(),
+          date: editor.date,
+          startingGrid: editor.startingGrid,
+        });
+      } else {
+        await updateMutation.mutateAsync({
+          motorsportId,
+          raceId: editor.raceId,
+          patch: { title: editor.title.trim(), date: editor.date },
+        });
+      }
       setEditor(null);
     } catch {
       onError("Failed to save race.");
-    } finally {
-      setLoadingOp(null);
     }
   }
 
   async function handleRemove(race: Race) {
-    setLoadingOp(`remove-${race.id}`);
     try {
-      const res = await fetch(`/api/races/${race.id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ motorsportId: race.motorsportId }),
-      });
-      if (!res.ok) { onError("Failed to delete race."); return; }
-      onRacesChange(races.filter((r) => r.id !== race.id));
+      await deleteMutation.mutateAsync({ motorsportId: race.motorsportId, raceId: race.id });
     } catch {
       onError("Failed to delete race.");
-    } finally {
-      setLoadingOp(null);
     }
   }
 
@@ -101,7 +101,9 @@ export function RacesSection({ motorsportId, races, racers, onRacesChange, onErr
                 <p className="text-xs text-muted-foreground">{race.date}</p>
               </div>
               <div className="flex gap-1 items-center shrink-0">
-                {loadingOp === `remove-${race.id}` && <Spinner className="w-3 h-3" />}
+                {deleteMutation.isPending && deleteMutation.variables?.raceId === race.id && (
+                  <Spinner className="w-3 h-3" />
+                )}
                 <Button variant="ghost" size="sm" onClick={() => openEditor(race)} disabled={busy}>Edit</Button>
                 <Button variant="ghost" size="sm" onClick={() => handleRemove(race)} disabled={busy}>Remove</Button>
               </div>
@@ -152,7 +154,7 @@ export function RacesSection({ motorsportId, races, racers, onRacesChange, onErr
             </div>
             <div className="flex gap-2 items-center">
               <Button onClick={commitRace} disabled={busy}>
-                {loadingOp === "save" && <Spinner className="w-3 h-3 mr-1" />}
+                {(createMutation.isPending || updateMutation.isPending) && <Spinner className="w-3 h-3 mr-1" />}
                 Save
               </Button>
               <Button variant="ghost" onClick={() => setEditor(null)} disabled={busy}>Cancel</Button>

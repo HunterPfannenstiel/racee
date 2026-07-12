@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { ChevronLeft, Settings2, Users, UserCheck, ClipboardCheck } from "lucide-react";
 import { PageShell } from "@/components/ui/page-shell";
 import { requireCommissioner } from "@/server/auth/guards";
-import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
-import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
-import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
+import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
+import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
+import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
 import { BlobCommissionerTeamsQuery } from "@/server/queries/commissioner-teams/BlobCommissionerTeamsQuery";
 
 const CARDS = [

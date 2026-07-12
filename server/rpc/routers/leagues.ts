@@ -1,77 +1,55 @@
 import { z } from "zod";
-import { os, ORPCError } from "@orpc/server";
-import { getSession } from "@/server/auth/server";
+import { ORPCError } from "@orpc/server";
+import { authed, adminOnly } from "@/server/rpc/procedures";
 import { LeagueSchema, TeamSchema } from "@/lib/schemas";
-import { NotFoundError, AuthorizationError } from "@/server/domain/errors";
-import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
-import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
-import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
-import { LeagueService } from "@/server/services/LeagueService";
+import { NotFoundError } from "@/server/domain/errors";
+import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
+import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
 import { BlobUserLeaguesQuery } from "@/server/queries/user-leagues/BlobUserLeaguesQuery";
 import { BlobLeagueQuery } from "@/server/queries/league/BlobLeagueQuery";
+import { BlobAllLeaguesQuery } from "@/server/queries/all-leagues/BlobAllLeaguesQuery";
 import { BlobLeagueTeamsQuery } from "@/server/queries/league-teams/BlobLeagueTeamsQuery";
-import { CreateLeagueCommand } from "@/server/commands/create-league/CreateLeagueCommand";
-import { UpdateLeagueCommand } from "@/server/commands/update-league/UpdateLeagueCommand";
-import { DeleteLeagueCommand } from "@/server/commands/delete-league/DeleteLeagueCommand";
-import { JoinViaInviteCommand } from "@/server/commands/join-via-invite/JoinViaInviteCommand";
+import { BlobCreateLeagueCommand } from "@/server/commands/create-league/BlobCreateLeagueCommand";
+import { BlobUpdateLeagueCommand } from "@/server/commands/update-league/BlobUpdateLeagueCommand";
+import { BlobDeleteLeagueCommand } from "@/server/commands/delete-league/BlobDeleteLeagueCommand";
+import { BlobJoinViaInviteCommand } from "@/server/commands/join-via-invite/BlobJoinViaInviteCommand";
 import { CreateTeamCommand } from "@/server/commands/create-team/CreateTeamCommand";
 import { UpdateTeamCommand } from "@/server/commands/update-team/UpdateTeamCommand";
 import { DeleteTeamCommand } from "@/server/commands/delete-team/DeleteTeamCommand";
 import { JoinTeamCommand } from "@/server/commands/join-team/JoinTeamCommand";
 
 /**
- * Wiring: concrete repositories/services are constructed once here and injected into
- * the query/command implementations, mirroring server/rpc/routers/me.ts. Per
+ * Wiring: concrete repositories are constructed once here and injected into the
+ * query/command implementations, mirroring server/rpc/routers/me.ts. Per
  * server/rpc/AGENTS.md, procedures below never touch a repository or service directly
  * — only through these query/command instances.
  */
 const leagueRepo = new BlobLeagueRepository();
 const teamRepo = new BlobTeamRepository();
-const userRepo = new PrismaUserRepository();
-const leagueService = new LeagueService(leagueRepo, teamRepo, userRepo);
 
 const userLeaguesQuery = new BlobUserLeaguesQuery(leagueRepo);
 const leagueQuery = new BlobLeagueQuery(leagueRepo);
+const allLeaguesQuery = new BlobAllLeaguesQuery(leagueRepo);
 const leagueTeamsQuery = new BlobLeagueTeamsQuery(teamRepo);
 
-const createLeagueCommand = new CreateLeagueCommand(leagueService);
-const updateLeagueCommand = new UpdateLeagueCommand(leagueService);
-const deleteLeagueCommand = new DeleteLeagueCommand(leagueService);
-const joinViaInviteCommand = new JoinViaInviteCommand(leagueService);
-const createTeamCommand = new CreateTeamCommand(leagueService);
-const updateTeamCommand = new UpdateTeamCommand(leagueService, teamRepo);
-const deleteTeamCommand = new DeleteTeamCommand(leagueService);
-const joinTeamCommand = new JoinTeamCommand(leagueService);
-
-/**
- * Every procedure under `leagues` requires an authenticated session. Mirrors the
- * `authed` middleware in server/rpc/routers/me.ts exactly — that one isn't shared/
- * exported, so this is deliberately re-derived here rather than imported.
- */
-const authed = os.use(async ({ context, next }) => {
-  const session = await getSession();
-  if (!session) {
-    throw new ORPCError("UNAUTHORIZED", { message: "You must be signed in." });
-  }
-  return next({ context: { ...context, session } });
-});
-
-/** Authenticated + the session user must be a site admin (mirrors requireAdmin()). */
-const adminOnly = authed.use(async ({ context, next }) => {
-  if (!context.session.user.isAdmin) {
-    throw new ORPCError("FORBIDDEN", { message: "Admin access required." });
-  }
-  return next();
-});
+const createLeagueCommand = new BlobCreateLeagueCommand(leagueRepo);
+const updateLeagueCommand = new BlobUpdateLeagueCommand(leagueRepo);
+const deleteLeagueCommand = new BlobDeleteLeagueCommand(leagueRepo);
+const joinViaInviteCommand = new BlobJoinViaInviteCommand(leagueRepo);
+const createTeamCommand = new CreateTeamCommand(leagueRepo, teamRepo);
+const updateTeamCommand = new UpdateTeamCommand(leagueRepo, teamRepo);
+const deleteTeamCommand = new DeleteTeamCommand(leagueRepo, teamRepo);
+const joinTeamCommand = new JoinTeamCommand(leagueRepo, teamRepo);
 
 /**
  * Commissioner/ownership authorization for leagues and teams is enforced by the
- * command layer (via `Roles`, server/roles/Roles.ts) — each command loads the
- * `League` domain entity itself and calls `Roles.assertLeagueCommissioner` (owner or
- * co-commissioner) or `Roles.assertLeagueOwner` (primary commissioner only,
- * league-delete) before mutating. Procedures below just forward `actorUserId` from the
- * session and translate the resulting `AuthorizationError`/`NotFoundError` into oRPC
- * errors — no rpc-layer `.use()` guard or local ownership check.
+ * command layer (server/roles/league.ts) — each command loads the `League` domain
+ * entity itself and calls `assertLeagueCommissioner` (owner or co-commissioner) or
+ * `assertLeagueOwner` (primary commissioner only, league-delete) before mutating.
+ * Procedures below just forward `actorUserId` from the session — the resulting
+ * `AuthorizationError`/`NotFoundError` is mapped to an oRPC error automatically by the
+ * `authed` middleware chain (server/rpc/procedures.ts) — no rpc-layer `.use()` guard,
+ * local ownership check, or hand-written try/catch.
  */
 
 const LeagueIdInput = z.object({ leagueId: z.string().uuid() });
@@ -94,23 +72,13 @@ const teamsRouter = {
     .input(TeamSchema.omit({ memberIds: true }).extend({ leagueId: z.string().uuid() }))
     .output(TeamSchema)
     .handler(async ({ context, input }) => {
-      try {
-        return await createTeamCommand.execute({
-          leagueId: input.leagueId,
-          id: input.id,
-          name: input.name,
-          color: input.color,
-          actorUserId: context.session.user.id,
-        });
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new ORPCError("NOT_FOUND", { message: err.message });
-        }
-        if (err instanceof AuthorizationError) {
-          throw new ORPCError("FORBIDDEN", { message: err.message });
-        }
-        throw err;
-      }
+      return await createTeamCommand.execute({
+        leagueId: input.leagueId,
+        id: input.id,
+        name: input.name,
+        color: input.color,
+        actorUserId: context.session.user.id,
+      });
     }),
 
   /**
@@ -128,22 +96,12 @@ const teamsRouter = {
     )
     .output(TeamSchema)
     .handler(async ({ context, input }) => {
-      try {
-        return await updateTeamCommand.execute({
-          leagueId: input.leagueId,
-          teamId: input.teamId,
-          patch: input.patch,
-          actorUserId: context.session.user.id,
-        });
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new ORPCError("NOT_FOUND", { message: err.message });
-        }
-        if (err instanceof AuthorizationError) {
-          throw new ORPCError("FORBIDDEN", { message: err.message });
-        }
-        throw err;
-      }
+      return await updateTeamCommand.execute({
+        leagueId: input.leagueId,
+        teamId: input.teamId,
+        patch: input.patch,
+        actorUserId: context.session.user.id,
+      });
     }),
 
   /** Deletes a team. Same `leagueId` deviation as `create`/`update`. */
@@ -151,21 +109,11 @@ const teamsRouter = {
     .input(z.object({ leagueId: z.string().uuid(), teamId: z.string().uuid() }))
     .output(z.object({ ok: z.literal(true) }))
     .handler(async ({ context, input }) => {
-      try {
-        await deleteTeamCommand.execute({
-          leagueId: input.leagueId,
-          teamId: input.teamId,
-          actorUserId: context.session.user.id,
-        });
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new ORPCError("NOT_FOUND", { message: err.message });
-        }
-        if (err instanceof AuthorizationError) {
-          throw new ORPCError("FORBIDDEN", { message: err.message });
-        }
-        throw err;
-      }
+      await deleteTeamCommand.execute({
+        leagueId: input.leagueId,
+        teamId: input.teamId,
+        actorUserId: context.session.user.id,
+      });
       return { ok: true as const };
     }),
 
@@ -178,21 +126,11 @@ const teamsRouter = {
     .input(z.object({ leagueId: z.string().uuid(), teamId: z.string().uuid() }))
     .output(z.object({ ok: z.literal(true) }))
     .handler(async ({ context, input }) => {
-      try {
-        await joinTeamCommand.execute({
-          leagueId: input.leagueId,
-          userId: context.session.user.id,
-          teamId: input.teamId,
-        });
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new ORPCError("NOT_FOUND", { message: err.message });
-        }
-        if (err instanceof AuthorizationError) {
-          throw new ORPCError("FORBIDDEN", { message: err.message });
-        }
-        throw err;
-      }
+      await joinTeamCommand.execute({
+        leagueId: input.leagueId,
+        userId: context.session.user.id,
+        teamId: input.teamId,
+      });
       return { ok: true as const };
     }),
 };
@@ -203,16 +141,17 @@ export const leaguesRouter = {
     .output(z.array(LeagueSchema))
     .handler(async ({ context }) => userLeaguesQuery.execute(context.session.user.id)),
 
+  /** All leagues, unfiltered. Site-admin only — backs app/create/page.tsx. */
+  listAll: adminOnly
+    .output(z.array(LeagueSchema))
+    .handler(async () => allLeaguesQuery.execute()),
+
   /** A single league by id. */
   get: authed
     .input(LeagueIdInput)
     .output(LeagueSchema)
     .handler(async ({ input }) => {
-      const league = await leagueQuery.execute(input.leagueId);
-      if (!league) {
-        throw new ORPCError("NOT_FOUND", { message: "League not found." });
-      }
-      return league;
+      return await leagueQuery.execute(input.leagueId);
     }),
 
   /** Creates a league. Site-admin only, mirroring requireAdmin() semantics. */
@@ -228,21 +167,11 @@ export const leaguesRouter = {
     .input(z.object({ leagueId: z.string().uuid(), patch: LeagueSchema.omit({ id: true }).partial() }))
     .output(LeagueSchema)
     .handler(async ({ context, input }) => {
-      try {
-        return await updateLeagueCommand.execute({
-          leagueId: input.leagueId,
-          patch: input.patch,
-          actorUserId: context.session.user.id,
-        });
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new ORPCError("NOT_FOUND", { message: err.message });
-        }
-        if (err instanceof AuthorizationError) {
-          throw new ORPCError("FORBIDDEN", { message: err.message });
-        }
-        throw err;
-      }
+      return await updateLeagueCommand.execute({
+        leagueId: input.leagueId,
+        patch: input.patch,
+        actorUserId: context.session.user.id,
+      });
     }),
 
   /** Deletes a league. Owning commissioner only — stricter than update/teams. */
@@ -250,17 +179,7 @@ export const leaguesRouter = {
     .input(LeagueIdInput)
     .output(z.object({ ok: z.literal(true) }))
     .handler(async ({ context, input }) => {
-      try {
-        await deleteLeagueCommand.execute({ leagueId: input.leagueId, actorUserId: context.session.user.id });
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new ORPCError("NOT_FOUND", { message: err.message });
-        }
-        if (err instanceof AuthorizationError) {
-          throw new ORPCError("FORBIDDEN", { message: err.message });
-        }
-        throw err;
-      }
+      await deleteLeagueCommand.execute({ leagueId: input.leagueId, actorUserId: context.session.user.id });
       return { ok: true as const };
     }),
 

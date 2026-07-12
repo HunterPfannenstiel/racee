@@ -47,11 +47,12 @@ const { blob } = await import("../../lib/blob/index.ts");
 const { RACERS_PATH, LEAGUES_PATH, motorsportRacesPath, teamsPath, predictionsPath } =
   await import("../../lib/paths.ts");
 const { PredictionService } = await import("../../server/services/PredictionService.ts");
-const { BlobLeagueRepository } = await import("../../server/repositories/blob/BlobLeagueRepository.ts");
-const { BlobRaceRepository } = await import("../../server/repositories/blob/BlobRaceRepository.ts");
-const { BlobRacePredictionBookRepository } = await import("../../server/repositories/blob/BlobRacePredictionBookRepository.ts");
-const { BlobLeagueStandingsRepository } = await import("../../server/repositories/blob/BlobLeagueStandingsRepository.ts");
-const { BlobTeamRepository } = await import("../../server/repositories/blob/BlobTeamRepository.ts");
+const { RecalculateRaceCommand } = await import("../../server/commands/recalculate-race/RecalculateRaceCommand.ts");
+const { BlobLeagueRepository } = await import("../../server/repositories/league/BlobLeagueRepository.ts");
+const { BlobRaceRepository } = await import("../../server/repositories/race/BlobRaceRepository.ts");
+const { BlobRacePredictionBookRepository } = await import("../../server/repositories/race-prediction-book/BlobRacePredictionBookRepository.ts");
+const { BlobLeagueStandingsRepository } = await import("../../server/repositories/league-standings/BlobLeagueStandingsRepository.ts");
+const { BlobTeamRepository } = await import("../../server/repositories/team/BlobTeamRepository.ts");
 
 // ---------------------------------------------------------------------------
 // Fixed identifiers for this batch
@@ -218,10 +219,12 @@ if (!preflightOk) {
 
 console.log("\n--- Writing (--write) ---\n");
 
-const predictionService = new PredictionService(
-  new BlobLeagueRepository(),
+const bookRepo = new BlobRacePredictionBookRepository();
+const predictionService = new PredictionService(bookRepo);
+const recalculateRaceCommand = new RecalculateRaceCommand(
   new BlobRaceRepository(),
-  new BlobRacePredictionBookRepository(),
+  new BlobLeagueRepository(),
+  bookRepo,
   new BlobLeagueStandingsRepository(),
   new BlobTeamRepository(),
 );
@@ -244,7 +247,7 @@ for (const r of RACES) {
     console.log(`  submitted ${p.userId}`);
   }
   console.log(`  recalculating grades for ${r.label}...`);
-  await predictionService.recalculate(MOTORSPORT_ID, r.raceId);
+  await recalculateRaceCommand.execute({ motorsportId: MOTORSPORT_ID, raceId: r.raceId });
   console.log(`  done: ${r.label}`);
 }
 

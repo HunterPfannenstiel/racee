@@ -2,8 +2,8 @@ import { z } from "zod";
 import { blob } from "@/lib/blob";
 import { RACERS_PATH, motorsportRacesPath, predictionsPath } from "@/lib/paths";
 import { NotFoundError } from "@/server/domain/errors";
-import { Roles } from "@/server/roles/Roles";
-import type { ILeagueRepository } from "@/server/repositories/interfaces/ILeagueRepository";
+import { assertLeagueCommissioner } from "@/server/roles/league";
+import type { ILeagueRepository } from "@/server/repositories/league/ILeagueRepository";
 import type {
   ICommissionerPlayerPredictionsQuery,
   CommissionerPlayerPredictionsResult,
@@ -64,7 +64,7 @@ export class BlobCommissionerPlayerPredictionsQuery
   ): Promise<CommissionerPlayerPredictionsResult> {
     const league = await this.leagues.findById(leagueId);
     if (!league) throw new NotFoundError("League", leagueId);
-    Roles.assertLeagueCommissioner(actorUserId, league);
+    assertLeagueCommissioner(actorUserId, league);
 
     const rawRacers = await blob.read<unknown>(RACERS_PATH);
     const allRacers = z.array(RacerReadSchema).parse(rawRacers ?? []);
