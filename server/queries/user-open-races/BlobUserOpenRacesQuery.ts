@@ -1,13 +1,15 @@
 import { z } from "zod";
 import { blob } from "@/lib/blob";
 import {
-  LEAGUES_PATH,
   RACERS_PATH,
   motorsportRacesPath,
   predictionsPath,
   teamsPath,
 } from "@/lib/paths";
 import { prisma } from "@/server/db";
+import { NotFoundError } from "@/server/domain/errors";
+import { assertLeagueMember } from "@/server/roles/league";
+import type { ILeagueRepository } from "@/server/repositories";
 import type {
   IUserOpenRacesQuery,
   UserOpenRacesResult,
@@ -18,11 +20,6 @@ import type {
 } from "./IUserOpenRacesQuery";
 
 // ─── Lightweight read schemas ─────────────────────────────────────────────────
-
-const LeagueReadSchema = z.object({
-  id: z.string(),
-  motorsportId: z.string().optional(),
-});
 
 const RaceReadSchema = z.object({
   id: z.string(),
@@ -69,25 +66,31 @@ const TeamReadSchema = z.object({
 
 // ─── Implementation ───────────────────────────────────────────────────────────
 
+/**
+ * Reads the current user's open races, picks, and teammate lineup for a
+ * league. Ported from the legacy `GET /api/predict/init` route (whose
+ * `requireMember` guard is replaced below by loading the league through
+ * `ILeagueRepository` and calling `assertLeagueMember` — see
+ * server/rpc/routers/predictions.ts).
+ */
 export class BlobUserOpenRacesQuery implements IUserOpenRacesQuery {
+  constructor(private leagues: ILeagueRepository) {}
+
   async execute(userId: string, leagueId: string): Promise<UserOpenRacesResult> {
     const now = new Date();
 
-    // Round 1: leagues + racers + teams in parallel
-    const [rawLeagues, rawRacers, rawTeams] = await Promise.all([
-      blob.read<unknown>(LEAGUES_PATH),
+    // Round 1: league (repository, for membership enforcement) + racers + teams in parallel
+    const [league, rawRacers, rawTeams] = await Promise.all([
+      this.leagues.findById(leagueId),
       blob.read<unknown>(RACERS_PATH),
       blob.read<unknown>(teamsPath(leagueId)),
     ]);
 
-    const leagues = z.array(LeagueReadSchema).parse(rawLeagues ?? []);
+    if (!league) throw new NotFoundError("League", leagueId);
+    assertLeagueMember(userId, league);
+
     const allRacers = z.array(RacerReadSchema).parse(rawRacers ?? []);
     const teams = z.array(TeamReadSchema).parse(rawTeams ?? []);
-
-    const league = leagues.find((l) => l.id === leagueId);
-    if (!league?.motorsportId) {
-      return { openRaces: [], racersById: {}, teammates: [], teammatePicks: {} };
-    }
 
     // Resolve team membership
     const userTeam = teams.find((t) => t.memberIds.includes(userId));

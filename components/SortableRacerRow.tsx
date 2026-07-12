@@ -7,10 +7,14 @@ import { cn } from "@/lib/utils";
 import { RacerAvatar } from "@/components/RacerAvatar";
 import { type Racer } from "@/lib/schemas";
 
+// Accepts either the full domain-backed Racer or the leaner client-facing
+// racer DTO used by prediction flows (never carries motorsportId).
+type SortableRacer = Pick<Racer, "name" | "team" | "image" | "teamColor">;
+
 type Props = {
   racerId: string;
   index: number;
-  racer: Racer;
+  racer: SortableRacer;
   disabled: boolean;
   startingGridPosition?: number;
 };
