@@ -49,6 +49,10 @@ export class LeagueStandings {
   get individual(): readonly UserLeagueScores[] { return Array.from(this._individual.values()); }
   get teams(): readonly TeamLeagueScores[] { return Array.from(this._teams.values()); }
 
+  removeIndividual(userId: string): void {
+    this._individual.delete(userId);
+  }
+
   incorporateRaceResult(
     raceScores: RaceScores,
     activeTeamIds: Set<string>,

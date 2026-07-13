@@ -1,8 +1,16 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { config } from "dotenv";
 import type { PropKey, PropName } from "../server/domain/race-prediction-book.ts";
+import {
+  type DatafixOpts,
+  type DatafixStepResult,
+  isMainModule,
+  loadDatafixEnv,
+  parseDatafixArgs,
+  printDatafixBanner,
+  printStepSummary,
+} from "./datafix-shared.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, "data", "corrected-race-keys");
@@ -17,39 +25,6 @@ const KNOWN_MISSING_SOURCE_DATA = ["Bahrain", "Saudi Arabian"];
 // to this motorsport today. If a future correction spans a different motorsport, this needs
 // to move into each JSON file rather than staying a single constant.
 const MOTORSPORT_ID = "9ff98309-13ac-4dd6-85db-a9afba01179f";
-
-const args = process.argv.slice(2);
-const dryRun = args.includes("--dry-run");
-const confirmed = args.includes("--yes");
-const envFileArg = args.find((a) => a.startsWith("--env-file="));
-const envFile = envFileArg ? envFileArg.slice("--env-file=".length) : ".env.local";
-
-// Must run before any import that touches lib/blob (e.g. the repository modules imported
-// dynamically in main() below) — lib/blob/supabase.ts constructs its Supabase client at
-// module-evaluation time, so loading env vars after that module is imported is too late.
-const envResult = config({ path: envFile });
-if (envResult.error) {
-  console.warn(`warning: could not load ${envFile} (${envResult.error.message}) — relying on already-exported env vars`);
-}
-
-function printTargetBanner() {
-  const backend = process.env.VERCEL ? "SupabaseBlobStore" : "LocalBlobStore";
-  console.log("=".repeat(60));
-  console.log(`target env file:  ${envFile}`);
-  console.log(
-    `storage backend:  ${backend}` +
-      (process.env.VERCEL ? "" : "  (writes to .blob-store/ on local disk, NOT Supabase — set VERCEL=1 to target Supabase)"),
-  );
-  if (process.env.VERCEL) {
-    console.log(`SUPABASE_URL:     ${process.env.SUPABASE_URL ?? "(not set)"}`);
-    console.log(`DATABASE_SCHEMA:  ${process.env.DATABASE_SCHEMA ?? "(not set)"}`);
-    console.log(`BUCKET_NAME:      ${process.env.BUCKET_NAME ?? "(not set)"}`);
-  }
-  console.log(
-    `mode:             ${dryRun ? "dry-run (no writes)" : confirmed ? "REAL WRITE (--yes)" : "preview only (pass --yes to write)"}`,
-  );
-  console.log("=".repeat(60));
-}
 
 interface CorrectedRaceKey {
   raceId: string;
@@ -102,16 +77,18 @@ function loadCorrectedKeys(): CorrectedRaceKey[] {
     });
 }
 
-async function main() {
-  printTargetBanner();
+export async function runApplyCorrectedRaceKeys(opts: { dryRun: boolean; confirmed: boolean }): Promise<DatafixStepResult> {
+  const { dryRun, confirmed } = opts;
+  const willWrite = !dryRun && confirmed;
 
   for (const title of KNOWN_MISSING_SOURCE_DATA) {
     console.log(`skip: ${title} — no corrected data yet (source Excel not available)`);
   }
 
-  // Imported dynamically, after env vars are loaded above — these modules construct a
-  // Supabase client at import time (lib/blob/supabase.ts), so importing them statically
-  // (before config() runs) would lock in the wrong, or missing, credentials.
+  // Imported dynamically, after env vars are loaded by the caller (either this file's
+  // own CLI entry below, or run-prod-datafixes.ts) — these modules construct a Supabase
+  // client at import time (lib/blob/supabase.ts), so importing them statically (before
+  // env vars are set) would lock in the wrong, or missing, credentials.
   const [
     { BlobRaceRepository },
     { BlobLeagueRepository },
@@ -138,7 +115,6 @@ async function main() {
   );
 
   const corrections = loadCorrectedKeys();
-  const willWrite = !dryRun && confirmed;
   let applied = 0;
   let skipped = 0;
   let pending = 0;
@@ -169,6 +145,8 @@ async function main() {
 
       if (!willWrite) {
         console.log(`${dryRun ? "would update" : "planned"}: ${correction.title} — ${changedFields.join("; ")}`);
+        console.log(JSON.stringify({ keyOrder: correction.keyOrder, propKey: correction.propKey }, null, 2)
+          .split("\n").map((l) => "  " + l).join("\n"));
         pending++;
         continue;
       }
@@ -187,14 +165,22 @@ async function main() {
     }
   }
 
-  if (dryRun) {
-    console.log(`\ndry run done — ${corrections.length} race(s) checked, ${pending} would change, ${skipped} already correct`);
-  } else if (!confirmed) {
-    console.log(`\npreview only — ${pending} race(s) need changes, ${skipped} already correct. Re-run with --yes to apply against ${envFile}.`);
-  } else {
-    console.log(`\ndone — ${applied} applied, ${skipped} already correct, ${failed} failed`);
-  }
-  if (failed > 0) process.exitCode = 1;
+  return { applied, skipped, pending, failed };
 }
 
-main();
+// ---------------------------------------------------------------------------
+// Standalone CLI entry — only runs when this file is executed directly
+// (`tsx scripts/apply-corrected-race-keys.ts`), not when imported by
+// run-prod-datafixes.ts.
+// ---------------------------------------------------------------------------
+
+if (isMainModule(import.meta.url)) {
+  const opts: DatafixOpts = parseDatafixArgs(process.argv.slice(2));
+  loadDatafixEnv(opts.envFile);
+  printDatafixBanner(opts);
+
+  runApplyCorrectedRaceKeys(opts).then((result) => {
+    printStepSummary("apply-corrected-race-keys", result, opts);
+    if (result.failed > 0) process.exitCode = 1;
+  });
+}

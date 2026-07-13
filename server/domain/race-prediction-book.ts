@@ -139,6 +139,10 @@ export class RacePredictionBook {
     this._predictions.set(userId, new UserPrediction({ userId, racerIds, propPicks, submittedAt, submittedBy }));
   }
 
+  retractPrediction(userId: string): void {
+    this._predictions.delete(userId);
+  }
+
   grade(league: League, race: Race): RaceScores {
     if (!race.keyOrder || race.keyOrder.length === 0) {
       throw new Error("RacePredictionBook: cannot grade without an answer key");
