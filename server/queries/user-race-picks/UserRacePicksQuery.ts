@@ -5,6 +5,7 @@ import type {
   IRacePredictionBookRepository,
 } from "@/server/repositories";
 import type { IUserRacePicksQuery, UserRacePicksResult, RacerDTO } from "./IUserRacePicksQuery";
+import { assignRanks } from "@/lib/scoring";
 
 /**
  * A single user's picks, key, and score for one race. A missing league yields
@@ -47,10 +48,10 @@ export class UserRacePicksQuery implements IUserRacePicksQuery {
 
     // Scores + rank
     const scores = book?.scores ?? null;
-    const sortedEntries = scores
-      ? [...scores.entries].sort((a, b) => (b.gridPoints + b.propPoints) - (a.gridPoints + a.propPoints))
+    const rankedEntries = scores
+      ? assignRanks([...scores.entries], (e) => e.gridPoints + e.propPoints)
       : [];
-    const rankIndex = sortedEntries.findIndex((e) => e.userId === userId);
+    const userRank = rankedEntries.find((e) => e.userId === userId)?.rank ?? null;
     const userEntry = scores?.entryFor(userId) ?? null;
 
     return {
@@ -62,8 +63,8 @@ export class UserRacePicksQuery implements IUserRacePicksQuery {
       scores: userEntry
         ? { gridPoints: userEntry.gridPoints, propPoints: userEntry.propPoints, medal: userEntry.medal }
         : null,
-      rank: rankIndex >= 0 ? rankIndex + 1 : null,
-      totalParticipants: sortedEntries.length,
+      rank: userRank,
+      totalParticipants: rankedEntries.length,
       placementPoints: [...league.placementPoints],
       propPointValues: { ...league.propPointValues },
       racersById,

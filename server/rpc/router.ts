@@ -7,6 +7,7 @@ import { usersRouter } from "@/server/rpc/routers/users";
 import { predictionsRouter } from "@/server/rpc/routers/predictions";
 import { playersRouter } from "@/server/rpc/routers/players";
 import { standingsRouter } from "@/server/rpc/routers/standings";
+import { weeklyResultsRouter } from "@/server/rpc/routers/weekly-results";
 
 /**
  * Root oRPC router. Compose additional domain sub-routers here as they're
@@ -22,6 +23,7 @@ export const router = {
   predictions: predictionsRouter,
   players: playersRouter,
   standings: standingsRouter,
+  weeklyResults: weeklyResultsRouter,
 };
 
 export type AppRouter = typeof router;

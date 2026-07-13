@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { type Race } from "@/lib/schemas";
+import { assignRanks } from "@/lib/scoring";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { type StandingsRowData } from "./StandingsGrid";
 
@@ -17,13 +18,12 @@ type Props = {
 };
 
 function computeStageRank(rows: StandingsRowData[], raceIds: string[], targetId: string): number {
-  const sorted = rows
-    .map((r) => ({
-      id: r.id,
-      total: raceIds.reduce((sum, rid) => sum + (r.raceScores[rid] ?? 0), 0),
-    }))
-    .sort((a, b) => b.total - a.total);
-  return sorted.findIndex((t) => t.id === targetId) + 1;
+  const totals = rows.map((r) => ({
+    id: r.id,
+    total: raceIds.reduce((sum, rid) => sum + (r.raceScores[rid] ?? 0), 0),
+  }));
+  const ranked = assignRanks(totals, (t) => t.total);
+  return ranked.find((t) => t.id === targetId)?.rank ?? 0;
 }
 
 export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx, stages, races }: Props) {
