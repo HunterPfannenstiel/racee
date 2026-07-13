@@ -2,10 +2,18 @@ import { z } from "zod";
 import { authed } from "@/server/rpc/procedures";
 import { RacerSchema, PropNameSchema } from "@/lib/schemas";
 import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
-import { BlobUserProfileStatsQuery } from "@/server/queries/user-profile-stats/BlobUserProfileStatsQuery";
+import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
+import { BlobRacerRepository } from "@/server/repositories/racer/BlobRacerRepository";
+import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepository";
+import { BlobRacePredictionBookRepository } from "@/server/repositories/race-prediction-book/BlobRacePredictionBookRepository";
+import { UserProfileStatsQuery } from "@/server/queries/user-profile-stats/UserProfileStatsQuery";
 
 const userRepo = new PrismaUserRepository();
-const userProfileStatsQuery = new BlobUserProfileStatsQuery(userRepo);
+const leagueRepo = new BlobLeagueRepository();
+const racerRepo = new BlobRacerRepository();
+const raceRepo = new BlobRaceRepository();
+const bookRepo = new BlobRacePredictionBookRepository();
+const userProfileStatsQuery = new UserProfileStatsQuery(userRepo, leagueRepo, racerRepo, raceRepo, bookRepo);
 
 // Same client-facing racer shape as server/rpc/routers/predictions.ts's
 // RacerDTOSchema — IUserProfileStatsQuery.ts's RacerDTO never carries

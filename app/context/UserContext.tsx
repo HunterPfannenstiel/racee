@@ -3,6 +3,13 @@ import { createContext, useContext } from "react";
 import { useSession } from "@/server/auth/auth-client";
 import { type User } from "@/lib/schemas";
 
+/**
+ * Division of responsibility: UserContext carries better-auth session state
+ * only, for auth gating — who is signed in, `isAdmin`, and the loading flag
+ * that gates like `RequireUser` consume. Server profile data (display name,
+ * leagues, etc.) belongs to `orpc.me.get` via TanStack Query — components
+ * must not add server state here.
+ */
 type UserContextValue = {
   user: User | null;
   isAdmin: boolean;

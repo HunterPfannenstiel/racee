@@ -5,7 +5,11 @@ import { NotFoundError } from "@/server/domain/errors";
 import { assertLeagueCommissioner } from "@/server/roles/league";
 import type { ICommissionerTeamsQuery, CommissionerTeamsResult } from "./ICommissionerTeamsQuery";
 
-export class BlobCommissionerTeamsQuery implements ICommissionerTeamsQuery {
+/**
+ * Teams plus every league member — the commissioner team-management roster.
+ * Unprefixed — composes the team, user, and league repositories.
+ */
+export class CommissionerTeamsQuery implements ICommissionerTeamsQuery {
   constructor(
     private readonly teams: ITeamRepository,
     private readonly users: IUserRepository,

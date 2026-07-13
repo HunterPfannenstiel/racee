@@ -159,14 +159,10 @@ export class BlobRacePredictionBookRepository
       throw new PersistenceError("read", pPath, e);
     }
 
-    if (rawPredictions === null) return null;
-
-    let parsedPredictions: PredictionsPersistence;
-    try {
-      parsedPredictions = PredictionsPersistenceSchema.parse(rawPredictions);
-    } catch (e) {
-      throw new ParseError(pPath, e);
-    }
+    // The aggregate exists if either blob does — a scores blob without a
+    // predictions blob still yields a (predictionless) book, so its scores
+    // stay readable.
+    if (rawPredictions === null && rawScores === null) return null;
 
     let scores: RaceScores | null = null;
     if (rawScores !== null) {
@@ -179,7 +175,28 @@ export class BlobRacePredictionBookRepository
       scores = scoresToDomain(parsedScores);
     }
 
+    if (rawPredictions === null) {
+      return new RacePredictionBook(leagueId, raceId, new Map(), scores);
+    }
+
+    let parsedPredictions: PredictionsPersistence;
+    try {
+      parsedPredictions = PredictionsPersistenceSchema.parse(rawPredictions);
+    } catch (e) {
+      throw new ParseError(pPath, e);
+    }
+
     return predictionsToDomain(leagueId, raceId, parsedPredictions, scores);
+  }
+
+  async findAllForRaces(
+    leagueId: string,
+    raceIds: string[],
+  ): Promise<RacePredictionBook[]> {
+    const books = await Promise.all(
+      raceIds.map((raceId) => this.findByRace(leagueId, raceId)),
+    );
+    return books.filter((b): b is RacePredictionBook => b !== null);
   }
 
   async save(book: RacePredictionBook): Promise<void> {

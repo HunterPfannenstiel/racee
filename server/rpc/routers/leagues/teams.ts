@@ -5,7 +5,7 @@ import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRep
 import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
 import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
 import { BlobLeagueTeamsQuery } from "@/server/queries/league-teams/BlobLeagueTeamsQuery";
-import { BlobCommissionerTeamsQuery } from "@/server/queries/commissioner-teams/BlobCommissionerTeamsQuery";
+import { CommissionerTeamsQuery } from "@/server/queries/commissioner-teams/CommissionerTeamsQuery";
 import { CreateTeamCommand } from "@/server/commands/create-team/CreateTeamCommand";
 import { UpdateTeamCommand } from "@/server/commands/update-team/UpdateTeamCommand";
 import { DeleteTeamCommand } from "@/server/commands/delete-team/DeleteTeamCommand";
@@ -16,7 +16,7 @@ const teamRepo = new BlobTeamRepository();
 const userRepo = new PrismaUserRepository();
 
 const leagueTeamsQuery = new BlobLeagueTeamsQuery(teamRepo);
-const commissionerTeamsQuery = new BlobCommissionerTeamsQuery(teamRepo, userRepo, leagueRepo);
+const commissionerTeamsQuery = new CommissionerTeamsQuery(teamRepo, userRepo, leagueRepo);
 const createTeamCommand = new CreateTeamCommand(leagueRepo, teamRepo);
 const updateTeamCommand = new UpdateTeamCommand(leagueRepo, teamRepo);
 const deleteTeamCommand = new DeleteTeamCommand(leagueRepo, teamRepo);

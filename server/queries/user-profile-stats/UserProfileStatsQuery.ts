@@ -1,13 +1,13 @@
-import { z } from "zod";
-import { blob } from "@/lib/blob";
-import {
-  LEAGUES_PATH,
-  RACERS_PATH,
-  motorsportRacesPath,
-  predictionsPath,
-} from "@/lib/paths";
 import { type PropName } from "@/lib/schemas";
-import type { IUserRepository } from "@/server/repositories/user/IUserRepository";
+import type { Race } from "@/server/domain/race";
+import type { RacePredictionBook } from "@/server/domain/race-prediction-book";
+import type {
+  IUserRepository,
+  ILeagueRepository,
+  IRacerRepository,
+  IRaceRepository,
+  IRacePredictionBookRepository,
+} from "@/server/repositories";
 import type {
   IUserProfileStatsQuery,
   UserProfileStatsResult,
@@ -17,57 +17,6 @@ import type {
   TrendPointDTO,
   RacerDTO,
 } from "./IUserProfileStatsQuery";
-
-// ─── Schemas ──────────────────────────────────────────────────────────────────
-
-const LeagueReadSchema = z.object({
-  id: z.string(),
-  motorsportId: z.string().optional(),
-});
-
-const PropKeyReadSchema = z.object({
-  driverOfDay: z.array(z.string()).nullable(),
-  lapsLed: z.array(z.string()).nullable(),
-  fastestPitStop: z.array(z.string()).nullable(),
-  fastestLap: z.array(z.string()).nullable(),
-  overAchiever: z.array(z.string()).nullable(),
-  underAchiever: z.array(z.string()).nullable(),
-  wrecker: z.array(z.string()).nullable(),
-});
-
-const RaceReadSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  date: z.string(),
-  keySetAt: z.string().nullable().optional(),
-  propKey: PropKeyReadSchema.nullable().optional(),
-});
-
-const RacerReadSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  team: z.string(),
-  image: z.string().optional(),
-  teamColor: z.string().optional(),
-});
-
-const PropPicksReadSchema = z.object({
-  driverOfDay: z.string().optional(),
-  lapsLed: z.string().optional(),
-  fastestPitStop: z.string().optional(),
-  fastestLap: z.string().optional(),
-  overAchiever: z.string().optional(),
-  underAchiever: z.string().optional(),
-  wrecker: z.string().optional(),
-});
-
-const PredictionsReadSchema = z.object({
-  predictions: z.record(z.string(), z.array(z.string())),
-  propPicks: z.record(z.string(), PropPicksReadSchema).optional(),
-});
-
-type RaceRead = z.infer<typeof RaceReadSchema>;
-type PropPicksRead = z.infer<typeof PropPicksReadSchema>;
 
 const PROP_NAMES: PropName[] = [
   "driverOfDay",
@@ -79,90 +28,91 @@ const PROP_NAMES: PropName[] = [
   "wrecker",
 ];
 
-// ─── Implementation ───────────────────────────────────────────────────────────
-
-export class BlobUserProfileStatsQuery implements IUserProfileStatsQuery {
-  constructor(private readonly userRepo: IUserRepository) {}
+/**
+ * A player's prediction-history stats and pick feed across every league.
+ * Unprefixed — composes the user, league, racer, race, and prediction-book
+ * repositories.
+ */
+export class UserProfileStatsQuery implements IUserProfileStatsQuery {
+  constructor(
+    private readonly users: IUserRepository,
+    private readonly leagues: ILeagueRepository,
+    private readonly racers: IRacerRepository,
+    private readonly races: IRaceRepository,
+    private readonly books: IRacePredictionBookRepository,
+  ) {}
 
   async execute(userId: string): Promise<UserProfileStatsResult> {
     // Round 1: user lookup + leagues + racers in parallel
-    const [user, rawLeagues, rawRacers] = await Promise.all([
-      this.userRepo.findById(userId),
-      blob.read<unknown>(LEAGUES_PATH),
-      blob.read<unknown>(RACERS_PATH),
+    const [user, leagues, allRacers] = await Promise.all([
+      this.users.findById(userId),
+      this.leagues.findAll(),
+      this.racers.findAll(),
     ]);
 
     if (!user) return emptyResult(userId);
 
-    const leagues = z.array(LeagueReadSchema).parse(rawLeagues ?? []);
-    const allRacers = z.array(RacerReadSchema).parse(rawRacers ?? []);
-
     const allRacersById: Record<string, RacerDTO> = Object.fromEntries(
       allRacers.map((r) => [
-        r.id,
-        { id: r.id, name: r.name, team: r.team, image: r.image, teamColor: r.teamColor },
+        r.racerId,
+        { id: r.racerId, name: r.name, team: r.constructorName, image: r.image, teamColor: r.teamColor },
       ]),
     );
 
     // Round 2: motorsport races for each unique motorsportId
-    const leaguesWithMotorsport = leagues.filter(
-      (l): l is typeof l & { motorsportId: string } => !!l.motorsportId,
-    );
-    const uniqueMotorsportIds = [...new Set(leaguesWithMotorsport.map((l) => l.motorsportId))];
+    const uniqueMotorsportIds = [...new Set(leagues.map((l) => l.motorsportId))];
 
-    const rawRacesByMotorsport = await Promise.all(
-      uniqueMotorsportIds.map((mid) => blob.read<unknown>(motorsportRacesPath(mid))),
+    const racesByMotorsport = await Promise.all(
+      uniqueMotorsportIds.map((mid) => this.races.findAllForMotorsport(mid)),
     );
 
-    const racesByMotorsportId: Record<string, RaceRead[]> = {};
+    const racesByMotorsportId: Record<string, Race[]> = {};
     for (let i = 0; i < uniqueMotorsportIds.length; i++) {
-      racesByMotorsportId[uniqueMotorsportIds[i]] = z
-        .array(RaceReadSchema)
-        .parse(rawRacesByMotorsport[i] ?? []);
+      racesByMotorsportId[uniqueMotorsportIds[i]] = racesByMotorsport[i];
     }
 
     // Build all league-race pairs
-    const leagueRacePairs: Array<{ leagueId: string; race: RaceRead }> = [];
-    for (const league of leaguesWithMotorsport) {
+    const leagueRacePairs: Array<{ leagueId: string; race: Race }> = [];
+    for (const league of leagues) {
       for (const race of racesByMotorsportId[league.motorsportId] ?? []) {
-        leagueRacePairs.push({ leagueId: league.id, race });
+        leagueRacePairs.push({ leagueId: league.leagueId, race });
       }
     }
 
-    // Round 3: predictions for all league-race pairs in parallel
-    const rawPredictionsList = await Promise.all(
-      leagueRacePairs.map(({ leagueId, race }) =>
-        blob.read<unknown>(predictionsPath(leagueId, race.id)),
-      ),
+    // Round 3: prediction books for every league's races, batched per league
+    const booksByLeague = new Map<string, Map<string, RacePredictionBook>>();
+    await Promise.all(
+      leagues.map(async (league) => {
+        const races = racesByMotorsportId[league.motorsportId] ?? [];
+        const books = await this.books.findAllForRaces(
+          league.leagueId,
+          races.map((r) => r.raceId),
+        );
+        booksByLeague.set(league.leagueId, new Map(books.map((b) => [b.raceId, b])));
+      }),
     );
 
     // Accumulate picks by (raceId, propType, answer)
     type PickAccum = { propType: PropName; answer: string; weight: number };
-    type RaceAccum = { race: RaceRead; leagueCount: number; picks: Map<string, PickAccum> };
+    type RaceAccum = { race: Race; leagueCount: number; picks: Map<string, PickAccum> };
 
     const raceAccumMap = new Map<string, RaceAccum>();
 
-    for (let i = 0; i < leagueRacePairs.length; i++) {
-      const { race } = leagueRacePairs[i];
-      const rawPreds = rawPredictionsList[i];
-      if (!rawPreds) continue;
+    for (const { leagueId, race } of leagueRacePairs) {
+      const book = booksByLeague.get(leagueId)?.get(race.raceId);
+      if (!book) continue;
 
-      const parsed = PredictionsReadSchema.safeParse(rawPreds);
-      if (!parsed.success) continue;
+      const pred = book.predictionFor(userId);
+      if (!pred) continue;
 
-      const userPropPicks: PropPicksRead | undefined = parsed.data.propPicks?.[userId];
-      const hasGridPick = userId in parsed.data.predictions;
-      const hasProps = !!userPropPicks && PROP_NAMES.some((p) => !!userPropPicks[p]);
-      if (!hasGridPick && !hasProps) continue;
-
-      let raceAccum = raceAccumMap.get(race.id);
+      let raceAccum = raceAccumMap.get(race.raceId);
       if (!raceAccum) {
         raceAccum = { race, leagueCount: 0, picks: new Map() };
-        raceAccumMap.set(race.id, raceAccum);
+        raceAccumMap.set(race.raceId, raceAccum);
       }
       raceAccum.leagueCount++;
 
-      if (!userPropPicks) continue;
+      const userPropPicks = pred.propPicks;
       for (const propType of PROP_NAMES) {
         const answer = userPropPicks[propType];
         if (!answer) continue;
@@ -209,7 +159,7 @@ export class BlobUserProfileStatsQuery implements IUserProfileStatsQuery {
       }
 
       pickFeed.push({
-        raceId: race.id,
+        raceId: race.raceId,
         title: race.title,
         date: race.date,
         leagueCount,

@@ -4,19 +4,23 @@ import { RaceSchema, RacerSchema, PredictionMutationSchema, PropKeySchema, PropP
 import { PropPicksSchema } from "@/server/domain/race-prediction-book";
 import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
 import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
+import { BlobRacerRepository } from "@/server/repositories/racer/BlobRacerRepository";
 import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepository";
 import { BlobRacePredictionBookRepository } from "@/server/repositories/race-prediction-book/BlobRacePredictionBookRepository";
-import { BlobUserOpenRacesQuery } from "@/server/queries/user-open-races/BlobUserOpenRacesQuery";
-import { BlobUserRacePicksQuery } from "@/server/queries/user-race-picks/BlobUserRacePicksQuery";
+import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
+import { UserOpenRacesQuery } from "@/server/queries/user-open-races/UserOpenRacesQuery";
+import { UserRacePicksQuery } from "@/server/queries/user-race-picks/UserRacePicksQuery";
 import { SubmitPredictionCommand } from "@/server/commands/submit-prediction/SubmitPredictionCommand";
 
 const leagueRepo = new BlobLeagueRepository();
 const teamRepo = new BlobTeamRepository();
+const racerRepo = new BlobRacerRepository();
 const raceRepo = new BlobRaceRepository();
 const bookRepo = new BlobRacePredictionBookRepository();
+const userRepo = new PrismaUserRepository();
 
-const userOpenRacesQuery = new BlobUserOpenRacesQuery(leagueRepo);
-const userRacePicksQuery = new BlobUserRacePicksQuery();
+const userOpenRacesQuery = new UserOpenRacesQuery(leagueRepo, teamRepo, racerRepo, raceRepo, userRepo, bookRepo);
+const userRacePicksQuery = new UserRacePicksQuery(leagueRepo, racerRepo, raceRepo, bookRepo);
 const submitPredictionCommand = new SubmitPredictionCommand(leagueRepo, teamRepo, raceRepo, bookRepo);
 
 // Client-facing racer shape — same fields IUserOpenRacesQuery/IUserRacePicksQuery's
@@ -91,7 +95,7 @@ export const predictionsRouter = {
   /**
    * The current user's open races, picks, and teammate lineup for a league.
    * Ports `GET /api/predict/init`; league-membership enforcement moves
-   * into BlobUserOpenRacesQuery (see its class doc) instead of a route-level
+   * into UserOpenRacesQuery (see its class doc) instead of a route-level
    * `requireMember` guard.
    */
   openRaces: authed
