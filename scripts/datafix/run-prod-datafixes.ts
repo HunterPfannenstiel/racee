@@ -6,9 +6,9 @@ import {
   parseDatafixArgs,
   printDatafixBanner,
   printStepSummary,
-} from "./datafix-shared.ts";
+} from "./shared/datafix-shared.ts";
 import { runBackfillPredictions } from "./backfill-predictions.ts";
-import { runApplyCorrectedRaceKeys } from "./apply-corrected-race-keys.ts";
+import { runApplyCorrectedRaceKeys } from "./apply-corrected-race-keys/apply-corrected-race-keys.ts";
 import { runRemoveDan1Data } from "./remove-dan1-test-league-data.ts";
 
 // Single entrypoint for every datafix that needs to run against prod: backfilling

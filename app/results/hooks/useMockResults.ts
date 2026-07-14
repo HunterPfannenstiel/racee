@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   MOCK_CURRENT_USER_ID,
+  MOCK_LEAGUE_NAME,
   MOCK_RACES,
   MOCK_RESULTS_BY_RACE,
   MOCK_STATS_BY_RACE,
@@ -16,6 +17,7 @@ function mostRecentRaceId(): string {
 
 export function useMockResults() {
   const [selectedRaceId, setSelectedRaceId] = useState(mostRecentRaceId);
+  const selectedRace = MOCK_RACES.find((race) => race.id === selectedRaceId);
 
   return {
     races: MOCK_RACES,
@@ -25,5 +27,7 @@ export function useMockResults() {
     stats: MOCK_STATS_BY_RACE[selectedRaceId] ?? null,
     isLoading: false,
     currentUserId: MOCK_CURRENT_USER_ID,
+    raceName: selectedRace?.title ?? "",
+    leagueName: MOCK_LEAGUE_NAME,
   };
 }

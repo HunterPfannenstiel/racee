@@ -4,10 +4,11 @@ This directory holds one-off, operator-run production data corrections. A datafi
 
 ## Standards
 * One file per datafix, under scripts/datafix/<kebab-case-name>.ts
+* A datafix with its own dedicated input data lives in its own scripts/datafix/<name>/<name>.ts + scripts/datafix/<name>/data/ folder instead — see apply-corrected-race-keys/ for the pattern. A datafix with no dedicated data of its own stays a flat file directly under scripts/datafix/
 * A datafix exports an async run<Name>(opts: { dryRun: boolean; confirmed: boolean }): Promise<DatafixStepResult> — this is what scripts/datafix/run-prod-datafixes.ts calls when running every datafix together
 * A datafix also has a standalone CLI entry, gated by isMainModule(import.meta.url) — this is what lets it run alone via `tsx scripts/datafix/<name>.ts`
 * A datafix defines its own DATAFIX_ID constant — a short, stable, unique string that namespaces its revert snapshots. There is no default; every datafix must declare one
-* All CLI parsing, env loading, banners, and reporting come from scripts/datafix/datafix-shared.ts — a datafix never reimplements --dry-run/--yes/--env-file parsing, dry-run output formatting, or its own applied/skipped/pending/failed summary
+* All CLI parsing, env loading, banners, and reporting come from scripts/datafix/shared/datafix-shared.ts — a datafix never reimplements --dry-run/--yes/--env-file parsing, dry-run output formatting, or its own applied/skipped/pending/failed summary
 * A datafix reads and writes through the project's current data-layer primitive (`blob` from lib/blob today) directly — never through a repository, entity, service, or command. The one exception is importing an existing zod schema purely for shape validation
 * That exception is absolute — a read-only lookup (e.g. resolving a title to an id) is a direct blob read validated by the relevant schema too, never a repository class or domain entity, even though nothing is being written
 * A schema needed for validation that's currently private to a repository gets relocated, not duplicated, into its own module the repository and the datafix both import — see server/repositories/race-prediction-book/schema.ts for the pattern

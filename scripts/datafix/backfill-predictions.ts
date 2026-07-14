@@ -15,7 +15,7 @@ import {
   printStepSummary,
   willWrite,
   writeDatafixRevertSnapshot,
-} from "./datafix-shared.ts";
+} from "./shared/datafix-shared.ts";
 import {
   PredictionsPersistenceSchema,
   type PredictionsPersistence,

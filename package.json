@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "backup": "tsx scripts/backup.ts",
-    "apply-race-keys": "tsx scripts/datafix/apply-corrected-race-keys.ts",
+    "apply-race-keys": "tsx scripts/datafix/apply-corrected-race-keys/apply-corrected-race-keys.ts",
     "remove-dan1-data": "tsx scripts/datafix/remove-dan1-test-league-data.ts",
     "backfill-predictions": "tsx scripts/datafix/backfill-predictions.ts",
     "run-prod-datafixes": "tsx scripts/datafix/run-prod-datafixes.ts"
@@ -32,6 +32,7 @@
     "clsx": "^2.1.1",
     "exceljs": "^4.4.0",
     "lucide-react": "^1.16.0",
+    "motion": "^12.42.2",
     "next": "16.2.6",
     "pg": "^8.21.0",
     "radix-ui": "^1.4.3",

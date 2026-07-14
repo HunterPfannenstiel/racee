@@ -8,7 +8,9 @@ type PodiumProps = {
 };
 
 // Stand shape: 2nd (left) - 1st (center, tallest) - 3rd (right, shortest).
-const PLATFORM_ORDER = [2, 1, 3] as const;
+// Exported so the cutscene's podium ceremony (Beat 4, PodiumStage.tsx) can
+// share this exact arrangement convention -- layout order only, not sizing.
+export const PLATFORM_ORDER = [2, 1, 3] as const;
 
 export const PLATFORM_HEIGHT: Record<number, string> = {
   1: "h-32",

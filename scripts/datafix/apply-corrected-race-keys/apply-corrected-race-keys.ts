@@ -2,8 +2,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { PropKeyPersistenceSchema, RacePersistenceSchema, type RacePersistence } from "../../server/repositories/race/schema.ts";
-import { motorsportRacesPath } from "../../lib/paths.ts";
+import { PropKeyPersistenceSchema, RacePersistenceSchema, type RacePersistence } from "../../../server/repositories/race/schema.ts";
+import { motorsportRacesPath } from "../../../lib/paths.ts";
 import {
   type DatafixOpts,
   type DatafixStepResult,
@@ -17,7 +17,7 @@ import {
   printStepSummary,
   willWrite,
   writeDatafixRevertSnapshot,
-} from "./datafix-shared.ts";
+} from "../shared/datafix-shared.ts";
 
 // Datafix standard: this script touches motorsports/{motorsportId}/races.json (source-
 // of-truth: the stored answer key fields on the race record — keyOrder/propKey/keySetAt)
@@ -137,7 +137,7 @@ export async function runApplyCorrectedRaceKeys(opts: { dryRun: boolean; confirm
   // own CLI entry below, or run-prod-datafixes.ts) — lib/blob/index.ts constructs a
   // Supabase client at import time, so importing it statically (before env vars are
   // set) would lock in the wrong, or missing, credentials.
-  const { blob } = await import("../../lib/blob/index.ts");
+  const { blob } = await import("../../../lib/blob/index.ts");
 
   const path = motorsportRacesPath(MOTORSPORT_ID);
   const raw = await blob.read<unknown>(path);
@@ -229,8 +229,8 @@ export async function runApplyCorrectedRaceKeys(opts: { dryRun: boolean; confirm
 
 // ---------------------------------------------------------------------------
 // Standalone CLI entry — only runs when this file is executed directly
-// (`tsx scripts/datafix/apply-corrected-race-keys.ts`), not when imported by
-// run-prod-datafixes.ts.
+// (`tsx scripts/datafix/apply-corrected-race-keys/apply-corrected-race-keys.ts`), not
+// when imported by run-prod-datafixes.ts.
 // ---------------------------------------------------------------------------
 
 if (isMainModule(import.meta.url)) {
