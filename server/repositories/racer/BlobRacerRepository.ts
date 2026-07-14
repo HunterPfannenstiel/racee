@@ -4,16 +4,7 @@ import { RACERS_PATH } from "@/lib/paths";
 import { Racer } from "@/server/domain/racer";
 import { ParseError, PersistenceError } from "@/server/repositories/errors";
 import type { IRacerRepository } from "./IRacerRepository";
-
-const RacerPersistenceSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1),
-  team: z.string().min(1),
-  image: z.string().url().optional(),
-  teamColor: z.string().optional(),
-  motorsportId: z.string().uuid().optional(),
-});
-type RacerPersistence = z.infer<typeof RacerPersistenceSchema>;
+import { RacerPersistenceSchema, type RacerPersistence } from "./schema";
 
 function toDomain(raw: RacerPersistence): Racer {
   if (!raw.motorsportId) {

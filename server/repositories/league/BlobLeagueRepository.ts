@@ -4,32 +4,7 @@ import { LEAGUES_PATH } from "@/lib/paths";
 import { League } from "@/server/domain/league";
 import { ParseError, PersistenceError } from "@/server/repositories/errors";
 import type { ILeagueRepository } from "./ILeagueRepository";
-
-const LeaguePersistenceSchema = z.object({
-  id: z.string().uuid(),
-  commissionerId: z.string(),
-  coCommissionerIds: z.array(z.string()).default([]),
-  memberIds: z.array(z.string()).default([]),
-  pendingMemberIds: z.array(z.string()).default([]),
-  name: z.string().min(1),
-  placementPoints: z.array(z.number().int().min(0)),
-  mulliganCount: z.number().int().min(0),
-  scoringDepth: z.number().int().min(1).optional(),
-  stageCount: z.number().int().min(0).optional(),
-  propPointValues: z.object({
-    driverOfDay: z.number().int().min(0),
-    lapsLed: z.number().int().min(0),
-    fastestPitStop: z.number().int().min(0),
-    fastestLap: z.number().int().min(0),
-    overAchiever: z.number().int().min(0),
-    underAchiever: z.number().int().min(0),
-    wrecker: z.number().int().min(0),
-  }),
-  motorsportId: z.string().uuid().optional(),
-  teamPositionPoints: z.array(z.number().min(0)).optional(),
-  inviteToken: z.string().nullable().optional().default(null),
-});
-type LeaguePersistence = z.infer<typeof LeaguePersistenceSchema>;
+import { LeaguePersistenceSchema, type LeaguePersistence } from "./schema";
 
 
 function toDomain(raw: LeaguePersistence): League {

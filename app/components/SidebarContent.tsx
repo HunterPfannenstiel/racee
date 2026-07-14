@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Flag, BarChart2, Users, Gavel, ShieldCheck, CircleUser } from "lucide-react";
+import { Flag, BarChart2, Users, Gavel, ShieldCheck, CircleUser, ListOrdered } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
 import { orpc } from "@/lib/orpc/client";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 const BASE_NAV = [
   { href: "/predict",       label: "Predict",       Icon: Flag },
+  { href: "/results",       label: "Results",       Icon: ListOrdered } as const,
   { href: "/standings",      label: "Standings",      Icon: BarChart2 },
   { href: "/teams",         label: "Teams",          Icon: Users },
   { href: "/commissioner",  label: "Commissioner",   Icon: Gavel },

@@ -8,28 +8,19 @@ import {
 } from "@/server/domain/race-prediction-book";
 import { ParseError, PersistenceError } from "@/server/repositories/errors";
 import type { IRacePredictionBookRepository } from "./IRacePredictionBookRepository";
+import {
+  PredictionsPersistenceSchema,
+  type PredictionsPersistence,
+} from "./schema";
 
 // ---------------------------------------------------------------------------
 // Persistence schemas
 // ---------------------------------------------------------------------------
-
-const PropPicksPersistenceSchema = z.object({
-  driverOfDay: z.string().optional(),
-  lapsLed: z.string().optional(),
-  fastestPitStop: z.string().optional(),
-  fastestLap: z.string().optional(),
-  overAchiever: z.string().optional(),
-  underAchiever: z.string().optional(),
-  wrecker: z.string().optional(),
-});
-
-const PredictionsPersistenceSchema = z.object({
-  predictions: z.record(z.string(), z.array(z.string().uuid())),
-  submittedAt: z.record(z.string(), z.string()).optional(),
-  submittedBy: z.record(z.string(), z.string()).optional(),
-  propPicks: z.record(z.string(), PropPicksPersistenceSchema),
-});
-type PredictionsPersistence = z.infer<typeof PredictionsPersistenceSchema>;
+//
+// The predictions.json schema (PropPicksPersistenceSchema/PredictionsPersistenceSchema)
+// lives in ./schema.ts, not here — it's shared with datafix scripts that read/write
+// predictions.json directly. scores.json's schema stays local since nothing outside
+// this repository needs it.
 
 const ScoresEntryPersistenceSchema = z.object({
   userId: z.string(),

@@ -1,5 +1,14 @@
-import { ScoreEntry, UserLeagueScores, TeamLeagueScores, PropKey, PropPointValues } from "@/lib/schemas";
+import { ScoreEntry, UserLeagueScores, TeamLeagueScores, PropKey, PropPointValues, PropName } from "@/lib/schemas";
 import { Team } from "@/lib/schemas";
+
+// Hardcoded rather than derived from PropNameSchema.options — same precedent as
+// UserProfileStatsQuery.ts's PROP_NAMES. lib/schemas.ts pulls in server/domain/race.ts,
+// which pulls in race-prediction-book.ts, which pulls in this file — importing the
+// schema's runtime value here (rather than just its type) would close that cycle.
+const PROP_NAMES: PropName[] = [
+  "driverOfDay", "lapsLed", "fastestPitStop", "fastestLap",
+  "overAchiever", "underAchiever", "wrecker",
+];
 
 export function computePropPoints(
   picks: Record<string, string>,
@@ -67,6 +76,43 @@ export function assignRanks<T>(entries: T[], totalOf: (entry: T) => number): (T 
     idx += group.length;
     return group.map((entry) => ({ ...entry, rank }));
   });
+}
+
+export function computeScoreStats(entries: ScoreEntry[]): {
+  average: number;
+  highest: { value: number; userIds: string[] };
+  lowest: { value: number; userIds: string[] };
+} {
+  if (entries.length === 0) {
+    return { average: 0, highest: { value: 0, userIds: [] }, lowest: { value: 0, userIds: [] } };
+  }
+  const totals = entries.map((e) => ({ userId: e.userId, total: e.gridPoints + e.propPoints }));
+  const average = totals.reduce((sum, t) => sum + t.total, 0) / totals.length;
+  const highestValue = Math.max(...totals.map((t) => t.total));
+  const lowestValue = Math.min(...totals.map((t) => t.total));
+  return {
+    average,
+    highest: { value: highestValue, userIds: totals.filter((t) => t.total === highestValue).map((t) => t.userId) },
+    lowest: { value: lowestValue, userIds: totals.filter((t) => t.total === lowestValue).map((t) => t.userId) },
+  };
+}
+
+/** Ties break by PropName's declared enum order — the first prop encountered at the max hit-rate wins. */
+export function computeBestPropBet(
+  picks: Partial<Record<PropName, string>>[],
+  propKey: PropKey,
+): { prop: PropName; hitRate: number } | null {
+  let best: { prop: PropName; hitRate: number } | null = null;
+  for (const prop of PROP_NAMES) {
+    const winners = propKey[prop];
+    if (!winners || winners.length === 0) continue;
+    const pickers = picks.filter((p) => p[prop] !== undefined);
+    if (pickers.length === 0) continue;
+    const hits = pickers.filter((p) => winners.includes(p[prop] as string)).length;
+    const hitRate = hits / pickers.length;
+    if (!best || hitRate > best.hitRate) best = { prop, hitRate };
+  }
+  return best;
 }
 
 function applyMulligans(raceScores: { gridPoints: number; propPoints: number }[], mulliganCount: number) {

@@ -9,10 +9,10 @@
     "lint": "eslint",
     "test": "vitest run",
     "backup": "tsx scripts/backup.ts",
-    "apply-race-keys": "tsx scripts/apply-corrected-race-keys.ts",
-    "remove-dan1-data": "tsx scripts/remove-dan1-test-league-data.ts",
-    "backfill-predictions": "tsx scripts/backfill-predictions.ts",
-    "run-prod-datafixes": "tsx scripts/run-prod-datafixes.ts"
+    "apply-race-keys": "tsx scripts/datafix/apply-corrected-race-keys.ts",
+    "remove-dan1-data": "tsx scripts/datafix/remove-dan1-test-league-data.ts",
+    "backfill-predictions": "tsx scripts/datafix/backfill-predictions.ts",
+    "run-prod-datafixes": "tsx scripts/datafix/run-prod-datafixes.ts"
   },
   "dependencies": {
     "@better-fetch/fetch": "^1.1.21",

@@ -4,14 +4,7 @@ import { teamsPath } from "@/lib/paths";
 import { Team } from "@/server/domain/team";
 import { ParseError, PersistenceError } from "@/server/repositories/errors";
 import type { ITeamRepository } from "./ITeamRepository";
-
-const TeamPersistenceSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1),
-  memberIds: z.array(z.string()).default([]),
-  color: z.string().optional(),
-});
-type TeamPersistence = z.infer<typeof TeamPersistenceSchema>;
+import { TeamPersistenceSchema, type TeamPersistence } from "./schema";
 
 function toDomain(leagueId: string, raw: TeamPersistence): Team {
   return new Team({ teamId: raw.id, leagueId, name: raw.name, memberIds: raw.memberIds, color: raw.color });

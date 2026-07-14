@@ -4,30 +4,7 @@ import { motorsportRacesPath } from "@/lib/paths";
 import { Race } from "@/server/domain/race";
 import { ParseError, PersistenceError } from "@/server/repositories/errors";
 import type { IRaceRepository } from "./IRaceRepository";
-
-const PropKeyPersistenceSchema = z.object({
-  driverOfDay: z.array(z.string()).nullable(),
-  lapsLed: z.array(z.string()).nullable(),
-  fastestPitStop: z.array(z.string()).nullable(),
-  fastestLap: z.array(z.string()).nullable(),
-  overAchiever: z.array(z.string()).nullable(),
-  underAchiever: z.array(z.string()).nullable(),
-  wrecker: z.array(z.string()).nullable(),
-});
-
-const RacePersistenceSchema = z.object({
-  id: z.string().uuid(),
-  motorsportId: z.string().uuid(),
-  title: z.string().min(1),
-  label: z.string().optional(),
-  date: z.string().min(1),
-  lockTime: z.string().datetime().optional(),
-  startingGrid: z.array(z.string().uuid()),
-  keyOrder: z.array(z.string().uuid()).nullable().default(null),
-  propKey: PropKeyPersistenceSchema.nullable().default(null),
-  keySetAt: z.string().nullable().default(null),
-});
-type RacePersistence = z.infer<typeof RacePersistenceSchema>;
+import { RacePersistenceSchema, type RacePersistence } from "./schema";
 
 function toDomain(raw: RacePersistence): Race {
   return new Race({

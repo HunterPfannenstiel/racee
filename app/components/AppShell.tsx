@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Flag, BarChart2, Users, ShieldCheck, ChevronLeft, ChevronRight, CircleUser } from "lucide-react";
+import { Flag, BarChart2, Users, ShieldCheck, ChevronLeft, ChevronRight, CircleUser, ListOrdered } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
 import { orpc } from "@/lib/orpc/client";
@@ -20,6 +20,7 @@ const sidebarKey = (userId: string) => `racee_sidebar_collapsed:${userId}`;
 
 const BASE_NAV = [
   { href: "/predict",  label: "Predict",   Icon: Flag },
+  { href: "/results", label: "Results",   Icon: ListOrdered },
   { href: "/standings", label: "Standings",  Icon: BarChart2 },
   { href: "/teams",    label: "Teams",      Icon: Users },
 ] as const;
