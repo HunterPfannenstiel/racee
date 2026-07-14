@@ -1,9 +1,10 @@
 import { PrismaClient } from "@/server/generated/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.POOLER_DATABASE_URL!,
-});
+const adapter = new PrismaPg(
+  { connectionString: process.env.DATABASE_URL! },
+  { schema: process.env.DATABASE_SCHEMA }
+);
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

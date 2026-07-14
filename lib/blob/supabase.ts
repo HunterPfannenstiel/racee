@@ -3,10 +3,10 @@ import type { BlobStore } from "./interface.ts";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SECRET_KEY!
 );
 
-const BUCKET = "racee";
+const BUCKET = process.env.BUCKET_NAME!;
 
 export class SupabaseBlobStore implements BlobStore {
   async read<T>(pathname: string): Promise<T | null> {

@@ -14,7 +14,10 @@ const __currentDir = dirname(fileURLToPath(import.meta.url));
 const APP_DIR = join(__currentDir, "..");
 
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.POOLER_DATABASE_URL! }),
+  adapter: new PrismaPg(
+    { connectionString: process.env.DATABASE_URL! },
+    { schema: process.env.DATABASE_SCHEMA }
+  ),
 });
 
 // ---- Fixed user IDs (stable across seed runs — lives in Prisma) ----
