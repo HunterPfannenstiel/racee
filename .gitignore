@@ -40,7 +40,9 @@ yarn-error.log*
 .blob-store/
 
 # generated migration output (regeneratable from source spreadsheets)
-/scripts/migration/output/
+/scripts/migration/output/*
+# ...except the human-reviewed resolution manifest, which is not regeneratable
+!/scripts/migration/output/resolution/
 
 # typescript
 *.tsbuildinfo

@@ -1,0 +1,7 @@
+{
+  "Ferrari": { "team": "Ferrari", "method": "exact" },
+  "McLaren": { "team": "McLaren", "method": "exact" },
+  "Mercedes": { "team": "Mercedes", "method": "exact" },
+  "RB": { "team": "Racing Bulls", "method": "known-alias", "note": "Racing Bulls' short/former name is 'RB'. Distinct from 'Red Bull Racing' — both appear as separate picks within the same race (Canada: Joel Aduddell picked 'Red Bull', Evan Lerch picked 'RB'), confirming these are genuinely different constructors, not a spelling inconsistency for the same team." },
+  "Red Bull": { "team": "Red Bull Racing", "method": "known-alias" }
+}

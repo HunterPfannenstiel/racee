@@ -1,0 +1,23 @@
+{
+  "Crilipp": { "teamId": "870bbb6c-ee4b-44e9-ab00-26ede3c99ef6", "method": "exact" },
+  "Fast and Furryious by FeetFinder": { "teamId": "b0ebfce7-4518-45f5-84e7-e1072ac8cbd6", "method": "exact", "note": "Excel sheet name is truncated to 31 chars ('...FeetFinde') by Excel's tab-name limit; Phase A's fuzzy sheet matcher already handled this as a note, not a warning." },
+  "Kildaullac Motorshports": { "teamId": "c75b27f9-6e45-4603-b412-60867550ab62", "method": "exact" },
+  "Mile High": { "teamId": "09fff5b4-8f00-4987-9e74-420a22c8acd0", "method": "exact" },
+  "Minor Heresy Motorsports": { "teamId": "5bc644bf-fcf9-4470-a358-e994887bfd8e", "method": "exact" },
+  "Sashimi Tornado": { "teamId": "1059f028-34a0-4407-b9ed-9ced16b5c022", "method": "exact" },
+  "Scooty Puff Jr": { "teamId": "74bf2ef8-7587-46ed-8e39-3024fd4ac780", "method": "exact" },
+  "TNT Racing": { "teamId": "ca13f6ad-be81-42ca-bf1d-0d5b553b73b8", "method": "exact" },
+  "The Verstrapons": { "teamId": "f3f2aedd-5376-4a94-81c9-28b8c5736ed4", "method": "exact" },
+  "Whos your Caddy": { "teamId": "aaf03025-9d77-4db5-879b-0672d1fb5637", "method": "exact" },
+  "Zeus Racing": { "teamId": "46d3bb2c-6105-48e0-bb3c-a435a3aad408", "method": "exact" },
+  "Zues Racing": {
+    "teamId": "46d3bb2c-6105-48e0-bb3c-a435a3aad408",
+    "method": "fuzzy-misspelling",
+    "note": "Only appears in Australia_.xlsx; every other race file spells this sheet 'Zeus Racing'. Same two members (Skipper Bertrand / Matt Bishop) confirm it's the same team, just a one-off typo in the Australia workbook."
+  },
+  "Team 3": {
+    "teamId": "7e8d8852-f2c3-4f05-b826-0509051529aa",
+    "method": "member-identity",
+    "note": "The sheet tab is literally named 'Team 3' in ALL 5 workbooks — it never contains the real team name anywhere. Resolved by cross-referencing its two players (Chris York / Russell Henderson) against teams.json, which uniquely matches 'No Drag, Only Lift' (members chris york / Russ Henderson). Confidence is high because the member-name match is unique across all 12 teams, but flagging since it's not a string match at all — worth a sanity check."
+  }
+}
