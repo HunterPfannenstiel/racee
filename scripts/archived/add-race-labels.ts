@@ -1,3 +1,5 @@
+/* ARCHIVED — one-off script, no longer run. Commented out so it stays excluded from typecheck/lint.
+
 import { blob } from "../lib/blob/index.ts";
 
 const LABELS: Record<string, string> = {
@@ -56,3 +58,5 @@ for (const league of leagues) {
 }
 
 console.log(`done — ${migrated} file(s) updated`);
+
+*/

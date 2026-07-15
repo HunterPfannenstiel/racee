@@ -1,3 +1,5 @@
+/* ARCHIVED — one-off script, no longer run. Commented out so it stays excluded from typecheck/lint.
+
 import { blob } from "../lib/blob/index.ts";
 
 const [leagues, racers] = await Promise.all([
@@ -20,3 +22,5 @@ if (migrated > 0) {
 } else {
   console.log("no leagues needed migration");
 }
+
+*/

@@ -6,9 +6,9 @@ import { animate, motion, useMotionValue, useTransform, type AnimationPlaybackCo
 // One pass of a soft gradient bar swept across whatever container it's
 // dropped into, tinted with a viewer's team color -- the cutscene's one
 // consistent "this is you" visual signature. Originally built for the
-// non-podium "You" row (see YouReveal.tsx); extracted here so the podium's
-// own "this box is you" moment reuses the exact same pattern rather than
-// inventing a second one.
+// non-podium "You" row (see GroupStage.tsx's YouGroupRow); extracted here so
+// the podium's own "this box is you" moment reuses the exact same pattern
+// rather than inventing a second one.
 export const SHIMMER_MS = 520;
 const SHIMMER_START_PCT = -140;
 const SHIMMER_END_PCT = 340;

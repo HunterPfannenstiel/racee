@@ -1,3 +1,5 @@
+/* ARCHIVED — one-off script, no longer run. Commented out so it stays excluded from typecheck/lint.
+
 // Run (local):  USE_LOCAL_BLOB=true node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts
 // Run (remote): USE_LOCAL_BLOB=false node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts
 // WARNING: wipes all blob storage before seeding
@@ -762,3 +764,5 @@ console.log(`  Motorsport:   Formula 1 (${motorsportId})`);
 console.log(`  Participants: ${users.map(u => u.name).join(", ")}`);
 console.log(`  Teams:        ${leagueTeams.map(t => t.name).join(", ")}`);
 console.log(`  Graded races: ${gradedRaceIds.length} / ${races.length}`);
+
+*/

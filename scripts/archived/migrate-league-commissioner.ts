@@ -1,3 +1,5 @@
+/* ARCHIVED — one-off script, no longer run. Commented out so it stays excluded from typecheck/lint.
+
 import { blob } from "../lib/blob/index.ts";
 
 const COMMISSIONER_ID = "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J";
@@ -18,3 +20,5 @@ if (migrated > 0) {
 } else {
   console.log("no leagues needed migration");
 }
+
+*/

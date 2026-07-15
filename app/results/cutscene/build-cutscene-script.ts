@@ -21,8 +21,13 @@ export type CutsceneGroupMember = {
   points: number;
   /** The member's own identity color (ResultsRowData.color) -- used for
    *  GroupRow's left-edge accent (echoing ResultsList.tsx's real-page
-   *  treatment) and, for the "you" row, the shimmer/border tint. */
+   *  treatment) and, for the viewer's own row, the shimmer/glow tint. */
   color: string;
+  /** True for exactly one member across the whole non-podium script (the
+   *  viewer's own row), tagged in place by `tagYouMember` rather than pulled
+   *  out into a separate event -- see GroupStage.tsx for the inline flourish
+   *  this drives. Absent (not just false) on every other member. */
+  isYou?: true;
 };
 
 export type CutsceneGroupEvent = {
@@ -46,14 +51,6 @@ export type CutsceneGroupEvent = {
   fallMs: number;
   /** Pause after the group's fall completes, before the next group's cascade begins. Never zero. */
   gapMs: number;
-  /**
-   * Present only for the single-member "you" solo break (Beat 3 -- see
-   * YOU_BEAT_* below): the viewer's own identity color, used to tint that
-   * row's shimmer sweep + border (see YouReveal.tsx). A group with this set
-   * always has exactly one member and deliberate (non-curve) timing -- it's
-   * a rhythm break, not another point on the pacing curve.
-   */
-  youReveal?: { color: string };
 };
 
 /**
@@ -96,21 +93,16 @@ export const GAP_MS_MIN = 150;
 export const GAP_MS_MAX = 500;
 export const GAP_EASE_K = 2.0;
 
-// --- "You" solo break (Beat 3) ---------------------------------------------
-// Deliberately its own fixed block, not another point on the pacing curve
-// above -- per spec this is a rhythm *break*, not a same-cadence single-row
-// group. Rise stays close to the field's own pace (it's still the same
-// vertical entrance everywhere else in the cutscene, not a push-in). Count-up
-// and hold both run heavier than even the top-of-field curve max so the row's
-// team-color shimmer, pop-out/pop-in, and second-person address (see
-// YouReveal.tsx) have room to actually register. The gap is intentionally NOT
-// stretched -- "snaps straight back" means the very next group must start on
-// its own normal pace, with no added cooldown.
-export const YOU_BEAT_RISE_MS = 260;
-export const YOU_BEAT_COUNT_UP_MS = 900;
-export const YOU_BEAT_HOLD_MS = 2600;
-export const YOU_BEAT_FALL_MS = 380;
-export const YOU_BEAT_GAP_MS = 260;
+// --- "You" row (Beat 3) ------------------------------------------------
+// No longer its own fixed timing block: the viewer's row is now just an
+// ordinary member of whichever group it naturally lands in (see
+// tagYouMember below), so it shares that group's own curve-derived
+// staggerMs/riseMs/countUpMs/holdMs/fallMs/gapMs like every other row --
+// nothing here schedules it separately anymore. The brief lift/shimmy/glow
+// flourish that used to need this dedicated timing block is a purely local,
+// non-scheduling animation layered on top by GroupStage.tsx (its
+// YOU_LIFT_MS/YOU_SHIMMY_MS/YOU_SETTLE_MS), timed to fit comfortably inside
+// even the smallest curve-derived holdMs (HOLD_MS_MIN above).
 
 function lerp(min: number, max: number, t: number) {
   return min + (max - min) * t;
@@ -169,9 +161,9 @@ function chunkEvenly<T>(items: T[]): T[][] {
  * them into `Math.ceil(field.length / GROUP_SIZE)` evenly-sized groups
  * (larger groups first), computes per-group timings from the pacing curve
  * above, then -- if `currentUserId` lands in this (non-podium) field --
- * breaks their row out into the standalone "you" solo event (see
- * `withYouBreak`). Podium-ranked viewers get no solo event here at all;
- * that's Beat 4's "YOU" marker instead.
+ * tags their row in place with `isYou: true` (see `tagYouMember`) so it
+ * renders inline in its natural group instead of being pulled out. Podium-
+ * ranked viewers get no tag here at all; that's Beat 4's "YOU" marker instead.
  */
 export function buildCutsceneScript(
   entries: ResultsRowData[],
@@ -185,9 +177,9 @@ export function buildCutsceneScript(
       return compareUserIdAscending(a.userId, b.userId);
     });
 
-  // Chunked from the FULL field (viewer included) -- withYouBreak only ever
-  // *removes* a member from whichever group it lands in afterward, so no
-  // other member's group/timing shifts because of the viewer's presence.
+  // Chunked from the FULL field (viewer included) -- tagYouMember only ever
+  // flags a member in place afterward, never adds/removes one, so no other
+  // member's group/timing shifts because of the viewer's presence.
   const chunks = chunkEvenly(field);
 
   const g = chunks.length;
@@ -221,68 +213,32 @@ export function buildCutsceneScript(
     };
   });
 
-  return withYouBreak(groups, field, currentUserId);
+  return tagYouMember(groups, currentUserId);
 }
 
 /**
- * Pulls the viewer's own row out of whichever group it naturally landed in
- * and re-inserts it immediately after that (now one-member-smaller) group as
- * a standalone solo event -- a rhythm break, not just another group. No-op
- * if the viewer has no row in this (non-podium) field, e.g. because they ARE
- * on the podium (Beat 4's "YOU" marker covers that case instead) or
- * `currentUserId` is unset.
+ * Flags the viewer's own row, in place, with `isYou: true` -- no longer
+ * splices a standalone event out of its group; the viewer's card stays
+ * exactly where it naturally landed, rendered as an ordinary member, just
+ * marked so GroupStage can layer its inline lift/shimmy/glow flourish onto
+ * that one row once its group settles into its hold. No-op if the viewer has
+ * no row in this (non-podium) field, e.g. because they ARE on the podium
+ * (Beat 4's "YOU" marker covers that case instead) or `currentUserId` is unset.
  */
-function withYouBreak(
-  groups: CutsceneGroupEvent[],
-  field: ResultsRowData[],
-  currentUserId: string | null,
-): CutsceneGroupEvent[] {
+function tagYouMember(groups: CutsceneGroupEvent[], currentUserId: string | null): CutsceneGroupEvent[] {
   if (!currentUserId) return groups;
 
-  const youEntry = field.find((entry) => entry.userId === currentUserId);
-  if (!youEntry) return groups;
-
-  const result: CutsceneGroupEvent[] = [];
-  for (const group of groups) {
+  return groups.map((group) => {
     const youMemberIndex = group.members.findIndex((m) => m.userId === currentUserId);
-    if (youMemberIndex === -1) {
-      result.push(group);
-      continue;
-    }
+    if (youMemberIndex === -1) return group;
 
-    const remainingMembers = group.members.filter((_, i) => i !== youMemberIndex);
-    // Only re-emit the original group if it still has anyone left in it --
-    // a group whose sole member was the viewer disappears entirely rather
-    // than surviving as an empty cascade.
-    if (remainingMembers.length > 0) {
-      result.push({ ...group, members: remainingMembers });
-    }
-
-    result.push({
-      groupIndex: group.groupIndex,
-      members: [
-        {
-          userId: youEntry.userId,
-          name: youEntry.name,
-          rank: youEntry.rank,
-          points: youEntry.total,
-          color: youEntry.color,
-        },
-      ],
-      staggerMs: 0,
-      riseMs: YOU_BEAT_RISE_MS,
-      countUpMs: YOU_BEAT_COUNT_UP_MS,
-      holdMs: YOU_BEAT_HOLD_MS,
-      fallMs: YOU_BEAT_FALL_MS,
-      gapMs: YOU_BEAT_GAP_MS,
-      youReveal: { color: youEntry.color },
-    });
-  }
-
-  // Re-number contiguously: chunking can leave a gap where a group vanished
-  // entirely above, and GroupStage keys/re-triggers its per-group effect off
-  // groupIndex, so it needs to stay a dense, monotonic sequence.
-  return result.map((group, i) => ({ ...group, groupIndex: i }));
+    return {
+      ...group,
+      members: group.members.map((member, i) =>
+        i === youMemberIndex ? { ...member, isYou: true as const } : member,
+      ),
+    };
+  });
 }
 
 /**

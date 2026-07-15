@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { animate, motion, useMotionValue, useTransform, type AnimationPlaybackControls } from "motion/react";
 import { RaceBug, RACE_BUG_REST_TOP_PCT, RACE_BUG_REST_LEFT_PCT } from "./RaceBug";
+import { fluidClampFontSize } from "./fluid-font-size";
 import type { EstablishingCardEvent, EstablishingCardState } from "./beats/establishing";
 
 // Hard-decelerating, never-overshoots easing -- duplicated from GroupStage
@@ -16,6 +17,25 @@ const BIG_SCALE = 3.6;
 const APPEAR_RISE_Y = 20;
 const CENTER_PCT = 50;
 
+// Horizontal anchor fraction, driven through the standalone CSS `translate`
+// property (Tailwind v4's `-translate-x-1/2` also targets this property, NOT
+// `transform`) -- NOT a CSS percent-of-viewport position, that's `left`.
+// Per the CSS Transforms spec, the individual `translate`/`rotate`/`scale`
+// properties are composed *before* the `transform` property, so driving the
+// anchor here (rather than via Motion's `x`, which folds into `transform`
+// alongside our `scale` motion value) keeps the percentage anchoring
+// well-defined independent of the concurrently-animating scale -- exactly
+// matching how the vertical `-translate-y-1/2` class already behaves.
+// At CENTER_ANCHOR_PCT the container is centered on its `left` point; at
+// REST_ANCHOR_PCT the container's own left edge sits exactly at its `left`
+// point, i.e. left-anchored, so it grows rightward from the corner instead
+// of symmetrically off both sides. Interpolating between the two during
+// "demote" (rather than snapping) is what keeps a long race/league name from
+// clipping off the left edge of the viewport once it reaches the small
+// corner rest position -- see resolveInstantStyle's demote branch.
+const CENTER_ANCHOR_PCT = -50;
+const REST_ANCHOR_PCT = 0;
+
 function clamp01(v: number) {
   return Math.min(1, Math.max(0, v));
 }
@@ -23,6 +43,7 @@ function clamp01(v: number) {
 type InstantStyle = {
   top: number;
   left: number;
+  xAnchorPct: number;
   scale: number;
   opacity: number;
   y: number;
@@ -48,6 +69,7 @@ function resolveInstantStyle(
     return {
       top: CENTER_PCT,
       left: CENTER_PCT,
+      xAnchorPct: CENTER_ANCHOR_PCT,
       scale: BIG_SCALE,
       opacity: eased,
       y: APPEAR_RISE_Y + (0 - APPEAR_RISE_Y) * eased,
@@ -56,7 +78,15 @@ function resolveInstantStyle(
   }
 
   if (phase === "hold") {
-    return { top: CENTER_PCT, left: CENTER_PCT, scale: BIG_SCALE, opacity: 1, y: 0, leagueOpacity: 1 };
+    return {
+      top: CENTER_PCT,
+      left: CENTER_PCT,
+      xAnchorPct: CENTER_ANCHOR_PCT,
+      scale: BIG_SCALE,
+      opacity: 1,
+      y: 0,
+      leagueOpacity: 1,
+    };
   }
 
   // phase === "demote"
@@ -64,6 +94,7 @@ function resolveInstantStyle(
   return {
     top: CENTER_PCT + (RACE_BUG_REST_TOP_PCT - CENTER_PCT) * eased,
     left: CENTER_PCT + (RACE_BUG_REST_LEFT_PCT - CENTER_PCT) * eased,
+    xAnchorPct: CENTER_ANCHOR_PCT + (REST_ANCHOR_PCT - CENTER_ANCHOR_PCT) * eased,
     scale: BIG_SCALE + (1 - BIG_SCALE) * eased,
     opacity: 1,
     y: 0,
@@ -88,6 +119,7 @@ export function EstablishingCardStage({
 
   const top = useMotionValue(initial.top);
   const left = useMotionValue(initial.left);
+  const xAnchor = useMotionValue(initial.xAnchorPct);
   const scale = useMotionValue(initial.scale);
   const opacity = useMotionValue(initial.opacity);
   const y = useMotionValue(initial.y);
@@ -95,6 +127,27 @@ export function EstablishingCardStage({
 
   const topPct = useTransform(top, (v) => `${v}%`);
   const leftPct = useTransform(left, (v) => `${v}%`);
+  // Full `translate` shorthand (x y): x is the phase-driven anchor, y stays
+  // pinned at -50% (vertical centering) always -- see xAnchor's comment.
+  const translatePct = useTransform(xAnchor, (v) => `${v}% -50%`);
+
+  // Character-count-derived, viewport-relative font sizes -- guarantee the
+  // text can never exceed a safe fraction of the viewport width even at
+  // BIG_SCALE (see fluid-font-size.ts). Memoized on the strings themselves
+  // since they're pure functions of `.length`, nothing else.
+  const raceTitleFontSize = useMemo(
+    () => fluidClampFontSize(event?.raceName ?? "", { maxScale: BIG_SCALE, maxRem: 0.875 }),
+    [event?.raceName],
+  );
+  const leagueNameFontSize = useMemo(
+    () =>
+      fluidClampFontSize(event?.leagueName ?? "", {
+        maxScale: BIG_SCALE,
+        maxRem: 0.75,
+        avgCharWidthEm: 0.58,
+      }),
+    [event?.leagueName],
+  );
 
   const controlsRef = useRef<AnimationPlaybackControls[]>([]);
 
@@ -114,6 +167,7 @@ export function EstablishingCardStage({
     const instant = resolveInstantStyle(phase, elapsedMs, event);
     top.set(instant.top);
     left.set(instant.left);
+    xAnchor.set(instant.xAnchorPct);
     scale.set(instant.scale);
     opacity.set(instant.opacity);
     y.set(instant.y);
@@ -137,6 +191,7 @@ export function EstablishingCardStage({
     controlsRef.current = [
       animate(top, RACE_BUG_REST_TOP_PCT, { duration: toSeconds(remaining), ease: EASE_HARD_DECEL }),
       animate(left, RACE_BUG_REST_LEFT_PCT, { duration: toSeconds(remaining), ease: EASE_HARD_DECEL }),
+      animate(xAnchor, REST_ANCHOR_PCT, { duration: toSeconds(remaining), ease: EASE_HARD_DECEL }),
       animate(scale, 1, { duration: toSeconds(remaining), ease: EASE_HARD_DECEL }),
       animate(leagueOpacity, 0, { duration: toSeconds(remaining), ease: EASE_HARD_DECEL }),
     ];
@@ -149,15 +204,26 @@ export function EstablishingCardStage({
 
   if (!event) return null;
 
+  // "appear"/"hold" are the big centered card -- children stack centered
+  // around the shared midpoint. "demote" (and its settled-forever terminal
+  // frame) is the small corner badge -- left-anchored (see xAnchor above), so
+  // children must also left-align within the container instead of centering,
+  // or the narrower league-name line would float off-center relative to the
+  // anchored race title. This switches in lockstep with xAnchor starting to
+  // animate off CENTER_ANCHOR_PCT, i.e. exactly when demote begins.
+  const isCorner = phase === "demote";
+
   return (
     <motion.div
-      style={{ top: topPct, left: leftPct, scale, opacity, y }}
-      className="fixed flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
+      style={{ top: topPct, left: leftPct, translate: translatePct, scale, opacity, y }}
+      className={`fixed flex min-w-0 flex-col gap-1 ${
+        isCorner ? "items-start text-left" : "items-center text-center"
+      }`}
     >
-      <RaceBug raceName={event.raceName} />
+      <RaceBug raceName={event.raceName} style={{ fontSize: raceTitleFontSize }} />
       <motion.p
-        style={{ opacity: leagueOpacity }}
-        className="font-sans text-xs font-medium uppercase tracking-wide text-muted-foreground"
+        style={{ opacity: leagueOpacity, fontSize: leagueNameFontSize }}
+        className="whitespace-nowrap font-sans text-xs font-medium uppercase tracking-wide text-muted-foreground"
       >
         {event.leagueName}
       </motion.p>

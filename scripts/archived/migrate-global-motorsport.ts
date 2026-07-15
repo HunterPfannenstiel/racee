@@ -1,3 +1,5 @@
+/* ARCHIVED — one-off script, no longer run. Commented out so it stays excluded from typecheck/lint.
+
 import { blob } from "../lib/blob/index.ts";
 import { randomUUID } from "crypto";
 
@@ -94,3 +96,5 @@ for (const league of migratedLeagues) {
     console.log(`league ${league.id}: all ${skipped} race(s) already in global path — nothing to do`);
   }
 }
+
+*/
