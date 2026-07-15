@@ -21,6 +21,7 @@ import { CheckIcon, LockIcon } from "lucide-react";
 import { PropPicker } from "@/app/predict/PropPicker";
 import { SortableRacerRow } from "@/components/SortableRacerRow";
 import { SubmissionAttribution } from "@/app/predict/teammate-lineup/SubmissionAttribution";
+import { ResetToGridButton } from "@/components/prediction/ResetToGridButton";
 
 type PredictionEditorRace = {
   id: string;
@@ -136,6 +137,15 @@ export function PredictionEditor({
       </div>
 
       <Separator />
+
+      <div className="flex items-center justify-start">
+        <ResetToGridButton
+          orderedRacerIds={orderedRacerIds}
+          startingGrid={race.startingGrid}
+          onReset={setOrderedRacerIds}
+          disabled={isLocked}
+        />
+      </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} autoScroll={{ acceleration: 1, threshold: { x: 0.2, y: 0.2 } }}>
         <SortableContext items={orderedRacerIds} strategy={verticalListSortingStrategy}>
