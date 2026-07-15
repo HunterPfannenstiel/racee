@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { HelpCircle } from "lucide-react";
 import { type League, type PropPointValues, type PlacementPoints } from "@/lib/schemas";
+import { orpc } from "@/lib/orpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
@@ -42,20 +44,26 @@ export function LeaguesSection({ leagues, motorsportId, onLeaguesChange, onError
   const [editPropPointValues, setEditPropPointValues] = useState<PropPointValues>(emptyPropPointValues);
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
 
+  const createMutation = useMutation(orpc.leagues.create.mutationOptions());
+  const updateMutation = useMutation(orpc.leagues.update.mutationOptions());
+  const deleteMutation = useMutation(orpc.leagues.delete.mutationOptions());
+
   const busy = loadingOp !== null;
 
   async function handleAdd() {
     const name = newLeagueName.trim();
     if (!name || !motorsportId) return;
-    const league: League = { id: crypto.randomUUID(), name, motorsportId, placementPoints: newPlacementPoints, mulliganCount: newMulliganCount, stageCount: newStageCount, scoringDepth: newScoringDepth, propPointValues: newPropPointValues };
     setLoadingOp("add");
     try {
-      const res = await fetch("/api/leagues", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(league),
+      const league = await createMutation.mutateAsync({
+        name,
+        motorsportId,
+        placementPoints: newPlacementPoints,
+        mulliganCount: newMulliganCount,
+        stageCount: newStageCount,
+        scoringDepth: newScoringDepth,
+        propPointValues: newPropPointValues,
       });
-      if (!res.ok) { onError("Failed to save league."); return; }
       onLeaguesChange([...leagues, league]);
       setNewLeagueName("");
       setNewPlacementPoints(emptyPlacementPoints);
@@ -89,13 +97,8 @@ export function LeaguesSection({ leagues, motorsportId, onLeaguesChange, onError
     const patch = { name, placementPoints: editPlacementPoints, mulliganCount: editMulliganCount, stageCount: editStageCount, scoringDepth: editScoringDepth, propPointValues: editPropPointValues };
     setLoadingOp("save");
     try {
-      const res = await fetch(`/api/leagues/${editingLeagueId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
-      });
-      if (!res.ok) { onError("Failed to save league."); return; }
-      onLeaguesChange(leagues.map((s) => s.id === editingLeagueId ? { ...s, ...patch } : s));
+      const updated = await updateMutation.mutateAsync({ leagueId: editingLeagueId, patch });
+      onLeaguesChange(leagues.map((s) => s.id === editingLeagueId ? updated : s));
       setEditingLeagueId(null);
     } catch {
       onError("Failed to save league.");
@@ -108,8 +111,7 @@ export function LeaguesSection({ leagues, motorsportId, onLeaguesChange, onError
     if (!editingLeagueId) return;
     setLoadingOp("delete");
     try {
-      const res = await fetch(`/api/leagues/${editingLeagueId}`, { method: "DELETE" });
-      if (!res.ok) { onError("Failed to delete league."); return; }
+      await deleteMutation.mutateAsync({ leagueId: editingLeagueId });
       onLeaguesChange(leagues.filter((s) => s.id !== editingLeagueId));
       setEditingLeagueId(null);
     } catch {

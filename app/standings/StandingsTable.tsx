@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { type Race } from "@/lib/schemas";
+import { assignRanks } from "@/lib/scoring";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StickyCell } from "./StickyCell";
 import { RaceHeaderCell } from "./RaceCell";
@@ -49,21 +50,19 @@ function computeStageData(rows: StandingsRowData[], stages: string[][]) {
       id: row.id,
       total: raceIds.reduce((sum, rid) => sum + (row.raceScores[rid] ?? 0), 0),
     }));
-    const sorted = [...totals].sort((a, b) => b.total - a.total);
-    const rankOf = (total: number) => sorted.findIndex((s) => s.total <= total) + 1;
+    const ranked = assignRanks(totals, (t) => t.total);
     return {
       lastRaceId: raceIds[raceIds.length - 1],
       totalsByRowId: Object.fromEntries(totals.map(({ id, total }) => [id, total])),
-      ranksByRowId: Object.fromEntries(totals.map(({ id, total }) => [id, rankOf(total)])),
+      ranksByRowId: Object.fromEntries(ranked.map(({ id, rank }) => [id, rank])),
     };
   });
 }
 
 function computeSeasonRanks(rows: StandingsRowData[]): Record<string, number> {
   const withTotals = rows.map((r) => ({ id: r.id, total: r.rawTotal + r.propTotal }));
-  const sorted = [...withTotals].sort((a, b) => b.total - a.total);
-  const rankOf = (total: number) => sorted.findIndex((s) => s.total <= total) + 1;
-  return Object.fromEntries(withTotals.map(({ id, total }) => [id, rankOf(total)]));
+  const ranked = assignRanks(withTotals, (t) => t.total);
+  return Object.fromEntries(ranked.map(({ id, rank }) => [id, rank]));
 }
 
 export function StandingsTable({ rows, races, nameHeader, stages, showSummary = true }: StandingsTableProps) {

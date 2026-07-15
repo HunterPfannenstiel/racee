@@ -17,16 +17,20 @@ type PredictRace = {
   startingGrid: string[];
 };
 
+// Racers here are always the client-facing DTO shape (no motorsportId — the
+// motorsport is already implied by the race/league context), a subset of
+// the full domain-backed Racer used elsewhere (e.g. admin racer management).
+type PredictRacer = Pick<Racer, "id" | "name" | "team" | "image" | "teamColor">;
+
 type Props = {
   race: PredictRace;
   leagueId: string;
-  racersById: Record<string, Racer>;
+  racersById: Record<string, PredictRacer>;
   existingPrediction: string[] | null;
   existingSubmittedAt: string | null;
   existingPropPicks: Partial<Record<PropName, string>>;
   existingSubmittedByName?: string | null;
   keyIsSet: boolean;
-  onPredictionSave: (racerIds: string[], submittedAt: string, propPicks: Partial<Record<PropName, string>>) => void;
   isProxy?: boolean;
   targetUserId?: string;
   targetUserName?: string;
@@ -42,7 +46,6 @@ export function PredictionForm({
   existingPropPicks,
   existingSubmittedByName,
   keyIsSet,
-  onPredictionSave,
   isProxy,
   targetUserId,
   targetUserName,
@@ -56,7 +59,7 @@ export function PredictionForm({
   const { saving, saved, save } = usePredictionSave({
     leagueId,
     raceId: race.id,
-    userId: targetUserId ?? user?.id ?? "",
+    targetUserId,
   });
 
   async function handleSubmit(racerIds: string[], propPicks: Partial<Record<PropName, string>>) {
@@ -65,7 +68,6 @@ export function PredictionForm({
     if (!result) return;
     setSubmittedAt(result.submittedAt);
     if (isProxy) setSubmittedByName("You");
-    onPredictionSave(racerIds, result.submittedAt, propPicks);
   }
 
   return (

@@ -1,0 +1,89 @@
+{
+  "_note": "Player identity is 100% consistent across all 5 races (same spreadsheet playerName + email every time), so this is one global table, not per-race. Candidate set for each name was constrained to exactly the 2 memberIds of its resolved team.",
+  "resolved": {
+    "Crilipp": {
+      "Chris Michels": { "userId": "4CVFS8ZmjqA8nK7aGw3K1WL5UWSupKPp", "authName": "Chris Michels", "authEmail": "michelsbmx@gmail.com", "method": "exact" },
+      "Phillip Younts": { "userId": "Z31qcMJzGlU7qLkNijArFXb9j7cXsHgG", "authName": "Philip Younts", "authEmail": "philbyounts@gmail.com", "method": "email-exact", "note": "Sheet spells it 'Phillip', auth account is 'Philip' — one-letter name variant, email matches exactly." }
+    },
+    "Minor Heresy Motorsports": {
+      "Johnson Miller": { "userId": "cwVeKgqGcSNoiTlC03e0RqCiXQ5pg69l", "authName": "Johnson Miller", "authEmail": "johnsonmiller24@gmail.com", "method": "exact" },
+      "Tyler Fox": { "userId": "76Dg0Uf261SSJi8FwtFlrXEyrgIHlAOz", "authName": "Tyler Fox", "authEmail": "tylerjfox44@gmail.com", "method": "exact" }
+    },
+    "Zeus Racing": {
+      "Skipper Bertrand": { "userId": "t1Y95rf1WZtNdbJ117fdiap8u4sovAAH", "authName": "Skipper Bertrand", "authEmail": "skipbert71@gmail.com", "method": "exact" },
+      "Matt Bishop": { "userId": "6NgaKXnzBAdU6nOPiWWJ5Acy63CP5ZwY", "authName": "Matt Bishop", "authEmail": "matthew.bishop.tx@gmail.com", "method": "exact" }
+    },
+    "Mile High": {
+      "Angelia Clark": { "userId": "3j7LNV9rBAWcaaB3zUfEGNJEOnfbEurh", "authName": "Angelia Clark", "authEmail": "angelialisanne@gmail.com", "method": "email-case-insensitive" },
+      "Jacob Junker": { "userId": "W5UmU8y5kmrsswgBcYxCVgyfS5FopfIF", "authName": "Jake Junker", "authEmail": "jacob.n.junker@gmail.com", "method": "email-exact", "note": "Sheet uses given name 'Jacob', auth display name is nickname 'Jake' — email matches exactly." }
+    },
+    "TNT Racing": {
+      "Antonio LaMonica": { "userId": "ZosoXWcsFZNn60nuidANR0f24fKj0k9I", "authName": "Antonio LaMonica", "authEmail": "antoniolamonica@gmail.com", "method": "exact" },
+      "Tony DeSha": {
+        "userId": "vOFKM0WuFjD1HNLOkoon6vVGawVGMSKc",
+        "authName": "Tony DeSha",
+        "authEmail": "tonydesha59@gmail.com",
+        "method": "name-exact-elimination",
+        "confidence": "high, but email mismatch flagged",
+        "note": "ANOMALY: sheet's contact email is 'tonydesha@yahoo.com' but the real auth account email is 'tonydesha59@gmail.com' — completely different address/domain. Name match is exact and this is the only other member of TNT Racing (elimination against Antonio LaMonica), so identity is not actually ambiguous, but the email discrepancy itself is worth a sanity check — the spreadsheet's contact sheet may just be stale."
+      }
+    },
+    "The Verstrapons": {
+      "Joel Aduddell": { "userId": "f3RvXRv6ow7kPOsKcM2AsXhCa3otnzRC", "authName": "Joel Aduddell", "authEmail": "jdaduddell@gmail.com", "method": "exact" },
+      "Ryan Sherlock": { "userId": "6Wx2tQKDrm0Ywgfxtpnb8Dly6a1rKm3Y", "authName": "Ryan Sherlock", "authEmail": "ryan.j.sherlock@outlook.com", "method": "email-case-insensitive" }
+    },
+    "No Drag, Only Lift": {
+      "Chris York": { "userId": "YFnuwHsydtFzegDT82rgUApKfW3lDpc6", "authName": "chris york", "authEmail": "topherxxv@gmail.com", "method": "email-case-insensitive", "note": "Sheet tab for this team is literally named 'Team 3' — see team-names.json for how the team itself was resolved." },
+      "Russell Henderson": {
+        "userId": "Qgt4Jk89IuZ8UkWgD5lX0h61PjP6Gk6b",
+        "authName": "Russ Henderson",
+        "authEmail": "russhenderson85@gmail.com",
+        "method": "name-elimination",
+        "confidence": "high, but email mismatch flagged",
+        "note": "ANOMALY: sheet's contact email is 'Russell_henderson@outlook.com' (outlook), real auth account is 'russhenderson85@gmail.com' (gmail) — different domain and address entirely. Name is a nickname match ('Russell' vs 'Russ') and this is the only other member of the team (elimination against Chris York), so identity is not ambiguous, but worth a sanity check — could be a personal vs. league-signup email."
+      }
+    },
+    "Sashimi Tornado": {
+      "Dylan Awe": { "userId": "GasiaaondJ2jcz6jgkqlvHvgrpZJQeoa", "authName": "Dylan A", "authEmail": "djawe20@gmail.com", "method": "email-exact" },
+      "Justin Frost": { "userId": "sIMAuwJX9ZzqxXGfROUGWsXjYPhX5sIE", "authName": "Frosty J", "authEmail": "jeterjace02@gmail.com", "method": "email-exact", "note": "Auth display name is a nickname unrelated-looking to the sheet name ('Frosty J' vs 'Justin Frost') — resolved purely on exact email match, which is unambiguous." }
+    },
+    "Kildaullac Motorshports": {
+      "Daniel Kilpadikar": {
+        "userId": "NHoznCe81FujdZqSjsxa7uvSEYnxTxlz",
+        "authName": "Dan 2",
+        "authEmail": "daniel.a.kilpadikar510@gmail.com",
+        "method": "name-elimination",
+        "confidence": "high, but email mismatch flagged",
+        "note": "ANOMALY: sheet email 'dkilpadikar510@yahoo.com' vs auth 'daniel.a.kilpadikar510@gmail.com' — different domain, similar-but-not-identical local part. Auth display name 'Dan 2' is generic, but verified this is NOT ambiguous: the league has a separate 'Dan 1' user (mrhockeyforlife510@gmail.com) who is NOT a member of any team in this league at all (confirmed against teams.json), so there is no competing 'Dan' candidate here. Resolved by elimination — the only other Kildaullac member is 'Zack Dauterive', an exact match."
+      },
+      "Zack Dauterive": { "userId": "ms0hDn90wTUl2KVdAlHNeAilbnP1AstS", "authName": "Zack Dauterive", "authEmail": "zack44@gmail.com", "method": "email-case-insensitive" }
+    },
+    "Fast and Furryious by FeetFinder": {
+      "Adam Koestner": { "userId": "Bo5G2yLs4gKQ5QAXkGiPTJJN4iyO3poq", "authName": "Adam K", "authEmail": "akoes10@gmail.com", "method": "email-exact" },
+      "Evan Lerch": { "userId": "7PIIK6sruwHHXLTe0erK3LFDGuOw7ax1", "authName": "Evan Lerch", "authEmail": "evanjlerch@gmail.com", "method": "exact" }
+    },
+    "Whos your Caddy": {
+      "Austin Teders": {
+        "userId": "Uqqs9OhE7tf59bHlypAajv2FwQEIeIng",
+        "authName": "Austin Teders",
+        "authEmail": "mrteders@gmail.com",
+        "method": "name-exact-elimination",
+        "confidence": "high, but email mismatch flagged",
+        "note": "ANOMALY: sheet email 'austin.teders@okstate.edu' (school address) vs auth 'mrteders@gmail.com' — totally different address, plausibly an old school email vs. the Google account actually used to sign in. Name is an exact match and this is the only other member of the team (elimination against Bronson Bata)."
+      },
+      "Bronson Bata": { "userId": "GqAdNhFiqHX4YGrl8T1T8JNNWvMcmCzk", "authName": "Bronson Bata", "authEmail": "bronsonbata@gmail.com", "method": "exact" }
+    },
+    "Scooty Puff Jr": {
+      "Zach Duck": { "userId": "hNW2Bf7I9b3o4OOh57Cuqh3KFOafzhaa", "authName": "Zach Duck", "authEmail": "zduck1234@gmail.com", "method": "exact" },
+      "Sarah Duck": {
+        "userId": "ye2lsDm8gCH2aiKp9497MiQfWmQJKaoN",
+        "authName": "Sarah Gile",
+        "authEmail": "sarahgile77@gmail.com",
+        "method": "name-elimination",
+        "confidence": "medium — flagged for explicit human confirmation",
+        "note": "ANOMALY (most significant in this manifest): sheet lists this player as 'Sarah Duck' with email 'sarahduck717@gmail.com'; the real auth account is 'Sarah Gile' with email 'sarahgile77@gmail.com' — different last name AND different email entirely, not just a nickname/domain variant. Only resolved via elimination (Zach Duck is an exact match for the other team slot, leaving exactly one other member). Likely explanation: maiden/married name change or a partner's shared team where the spreadsheet used a household surname. Recommend you confirm this one specifically before Phase B writes anything for this userId."
+      }
+    }
+  },
+  "unresolved": []
+}

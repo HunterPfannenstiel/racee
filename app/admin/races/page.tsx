@@ -1,42 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { type Race, type Racer, type Motorsport } from "@/lib/schemas";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { orpc } from "@/lib/orpc/client";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { QueryLoading, QueryError } from "@/components/ui/query-state";
 import { RacesSection } from "./RacesSection";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 
 export default function AdminRacesPage() {
-  const [motorsport, setMotorsport] = useState<Motorsport | null>(null);
-  const [races, setRaces] = useState<Race[]>([]);
-  const [racers, setRacers] = useState<Racer[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch("/api/motorsports")
-      .then((r) => r.json())
-      .then(async (motorsports: Motorsport[]) => {
-        if (motorsports.length === 0) {
-          setLoading(false);
-          return;
-        }
-        const first = motorsports[0];
-        setMotorsport(first);
-        const [fetchedRaces, fetchedRacers] = await Promise.all([
-          fetch(`/api/races?motorsportId=${first.id}`).then((r) => r.json()),
-          fetch("/api/racers").then((r) => r.json()),
-        ]);
-        setRaces(fetchedRaces);
-        setRacers(fetchedRacers);
-      })
-      .catch(() => setError("Failed to load race data."))
-      .finally(() => setLoading(false));
-  }, []);
+  const racersQuery = useQuery(orpc.racers.list.queryOptions());
+  const motorsportsQuery = useQuery(orpc.motorsports.list.queryOptions());
+
+  const motorsportId = motorsportsQuery.data?.[0]?.id ?? null;
+
+  const racesQuery = useQuery(
+    orpc.races.list.queryOptions({
+      input: { motorsportId: motorsportId ?? "" },
+      enabled: !!motorsportId,
+    }),
+  );
+
+  const racers = racersQuery.data ?? [];
+  const races = racesQuery.data ?? [];
+
+  const pending = racersQuery.isPending || motorsportsQuery.isPending || (!!motorsportId && racesQuery.isPending);
+  const firstError = racersQuery.isError
+    ? racersQuery.error
+    : motorsportsQuery.isError
+      ? motorsportsQuery.error
+      : racesQuery.isError
+        ? racesQuery.error
+        : null;
 
   return (
     <PageShell title="Races">
@@ -54,21 +54,26 @@ export default function AdminRacesPage() {
         </Alert>
       )}
 
-      {loading ? (
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <Spinner className="w-4 h-4" />
-          <span className="text-xs tracking-widest uppercase">Loading</span>
-        </div>
-      ) : !motorsport ? (
+      {pending ? (
+        <QueryLoading />
+      ) : firstError ? (
+        <QueryError
+          error={firstError}
+          onRetry={() => {
+            racersQuery.refetch();
+            motorsportsQuery.refetch();
+            racesQuery.refetch();
+          }}
+        />
+      ) : !motorsportId ? (
         <p className="text-xs tracking-widest uppercase text-muted-foreground">
           No motorsports configured.
         </p>
       ) : (
         <RacesSection
-          motorsportId={motorsport.id}
+          motorsportId={motorsportId}
           races={races}
           racers={racers}
-          onRacesChange={setRaces}
           onError={setError}
         />
       )}

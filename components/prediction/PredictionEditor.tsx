@@ -29,9 +29,13 @@ type PredictionEditorRace = {
   startingGrid: string[];
 };
 
+// Racers here are the client-facing DTO shape (no motorsportId) — see
+// app/predict/PredictionForm.tsx's PredictRacer for the same rationale.
+type PredictionEditorRacer = Pick<Racer, "id" | "name" | "team" | "image" | "teamColor">;
+
 type PredictionEditorProps = {
   race: PredictionEditorRace;
-  racersById: Record<string, Racer>;
+  racersById: Record<string, PredictionEditorRacer>;
   initialRacerIds: string[];
   initialPropPicks: Partial<Record<PropName, string>>;
   isLocked: boolean;
@@ -93,7 +97,7 @@ export function PredictionEditor({
     });
   }
 
-  const racers = race.startingGrid.map((id) => racersById[id]).filter((r): r is Racer => !!r);
+  const racers = race.startingGrid.map((id) => racersById[id]).filter((r): r is PredictionEditorRacer => !!r);
   const allPropsFilled = PROP_NAMES_ALL.every((p) => propPicks[p] != null);
 
   return (

@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Member } from "./hooks/usePlayersList";
+import type { Member } from "./types";
 
 type MemberRowProps = {
   leagueId: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { MemberRow } from "./MemberRow";
-import type { MemberSubmission } from "./hooks/usePlayerStatus";
+import type { MemberSubmission } from "./types";
 
 type MembersListProps = {
   members: MemberSubmission[];

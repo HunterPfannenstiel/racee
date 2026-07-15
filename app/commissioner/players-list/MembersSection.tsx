@@ -1,7 +1,7 @@
 "use client";
 
 import { MemberRow } from "./MemberRow";
-import type { Member } from "./hooks/usePlayersList";
+import type { Member } from "./types";
 
 type MembersSectionProps = {
   leagueId: string;

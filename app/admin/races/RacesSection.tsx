@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
   closestCenter,
@@ -18,6 +19,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { type Race, type Racer } from "@/lib/schemas";
+import { orpc } from "@/lib/orpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -62,18 +64,27 @@ type Props = {
   motorsportId: string;
   races: Race[];
   racers: Racer[];
-  onRacesChange: (races: Race[]) => void;
   onError: (msg: string) => void;
 };
 
-export function RacesSection({ motorsportId, races, racers, onRacesChange, onError }: Props) {
+export function RacesSection({ motorsportId, races, racers, onError }: Props) {
+  const queryClient = useQueryClient();
   const [editorOpen, setEditorOpen] = useState(false);
   const [editor, setEditor] = useState<Editor>(EMPTY_EDITOR);
   const [gridEditorOpen, setGridEditorOpen] = useState(false);
   const [gridEditor, setGridEditor] = useState<GridEditor>(EMPTY_GRID_EDITOR);
-  const [loadingOp, setLoadingOp] = useState<string | null>(null);
 
-  const busy = loadingOp !== null;
+  function invalidateRaces() {
+    queryClient.invalidateQueries({ queryKey: orpc.races.list.key() });
+  }
+
+  const createMutation = useMutation(orpc.races.create.mutationOptions({ onSuccess: invalidateRaces }));
+  const updateMutation = useMutation(orpc.races.update.mutationOptions({ onSuccess: invalidateRaces }));
+  const deleteMutation = useMutation(orpc.races.delete.mutationOptions({ onSuccess: invalidateRaces }));
+  const setGridMutation = useMutation(orpc.races.setGrid.mutationOptions({ onSuccess: invalidateRaces }));
+
+  const busy =
+    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || setGridMutation.isPending;
   const racersById = Object.fromEntries(racers.map((r) => [r.id, r]));
 
   const sensors = useSensors(
@@ -113,65 +124,56 @@ export function RacesSection({ motorsportId, races, racers, onRacesChange, onErr
 
   async function commitRace() {
     if (!editor.title.trim() || !editor.date) return;
-    const race: Race = {
-      id: editor.raceId,
-      motorsportId,
-      title: editor.title.trim(),
-      label: editor.label.trim() || undefined,
-      date: editor.date,
-      lockTime: editor.lockTime ? new Date(editor.lockTime).toISOString() : undefined,
-      startingGrid: editor.startingGrid,
-    };
-    const isNew = !races.some((r) => r.id === race.id);
-    setLoadingOp("save");
+    const isNew = !races.some((r) => r.id === editor.raceId);
     try {
-      const res = isNew
-        ? await fetch("/api/races", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(race) })
-        : await fetch(`/api/races/${race.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(race) });
-      if (!res.ok) { onError("Failed to save race."); return; }
-      onRacesChange(isNew ? [...races, race] : races.map((r) => (r.id === race.id ? race : r)));
+      if (isNew) {
+        await createMutation.mutateAsync({
+          id: editor.raceId,
+          motorsportId,
+          title: editor.title.trim(),
+          label: editor.label.trim() || undefined,
+          date: editor.date,
+          lockTime: editor.lockTime ? new Date(editor.lockTime).toISOString() : undefined,
+          startingGrid: editor.startingGrid,
+        });
+      } else {
+        await updateMutation.mutateAsync({
+          motorsportId,
+          raceId: editor.raceId,
+          patch: {
+            title: editor.title.trim(),
+            label: editor.label.trim() || undefined,
+            date: editor.date,
+            lockTime: editor.lockTime ? new Date(editor.lockTime).toISOString() : undefined,
+          },
+        });
+      }
       setEditorOpen(false);
     } catch {
       onError("Failed to save race.");
-    } finally {
-      setLoadingOp(null);
     }
   }
 
   async function commitGrid() {
     const race = races.find((r) => r.id === gridEditor.raceId);
     if (!race) return;
-    setLoadingOp("grid-save");
     try {
-      const res = await fetch(`/api/races/${race.id}/grid`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ motorsportId, startingGrid: gridEditor.order }),
+      await setGridMutation.mutateAsync({
+        motorsportId,
+        raceId: race.id,
+        startingGrid: gridEditor.order,
       });
-      if (!res.ok) { onError("Failed to save starting grid."); return; }
-      onRacesChange(races.map((r) => (r.id === race.id ? { ...r, startingGrid: gridEditor.order } : r)));
       setGridEditorOpen(false);
     } catch {
       onError("Failed to save starting grid.");
-    } finally {
-      setLoadingOp(null);
     }
   }
 
   async function handleRemove(race: Race) {
-    setLoadingOp(`remove-${race.id}`);
     try {
-      const res = await fetch(`/api/races/${race.id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ motorsportId }),
-      });
-      if (!res.ok) { onError("Failed to delete race."); return; }
-      onRacesChange(races.filter((r) => r.id !== race.id));
+      await deleteMutation.mutateAsync({ motorsportId, raceId: race.id });
     } catch {
       onError("Failed to delete race.");
-    } finally {
-      setLoadingOp(null);
     }
   }
 
@@ -201,7 +203,9 @@ export function RacesSection({ motorsportId, races, racers, onRacesChange, onErr
                   </p>
                 </div>
                 <div className="flex gap-1 items-center shrink-0">
-                  {loadingOp === `remove-${race.id}` && <Spinner className="w-3 h-3" />}
+                  {deleteMutation.isPending && deleteMutation.variables?.raceId === race.id && (
+                    <Spinner className="w-3 h-3" />
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => openGridEditor(race)} disabled={busy}>Starting Grid</Button>
                   <Button variant="ghost" size="sm" onClick={() => openEditor(race)} disabled={busy}>Edit</Button>
                   <Button variant="ghost" size="sm" onClick={() => handleRemove(race)} disabled={busy}>Remove</Button>
@@ -296,7 +300,7 @@ export function RacesSection({ motorsportId, races, racers, onRacesChange, onErr
           </div>
           <DialogFooter>
             <Button onClick={commitRace} disabled={busy || !editor.title.trim() || !editor.date}>
-              {loadingOp === "save" && <Spinner className="w-3 h-3 mr-1" />}
+              {(createMutation.isPending || updateMutation.isPending) && <Spinner className="w-3 h-3 mr-1" />}
               Save
             </Button>
             <Button variant="outline" onClick={() => setEditorOpen(false)} disabled={busy}>Cancel</Button>
@@ -322,7 +326,7 @@ export function RacesSection({ motorsportId, races, racers, onRacesChange, onErr
           </DndContext>
           <DialogFooter>
             <Button onClick={commitGrid} disabled={busy}>
-              {loadingOp === "grid-save" && <Spinner className="w-3 h-3 mr-1" />}
+              {setGridMutation.isPending && <Spinner className="w-3 h-3 mr-1" />}
               Save
             </Button>
             <Button variant="outline" onClick={() => setGridEditorOpen(false)} disabled={busy}>Cancel</Button>

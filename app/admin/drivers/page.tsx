@@ -1,28 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { type Racer, type Motorsport } from "@/lib/schemas";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { orpc } from "@/lib/orpc/client";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { QueryLoading, QueryError } from "@/components/ui/query-state";
 import { DriversSection } from "./DriversSection";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 
 export default function AdminDriversPage() {
-  const [racers, setRacers] = useState<Racer[]>([]);
-  const [motorsportId, setMotorsportId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/racers").then((r) => r.json()),
-      fetch("/api/motorsports").then((r) => r.json()),
-    ]).then(([racerList, motorsports]: [Racer[], Motorsport[]]) => {
-      setRacers(racerList);
-      if (motorsports.length > 0) setMotorsportId(motorsports[0].id);
-    });
-  }, []);
+  const racersQuery = useQuery(orpc.racers.list.queryOptions());
+  const motorsportsQuery = useQuery(orpc.motorsports.list.queryOptions());
+
+  const motorsportId = motorsportsQuery.data?.[0]?.id ?? null;
 
   return (
     <PageShell title="Drivers">
@@ -38,7 +33,15 @@ export default function AdminDriversPage() {
           </AlertDescription>
         </Alert>
       )}
-      <DriversSection racers={racers} motorsportId={motorsportId} onRacersChange={setRacers} onError={setError} />
+      {racersQuery.isPending || motorsportsQuery.isPending ? (
+        <QueryLoading />
+      ) : racersQuery.isError ? (
+        <QueryError error={racersQuery.error} onRetry={() => racersQuery.refetch()} />
+      ) : motorsportsQuery.isError ? (
+        <QueryError error={motorsportsQuery.error} onRetry={() => motorsportsQuery.refetch()} />
+      ) : (
+        <DriversSection racers={racersQuery.data} motorsportId={motorsportId} onError={setError} />
+      )}
     </PageShell>
   );
 }

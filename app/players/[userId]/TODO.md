@@ -22,7 +22,7 @@ It must implement `IUserProfileStatsQuery` and do the following fan-out:
 - `accuracy = correctWeight / totalWeight`
 - A pick is correct if `answer ∈ propKey[propType]` (PropKey values are arrays)
 
-Then swap the API route (`app/api/players/[userId]/route.ts`) from `MockUserProfileStatsQuery` to `BlobUserProfileStatsQuery`.
+Then swap the `players.profileStats` procedure (`server/rpc/routers/players.ts`) from `MockUserProfileStatsQuery` to `BlobUserProfileStatsQuery`.
 
 ---
 

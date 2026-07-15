@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { type League, type Race, type Racer, type PropName } from "@/lib/schemas";
+import { useQuery } from "@tanstack/react-query";
+import { type Racer, type PropName } from "@/lib/schemas";
+import { orpc } from "@/lib/orpc/client";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,32 +16,32 @@ import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 export default function SetResultPage() {
   const { raceId } = useParams<{ raceId: string }>();
   const router = useRouter();
-  const [race, setRace] = useState<Race | null>(null);
-  const [motorsportId, setMotorsportId] = useState<string | null>(null);
-  const [racersById, setRacersById] = useState<Record<string, Racer>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const leaguesQuery = useQuery(orpc.leagues.list.queryOptions());
+  const racersQuery = useQuery(orpc.racers.list.queryOptions());
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch("/api/leagues")
-      .then((r) => r.json())
-      .then(async (leagues: League[]) => {
-        if (leagues.length === 0) throw new Error("No leagues");
-        const msId = leagues[0].motorsportId;
-        setMotorsportId(msId);
+  const leagues = leaguesQuery.data ?? [];
+  const motorsportId = leagues[0]?.motorsportId ?? null;
 
-        const [raceList, racerList] = await Promise.all([
-          fetch(`/api/races?motorsportId=${msId}`).then((r) => r.json() as Promise<Race[]>),
-          fetch("/api/racers").then((r) => r.json() as Promise<Racer[]>),
-        ]);
+  const racesQuery = useQuery(
+    orpc.races.list.queryOptions({
+      input: { motorsportId: motorsportId ?? "" },
+      enabled: !!motorsportId,
+    }),
+  );
 
-        const found = raceList.find((r) => r.id === raceId) ?? null;
-        setRace(found);
-        setRacersById(Object.fromEntries(racerList.map((r) => [r.id, r])));
-      })
-      .catch(() => setError("Failed to load race data."))
-      .finally(() => setLoading(false));
-  }, [raceId]);
+  const loading = leaguesQuery.isPending || racersQuery.isPending || (!!motorsportId && racesQuery.isPending);
+  const loadFailed =
+    leaguesQuery.isError ||
+    racesQuery.isError ||
+    (leaguesQuery.isSuccess && leagues.length === 0);
+
+  const race = (racesQuery.data ?? []).find((r) => r.id === raceId) ?? null;
+  const error = loadFailed ? "Failed to load race data." : mutationError;
+
+  const racersById: Record<string, Racer> = Object.fromEntries(
+    (racersQuery.data ?? []).map((r) => [r.id, r]),
+  );
 
   return (
     <PageShell title="Set Result">
@@ -52,7 +54,7 @@ export default function SetResultPage() {
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
             {error}
-            <Button variant="ghost" size="sm" onClick={() => setError(null)}>✕</Button>
+            <Button variant="ghost" size="sm" onClick={() => setMutationError(null)}>✕</Button>
           </AlertDescription>
         </Alert>
       )}
@@ -79,7 +81,7 @@ export default function SetResultPage() {
             existingPropKey={(race.propKey as Partial<Record<PropName, string[] | null>>) ?? {}}
             onSave={() => router.push("/admin/results")}
             onCancel={() => router.push("/admin/results")}
-            onError={setError}
+            onError={setMutationError}
           />
         </div>
       )}

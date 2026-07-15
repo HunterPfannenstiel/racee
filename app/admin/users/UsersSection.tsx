@@ -1,25 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@/app/context/UserContext";
+import { orpc } from "@/lib/orpc/client";
+import type { UserDTO } from "@/server/rpc/routers/users";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/ui/spinner";
 
-type User = { id: string; name: string; isAdmin: boolean };
-
 type Props = {
-  users: User[];
-  onUsersChange: (users: User[]) => void;
+  users: UserDTO[];
   onError: (msg: string) => void;
 };
 
-export function UsersSection({ users, onUsersChange, onError }: Props) {
+export function UsersSection({ users, onError }: Props) {
   const { user: currentUser } = useUser();
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, boolean>>({});
-  const [saving, setSaving] = useState(false);
+
+  const setAdminMutation = useMutation(orpc.users.setAdmin.mutationOptions());
+  const saving = setAdminMutation.isPending;
 
   const currentFirst = [...users].sort((a, b) => {
     if (a.id === currentUser?.id) return -1;
@@ -41,26 +44,19 @@ export function UsersSection({ users, onUsersChange, onError }: Props) {
 
   async function handleSave() {
     const changed = users.filter((u) => draft[u.id] !== u.isAdmin);
-    if (changed.length === 0) { setEditing(false); return; }
-    setSaving(true);
+    if (changed.length === 0) {
+      setEditing(false);
+      return;
+    }
     try {
-      const results = await Promise.all(
-        changed.map((u) =>
-          fetch(`/api/admin/users/${u.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ isAdmin: draft[u.id] }),
-          })
-        )
+      await Promise.all(
+        changed.map((u) => setAdminMutation.mutateAsync({ userId: u.id, isAdmin: draft[u.id] })),
       );
-      if (results.some((r) => !r.ok)) { onError("Failed to update one or more users."); return; }
-      onUsersChange(users.map((u) => ({ ...u, isAdmin: draft[u.id] ?? u.isAdmin })));
+      queryClient.invalidateQueries({ queryKey: orpc.users.list.key() });
       setEditing(false);
       setDraft({});
     } catch {
       onError("Failed to update users.");
-    } finally {
-      setSaving(false);
     }
   }
 

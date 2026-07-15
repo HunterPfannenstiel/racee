@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { type ReactNode } from "react";
 import { type Race } from "@/lib/schemas";
+import { medalColor } from "@/lib/colors";
 import { StickyCell } from "./StickyCell";
 import { RaceCell } from "./RaceCell";
 
@@ -39,12 +40,6 @@ function SummaryCell({ value, muted }: { value: ReactNode; muted?: boolean }) {
     </td>
   );
 }
-
-export const medalColor: Record<number, string> = {
-  1: "text-amber-400",
-  2: "text-slate-400",
-  3: "text-amber-700",
-};
 
 function StageCell({ value, rank }: { value: number; rank: boolean }) {
   const color = rank ? (medalColor[value] ?? "text-muted-foreground") : "";

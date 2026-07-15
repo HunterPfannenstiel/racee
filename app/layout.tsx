@@ -5,6 +5,7 @@ import { UserContextProvider } from "@/app/context/UserContext";
 import { LeagueContextProvider } from "@/app/context/LeagueContext";
 import { AppShell } from "@/app/components/AppShell";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Providers } from "@/app/providers";
 
 const barlowCondensed = Barlow_Condensed({
   variable: "--font-barlow-condensed",
@@ -34,13 +35,15 @@ export default function RootLayout({
       className={`${barlowCondensed.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <body className="h-full bg-background">
-        <TooltipProvider>
-          <UserContextProvider>
-            <LeagueContextProvider>
-              <AppShell>{children}</AppShell>
-            </LeagueContextProvider>
-          </UserContextProvider>
-        </TooltipProvider>
+        <Providers>
+          <TooltipProvider>
+            <UserContextProvider>
+              <LeagueContextProvider>
+                <AppShell>{children}</AppShell>
+              </LeagueContextProvider>
+            </UserContextProvider>
+          </TooltipProvider>
+        </Providers>
       </body>
     </html>
   );

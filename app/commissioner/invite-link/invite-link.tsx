@@ -1,26 +1,8 @@
 "use client";
 
-import { InviteLink } from "./InviteLink";
-import { useInviteLink } from "./hooks/useInviteLink";
+import { ConnectedInviteLink } from "./ConnectedInviteLink";
 
+/** Kept for the prototype page — the live implementation is ConnectedInviteLink. */
 export function InviteLinkFeature({ leagueId }: { leagueId: string }) {
-  const {
-    link,
-    confirmation,
-    generate,
-    deactivate,
-    regenerate,
-    setConfirmation,
-  } = useInviteLink(leagueId);
-
-  return (
-    <InviteLink
-      link={link}
-      confirmation={confirmation}
-      onGenerate={generate}
-      onDeactivate={deactivate}
-      onRegenerate={regenerate}
-      onConfirmationChange={setConfirmation}
-    />
-  );
+  return <ConnectedInviteLink leagueId={leagueId} />;
 }

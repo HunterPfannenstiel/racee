@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MemberStatusIndicator } from "./MemberStatusIndicator";
-import type { MemberSubmission } from "./hooks/usePlayerStatus";
+import type { MemberSubmission } from "./types";
 
 function getInitials(name: string) {
   return name

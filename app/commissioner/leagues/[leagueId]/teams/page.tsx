@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { PageShell } from "@/components/ui/page-shell";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -17,17 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { CommissionerTeamDTO, CommissionerUserDTO } from "@/server/queries/commissioner-teams/ICommissionerTeamsQuery";
+import { orpc } from "@/lib/orpc/client";
 
 const UNASSIGNED = "__unassigned__";
 
 export default function CommissionerTeamsPage() {
   const { leagueId } = useParams<{ leagueId: string }>();
-  const [leagueName, setLeagueName] = useState<string | null>(null);
-  const [teams, setTeams] = useState<CommissionerTeamDTO[]>([]);
-  const [users, setUsers] = useState<CommissionerUserDTO[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const input = { leagueId };
 
   // Teams section
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -36,32 +34,65 @@ export default function CommissionerTeamsPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("#6b7280");
-  const [busyOp, setBusyOp] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Assignments section
-  const [savingUserId, setSavingUserId] = useState<string | null>(null);
+  const rosterQuery = useQuery(orpc.leagues.teams.roster.queryOptions({ input }));
+  const leagueQuery = useQuery(orpc.leagues.get.queryOptions({ input }));
 
+  const invalidateTeams = () => {
+    queryClient.invalidateQueries({ queryKey: orpc.leagues.teams.roster.key({ input }) });
+    queryClient.invalidateQueries({ queryKey: orpc.leagues.teams.list.key({ input }) });
+  };
+  const createMutation = useMutation(
+    orpc.leagues.teams.create.mutationOptions({
+      onSuccess: () => {
+        invalidateTeams();
+        setNewName("");
+        setNewColor("#6b7280");
+      },
+      onError: () => setError("Failed to create team."),
+    }),
+  );
+  const updateMutation = useMutation(
+    orpc.leagues.teams.update.mutationOptions({
+      onSuccess: () => {
+        invalidateTeams();
+        setEditingId(null);
+      },
+      onError: () => setError("Failed to save team."),
+    }),
+  );
+  const deleteMutation = useMutation(
+    orpc.leagues.teams.delete.mutationOptions({
+      onSuccess: () => {
+        invalidateTeams();
+        setConfirmDeleteId(null);
+      },
+      onError: () => setError("Failed to delete team."),
+    }),
+  );
+  const assignMutation = useMutation(
+    orpc.leagues.assignments.set.mutationOptions({
+      onSuccess: invalidateTeams,
+      onError: () => setError("Failed to assign player."),
+    }),
+  );
+
+  const teams = useMemo(() => rosterQuery.data?.teams ?? [], [rosterQuery.data]);
+  const users = rosterQuery.data?.users ?? [];
+  const leagueName = leagueQuery.data?.name ?? null;
+  const loading = rosterQuery.isPending;
+
+  const busyOp = createMutation.isPending
+    ? "create"
+    : updateMutation.isPending && updateMutation.variables
+      ? `save-${updateMutation.variables.teamId}`
+      : deleteMutation.isPending && deleteMutation.variables
+        ? `delete-${deleteMutation.variables.teamId}`
+        : null;
   const busy = busyOp !== null;
-
-  useEffect(() => {
-    Promise.all([
-      fetch(`/api/commissioner/leagues/${leagueId}/teams`).then((r) => {
-        if (!r.ok) throw new Error("Failed to load.");
-        return r.json() as Promise<{ teams: CommissionerTeamDTO[]; users: CommissionerUserDTO[] }>;
-      }),
-      fetch(`/api/commissioner/leagues/${leagueId}`).then((r) => {
-        if (!r.ok) throw new Error("Failed to load.");
-        return r.json() as Promise<{ name: string }>;
-      }),
-    ])
-      .then(([{ teams, users }, { name }]) => {
-        setTeams(teams);
-        setUsers(users);
-        setLeagueName(name);
-      })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Failed to load."))
-      .finally(() => setLoading(false));
-  }, [leagueId]);
+  const savingUserId =
+    assignMutation.isPending && assignMutation.variables ? assignMutation.variables.userId : null;
 
   const teamByUserId = useMemo(() => {
     const map: Record<string, string> = {};
@@ -71,90 +102,38 @@ export default function CommissionerTeamsPage() {
     return map;
   }, [teams]);
 
-  async function handleCreate() {
+  function handleCreate() {
     const name = newName.trim();
     if (!name || busy) return;
-    setBusyOp("create");
-    try {
-      const res = await fetch(`/api/commissioner/leagues/${leagueId}/teams`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, color: newColor }),
-      });
-      if (!res.ok) throw new Error("Failed to create team.");
-      const team = (await res.json()) as CommissionerTeamDTO;
-      setTeams((prev) => [...prev, team]);
-      setNewName("");
-      setNewColor("#6b7280");
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to create team.");
-    } finally {
-      setBusyOp(null);
-    }
+    createMutation.mutate({ leagueId, id: crypto.randomUUID(), name, color: newColor });
   }
 
-  async function handleSave(team: CommissionerTeamDTO) {
+  function handleSave(team: { id: string; name: string; color?: string }) {
     const name = editName.trim();
     if (!name) { setEditingId(null); return; }
     const patch: { name?: string; color?: string } = {};
     if (name !== team.name) patch.name = name;
     if (editColor !== (team.color ?? "#6b7280")) patch.color = editColor;
     if (Object.keys(patch).length === 0) { setEditingId(null); return; }
-    setBusyOp(`save-${team.id}`);
-    try {
-      const res = await fetch(`/api/commissioner/leagues/${leagueId}/teams/${team.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
-      });
-      if (!res.ok) throw new Error("Failed to save team.");
-      setTeams((prev) => prev.map((t) => (t.id === team.id ? { ...t, ...patch } : t)));
-      setEditingId(null);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to save team.");
-    } finally {
-      setBusyOp(null);
-    }
+    updateMutation.mutate({ leagueId, teamId: team.id, patch });
   }
 
-  async function handleDelete(teamId: string) {
-    setBusyOp(`delete-${teamId}`);
-    try {
-      const res = await fetch(`/api/commissioner/leagues/${leagueId}/teams/${teamId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete team.");
-      setTeams((prev) => prev.filter((t) => t.id !== teamId));
-      setConfirmDeleteId(null);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to delete team.");
-    } finally {
-      setBusyOp(null);
-    }
+  function handleDelete(teamId: string) {
+    deleteMutation.mutate({ leagueId, teamId });
   }
 
-  async function handleAssign(userId: string, teamId: string | null) {
+  function handleAssign(userId: string, teamId: string | null) {
     if (savingUserId !== null) return;
-    setSavingUserId(userId);
-    const prevTeams = teams;
-    setTeams((current) =>
-      current.map((t) => {
-        const members = t.memberIds.filter((id) => id !== userId);
-        if (teamId && t.id === teamId) return { ...t, memberIds: [...members, userId] };
-        return { ...t, memberIds: members };
-      })
-    );
-    try {
-      const res = await fetch(`/api/commissioner/leagues/${leagueId}/assignments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, teamId }),
-      });
-      if (!res.ok) { setTeams(prevTeams); throw new Error("Failed to assign player."); }
-    } catch (e: unknown) {
-      setTeams(prevTeams);
-      setError(e instanceof Error ? e.message : "Failed to assign player.");
-    } finally {
-      setSavingUserId(null);
+    assignMutation.mutate({ leagueId, userId, teamId });
+  }
+
+  // While an assignment is in flight, show the value being written so the
+  // Select doesn't visibly snap back until the roster refetch lands.
+  function assignedValue(userId: string): string {
+    if (savingUserId === userId && assignMutation.variables) {
+      return assignMutation.variables.teamId ?? UNASSIGNED;
     }
+    return teamByUserId[userId] ?? UNASSIGNED;
   }
 
   return (
@@ -167,18 +146,20 @@ export default function CommissionerTeamsPage() {
         {leagueName ?? "League"}
       </Link>
 
-      {error && (
+      {(error ?? rosterQuery.isError) && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
-            {error}
-            <Button variant="ghost" size="sm" onClick={() => setError(null)}>✕</Button>
+            {error ?? "Failed to load."}
+            {error && (
+              <Button variant="ghost" size="sm" onClick={() => setError(null)}>✕</Button>
+            )}
           </AlertDescription>
         </Alert>
       )}
 
       {loading ? (
         <div className="flex justify-center pt-8"><Spinner /></div>
-      ) : (
+      ) : rosterQuery.isError ? null : (
         <>
           <Card>
             <CardHeader>
@@ -323,7 +304,7 @@ export default function CommissionerTeamsPage() {
                     <div className="flex items-center gap-2 shrink-0">
                       {savingUserId === user.id && <Spinner className="w-3 h-3" />}
                       <Select
-                        value={teamByUserId[user.id] ?? UNASSIGNED}
+                        value={assignedValue(user.id)}
                         onValueChange={(val) => handleAssign(user.id, val === UNASSIGNED ? null : val)}
                         disabled={savingUserId !== null}
                       >

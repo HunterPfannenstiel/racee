@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type Racer } from "@/lib/schemas";
+import { orpc } from "@/lib/orpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RacerAvatar } from "@/components/RacerAvatar";
@@ -14,37 +16,41 @@ type Draft = { name: string; team: string; image?: string; teamColor?: string };
 type Props = {
   racers: Racer[];
   motorsportId: string | null;
-  onRacersChange: (racers: Racer[]) => void;
   onError: (msg: string) => void;
 };
 
-export function DriversSection({ racers, motorsportId, onRacersChange, onError }: Props) {
+export function DriversSection({ racers, motorsportId, onError }: Props) {
+  const queryClient = useQueryClient();
   const [newRacer, setNewRacer] = useState<Draft>({ name: "", team: "", image: "", teamColor: "" });
   const [editingRacerId, setEditingRacerId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Draft>({ name: "", team: "", image: "", teamColor: "" });
-  const [loadingOp, setLoadingOp] = useState<string | null>(null);
 
-  const busy = loadingOp !== null;
+  function invalidateRacers() {
+    queryClient.invalidateQueries({ queryKey: orpc.racers.list.key() });
+  }
+
+  const createMutation = useMutation(orpc.racers.create.mutationOptions({ onSuccess: invalidateRacers }));
+  const updateMutation = useMutation(orpc.racers.update.mutationOptions({ onSuccess: invalidateRacers }));
+  const deleteMutation = useMutation(orpc.racers.delete.mutationOptions({ onSuccess: invalidateRacers }));
+
+  const busy = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   async function handleAdd() {
     const name = newRacer.name.trim();
     const team = newRacer.team.trim();
     if (!name || !team || !motorsportId) return;
-    const racer: Racer = { id: crypto.randomUUID(), name, team, motorsportId, image: newRacer.image || undefined, teamColor: newRacer.teamColor || undefined };
-    setLoadingOp("add");
     try {
-      const res = await fetch("/api/racers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(racer),
+      await createMutation.mutateAsync({
+        id: crypto.randomUUID(),
+        name,
+        team,
+        motorsportId,
+        image: newRacer.image || undefined,
+        teamColor: newRacer.teamColor || undefined,
       });
-      if (!res.ok) { onError("Failed to save drivers."); return; }
-      onRacersChange([...racers, racer]);
       setNewRacer({ name: "", team: "", image: "", teamColor: "" });
     } catch {
       onError("Failed to save drivers.");
-    } finally {
-      setLoadingOp(null);
     }
   }
 
@@ -54,34 +60,25 @@ export function DriversSection({ racers, motorsportId, onRacersChange, onError }
   }
 
   async function commitEdit(id: string) {
-    const data = { name: editDraft.name, team: editDraft.team, image: editDraft.image || undefined, teamColor: editDraft.teamColor || undefined };
-    setLoadingOp(`save-${id}`);
+    const patch = {
+      name: editDraft.name,
+      team: editDraft.team,
+      image: editDraft.image || undefined,
+      teamColor: editDraft.teamColor || undefined,
+    };
     try {
-      const res = await fetch(`/api/racers/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) { onError("Failed to save drivers."); return; }
-      onRacersChange(racers.map((r) => (r.id === id ? { ...r, ...data } : r)));
+      await updateMutation.mutateAsync({ racerId: id, patch });
       setEditingRacerId(null);
     } catch {
       onError("Failed to save drivers.");
-    } finally {
-      setLoadingOp(null);
     }
   }
 
   async function handleRemove(id: string) {
-    setLoadingOp(`remove-${id}`);
     try {
-      const res = await fetch(`/api/racers/${id}`, { method: "DELETE" });
-      if (!res.ok) { onError("Failed to save drivers."); return; }
-      onRacersChange(racers.filter((r) => r.id !== id));
+      await deleteMutation.mutateAsync({ racerId: id });
     } catch {
       onError("Failed to save drivers.");
-    } finally {
-      setLoadingOp(null);
     }
   }
 
@@ -110,7 +107,9 @@ export function DriversSection({ racers, motorsportId, onRacersChange, onError }
                 </div>
                 <div className="flex gap-2 items-center">
                   <Button size="sm" onClick={() => commitEdit(racer.id)} disabled={busy}>
-                    {loadingOp === `save-${racer.id}` && <Spinner className="w-3 h-3 mr-1" />}
+                    {updateMutation.isPending && updateMutation.variables?.racerId === racer.id && (
+                      <Spinner className="w-3 h-3 mr-1" />
+                    )}
                     Save
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => setEditingRacerId(null)} disabled={busy}>Cancel</Button>
@@ -128,7 +127,9 @@ export function DriversSection({ racers, motorsportId, onRacersChange, onError }
                   <p className="text-xs text-muted-foreground truncate">{racer.team}</p>
                 </div>
                 <div className="flex gap-1 items-center shrink-0">
-                  {loadingOp === `remove-${racer.id}` && <Spinner className="w-3 h-3" />}
+                  {deleteMutation.isPending && deleteMutation.variables?.racerId === racer.id && (
+                    <Spinner className="w-3 h-3" />
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => startEdit(racer)} disabled={busy}>Edit</Button>
                   <Button variant="ghost" size="sm" onClick={() => handleRemove(racer.id)} disabled={busy}>Remove</Button>
                 </div>
@@ -152,7 +153,7 @@ export function DriversSection({ racers, motorsportId, onRacersChange, onError }
             <span className="text-xs text-muted-foreground">Constructor color</span>
           </div>
           <Button variant="outline" onClick={handleAdd} disabled={busy}>
-            {loadingOp === "add" && <Spinner className="w-3 h-3 mr-1" />}
+            {createMutation.isPending && <Spinner className="w-3 h-3 mr-1" />}
             Add driver
           </Button>
         </div>

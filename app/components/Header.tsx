@@ -3,12 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Menu } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
+import { orpc } from "@/lib/orpc/client";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { SidebarContent } from "@/app/components/SidebarContent";
 
 export default function Header() {
-  const { leagues, activeLeagueId } = useLeague();
+  const { user } = useUser();
+  const { activeLeagueId } = useLeague();
+  const { data: leagues = [] } = useQuery(orpc.leagues.list.queryOptions({ enabled: !!user }));
   const [navOpen, setNavOpen] = useState(false);
 
   const activeLeague = leagues.find((l) => l.id === activeLeagueId) ?? null;

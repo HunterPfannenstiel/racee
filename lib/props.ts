@@ -12,7 +12,12 @@ export const PROP_META: Record<PropName, { label: string; type: "driver" | "cons
 
 export type PropOption = { id: string; label: string; color?: string };
 
-export function getPropOptions(prop: PropName, racers: Racer[]): PropOption[] {
+// Accepts anything shaped like a racer for these fields — callers may pass
+// either the full domain-backed Racer (admin flows) or the leaner
+// client-facing racer DTO (prediction flows, which never carry motorsportId).
+export type PropOptionRacer = Pick<Racer, "id" | "name" | "team" | "teamColor">;
+
+export function getPropOptions(prop: PropName, racers: PropOptionRacer[]): PropOption[] {
   if (PROP_META[prop].type === "constructor") {
     const seen = new Set<string>();
     return racers

@@ -1,12 +1,14 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { ORPCError } from "@orpc/client";
 import { ChevronLeft, Settings2, Users, UserCheck, ClipboardCheck } from "lucide-react";
 import { PageShell } from "@/components/ui/page-shell";
-import { requireCommissioner } from "@/server/auth/guards";
-import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
-import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
-import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
-import { BlobCommissionerTeamsQuery } from "@/server/queries/commissioner-teams/BlobCommissionerTeamsQuery";
+import { QueryLoading } from "@/components/ui/query-state";
+import { orpc } from "@/lib/orpc/client";
 
 const CARDS = [
   {
@@ -35,34 +37,42 @@ const CARDS = [
   },
 ];
 
-export default async function CommissionerLeagueHubPage({
-  params,
-}: {
-  params: Promise<{ leagueId: string }>;
-}) {
-  const { leagueId } = await params;
+export default function CommissionerLeagueHubPage() {
+  const { leagueId } = useParams<{ leagueId: string }>();
+  const router = useRouter();
+  const input = { leagueId };
 
-  let league: Awaited<ReturnType<typeof requireCommissioner>>["league"];
-  try {
-    ({ league } = await requireCommissioner(leagueId));
-  } catch {
-    redirect("/commissioner");
+  const leagueQuery = useQuery(orpc.leagues.get.queryOptions({ input }));
+  // roster is commissioner-only — its FORBIDDEN doubles as the page's access check,
+  // replacing the old server-side requireCommissioner + redirect.
+  const rosterQuery = useQuery(orpc.leagues.teams.roster.queryOptions({ input }));
+
+  const deniedError = [leagueQuery, rosterQuery]
+    .map((q) => q.error)
+    .find(
+      (e) => e instanceof ORPCError && (e.code === "FORBIDDEN" || e.code === "NOT_FOUND"),
+    );
+  useEffect(() => {
+    if (deniedError) router.replace("/commissioner");
+  }, [deniedError, router]);
+
+  if (leagueQuery.isPending || rosterQuery.isPending || deniedError) {
+    return (
+      <PageShell title="Commissioner">
+        <QueryLoading />
+      </PageShell>
+    );
   }
 
-  const query = new BlobCommissionerTeamsQuery(
-    new BlobTeamRepository(),
-    new PrismaUserRepository(),
-    new BlobLeagueRepository(),
-  );
-  const { teams, users } = await query.execute(leagueId);
-
+  const teams = rosterQuery.data?.teams ?? [];
+  const users = rosterQuery.data?.users ?? [];
   const assignedIds = new Set(teams.flatMap((t) => t.memberIds));
   const playerCount = assignedIds.size;
   const teamCount = teams.length;
   const unassignedCount = users.filter((u) => !assignedIds.has(u.id)).length;
 
   return (
-    <PageShell title={league.name}>
+    <PageShell title={leagueQuery.data?.name ?? "Commissioner"}>
       <Link
         href="/commissioner"
         className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit"

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeGridPoints, computeWeeklyTeamPoints, computePropPoints } from "@/lib/scoring";
+import { computeGridPoints, computeWeeklyTeamPoints, computePropPoints, computeScoreStats, computeBestPropBet } from "@/lib/scoring";
 
 const makeOrder = (size: number) => Array.from({ length: size }, (_, i) => `driver-${i}`);
 
@@ -92,5 +92,102 @@ describe("computeWeeklyTeamPoints", () => {
     expect(result.get("mercedes")).toBe(22);   // unaffected by the tie below
     expect(result.get("redbull")).toBe(15.5);  // (17+14)/2
     expect(result.get("ferrari")).toBe(15.5);  // (17+14)/2
+  });
+});
+
+const scoreEntry = (userId: string, gridPoints: number, propPoints: number) => ({
+  userId, gridPoints, propPoints, medal: null, weeklyTeamPoints: 0,
+});
+
+describe("computeScoreStats", () => {
+  // Three distinct totals — no ties, so highest/lowest each name one player.
+  it("no ties → average, single highest, single lowest", () => {
+    const entries = [scoreEntry("a", 20, 10), scoreEntry("b", 15, 5), scoreEntry("c", 5, 5)];
+    const result = computeScoreStats(entries);
+    expect(result.average).toBeCloseTo((30 + 20 + 10) / 3);
+    expect(result.highest).toEqual({ value: 30, userIds: ["a"] });
+    expect(result.lowest).toEqual({ value: 10, userIds: ["c"] });
+  });
+
+  // Two players tie for the top total — both userIds come back, not just one.
+  it("tie at the top → highest lists every tied userId", () => {
+    const entries = [scoreEntry("a", 20, 10), scoreEntry("b", 25, 5), scoreEntry("c", 5, 5)];
+    const result = computeScoreStats(entries);
+    expect(result.highest).toEqual({ value: 30, userIds: expect.arrayContaining(["a", "b"]) });
+    expect(result.highest.userIds).toHaveLength(2);
+  });
+
+  // A single entry collapses average/highest/lowest to the same value — never suppressed.
+  it("single entry → average, highest, and lowest all equal that entry's total", () => {
+    const entries = [scoreEntry("a", 12, 8)];
+    const result = computeScoreStats(entries);
+    expect(result.average).toBe(20);
+    expect(result.highest).toEqual({ value: 20, userIds: ["a"] });
+    expect(result.lowest).toEqual({ value: 20, userIds: ["a"] });
+  });
+
+  // No entries at all — degenerate but must not throw or return NaN.
+  it("no entries → zeroed stats, no userIds", () => {
+    const result = computeScoreStats([]);
+    expect(result.average).toBe(0);
+    expect(result.highest).toEqual({ value: 0, userIds: [] });
+    expect(result.lowest).toEqual({ value: 0, userIds: [] });
+  });
+});
+
+describe("computeBestPropBet", () => {
+  // fastestLap is picked by everyone and gets it right; driverOfDay is picked but nobody's correct.
+  it("one prop with a strictly higher hit-rate wins", () => {
+    const propKey = {
+      driverOfDay: ["HAM"], lapsLed: null, fastestPitStop: null,
+      fastestLap: ["VER"], overAchiever: null, underAchiever: null, wrecker: null,
+    };
+    const picks = [
+      { driverOfDay: "LEC", fastestLap: "VER" },
+      { driverOfDay: "NOR", fastestLap: "VER" },
+    ];
+    expect(computeBestPropBet(picks, propKey)).toEqual({ prop: "fastestLap", hitRate: 1 });
+  });
+
+  // driverOfDay and fastestLap both land at a 50% hit-rate — canonical PropName order
+  // (driverOfDay before fastestLap) breaks the tie.
+  it("tied hit-rates → earlier prop in PropName's declared order wins", () => {
+    const propKey = {
+      driverOfDay: ["HAM"], lapsLed: null, fastestPitStop: null,
+      fastestLap: ["VER"], overAchiever: null, underAchiever: null, wrecker: null,
+    };
+    const picks = [
+      { driverOfDay: "HAM", fastestLap: "LEC" },
+      { driverOfDay: "LEC", fastestLap: "VER" },
+    ];
+    expect(computeBestPropBet(picks, propKey)).toEqual({ prop: "driverOfDay", hitRate: 0.5 });
+  });
+
+  // A prop with no answer key set is not gradable, even if everyone picked it.
+  it("prop with no correct answer set is ineligible", () => {
+    const propKey = {
+      driverOfDay: null, lapsLed: null, fastestPitStop: null,
+      fastestLap: null, overAchiever: null, underAchiever: null, wrecker: null,
+    };
+    const picks = [{ driverOfDay: "HAM" }];
+    expect(computeBestPropBet(picks, propKey)).toBeNull();
+  });
+
+  // A prop has a correct answer but nobody picked it — also ineligible.
+  it("prop nobody picked is ineligible even with a correct answer set", () => {
+    const propKey = {
+      driverOfDay: ["HAM"], lapsLed: null, fastestPitStop: null,
+      fastestLap: null, overAchiever: null, underAchiever: null, wrecker: null,
+    };
+    expect(computeBestPropBet([{}], propKey)).toBeNull();
+  });
+
+  // Nothing gradable at all this race → null, not a thrown error.
+  it("no eligible props at all → null", () => {
+    const propKey = {
+      driverOfDay: null, lapsLed: null, fastestPitStop: null,
+      fastestLap: null, overAchiever: null, underAchiever: null, wrecker: null,
+    };
+    expect(computeBestPropBet([], propKey)).toBeNull();
   });
 });

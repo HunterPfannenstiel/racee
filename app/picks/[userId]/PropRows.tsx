@@ -9,7 +9,7 @@ const PROP_NAMES: PropName[] = [
 ];
 
 type Props = {
-  propPicks: Record<string, string>;
+  propPicks: Partial<Record<PropName, string>>;
   propKey: PropKey | null;
   racersById: Record<string, RacerDTO>;
   propPointValues: PropPointValues | null;

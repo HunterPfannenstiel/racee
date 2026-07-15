@@ -1,7 +1,7 @@
 "use client";
 
 import { PendingRow } from "./PendingRow";
-import type { PendingPlayer } from "./hooks/usePlayersList";
+import type { PendingPlayer } from "./types";
 
 type PendingSectionProps = {
   pending: PendingPlayer[];
