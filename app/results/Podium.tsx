@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { medalColor } from "@/lib/colors";
 import type { ResultsRowData } from "./types";
+import { groupEntriesByRank } from "./rank-utils";
 
 type PodiumProps = {
   entries: ResultsRowData[];
@@ -18,39 +19,80 @@ export const PLATFORM_HEIGHT: Record<number, string> = {
   3: "h-20",
 };
 
-function PodiumPlatform({ entry, isMe }: { entry: ResultsRowData; isMe: boolean }) {
-  const color = medalColor[entry.rank] ?? "text-muted-foreground";
+// Same "no data" convention used elsewhere (formatStats.ts, StatStrip.tsx,
+// RaceCell.tsx) -- reused here for a rank slot nobody holds (e.g. a tie for
+// 2nd means no entry has rank 3), rather than inventing a new placeholder.
+const NO_DATA = "—";
+
+// A slot's pedestal (position/height/background per rank) always renders,
+// even when nobody holds that rank -- only the occupant content (name(s) +
+// total) is conditional. This keeps an unoccupied rank visually present as
+// an empty pedestal instead of collapsing to blank space.
+function PodiumPlatform({
+  rank,
+  entries,
+  currentUserId,
+}: {
+  rank: number;
+  entries: ResultsRowData[];
+  currentUserId: string | null;
+}) {
+  const color = medalColor[rank] ?? "text-muted-foreground";
+  const isMe = entries.some((entry) => entry.userId === currentUserId);
+  // Tied entries share the same total by construction -- shown once, not per name.
+  const total = entries.length > 0 ? entries[0].total : null;
+
   return (
     <div className="flex flex-1 min-w-0 flex-col items-center gap-2">
       <div className="flex min-w-0 max-w-full flex-col items-center gap-0.5">
-        <p className="max-w-full truncate font-heading text-base font-bold text-foreground">
-          {entry.name}
+        {entries.length > 0 ? (
+          entries.map((entry) => (
+            <div key={entry.userId} className="flex min-w-0 max-w-full items-baseline gap-1">
+              {entries.length > 1 && (
+                <span aria-hidden="true" className="shrink-0 text-[10px] leading-none text-muted-foreground">
+                  •
+                </span>
+              )}
+              <p className="min-w-0 max-w-full truncate font-heading text-base font-bold text-foreground">
+                {entry.name}
+              </p>
+            </div>
+          ))
+        ) : (
+          <p className="max-w-full truncate font-heading text-base font-bold text-muted-foreground">
+            {NO_DATA}
+          </p>
+        )}
+        <p className={cn("font-mono text-sm font-bold tabular-nums", color)}>
+          {total ?? NO_DATA}
         </p>
-        <p className={cn("font-mono text-sm font-bold tabular-nums", color)}>{entry.total}</p>
       </div>
       <div
         className={cn(
           "flex w-full items-start justify-center rounded-t-lg border border-border-strong pt-2",
-          PLATFORM_HEIGHT[entry.rank],
+          PLATFORM_HEIGHT[rank],
           isMe ? "bg-primary-subtle" : "bg-surface"
         )}
       >
-        <span className={cn("font-mono text-2xl font-bold", color)}>{entry.rank}</span>
+        <span className={cn("font-mono text-2xl font-bold", color)}>{rank}</span>
       </div>
     </div>
   );
 }
 
 export function Podium({ entries, currentUserId }: PodiumProps) {
-  const byRank = Object.fromEntries(entries.map((entry) => [entry.rank, entry]));
+  const byRank = groupEntriesByRank(entries);
 
   return (
     <div className="flex items-end gap-2 px-4">
-      {PLATFORM_ORDER.map((rank) => {
-        const entry = byRank[rank];
-        if (!entry) return <div key={rank} className="flex-1" />;
-        return <PodiumPlatform key={entry.userId} entry={entry} isMe={entry.userId === currentUserId} />;
-      })}
+      {PLATFORM_ORDER.map((rank) => (
+        <PodiumPlatform
+          key={rank}
+          rank={rank}
+          entries={byRank.get(rank) ?? []}
+          currentUserId={currentUserId}
+        />
+      ))}
     </div>
   );
 }

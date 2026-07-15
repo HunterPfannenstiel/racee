@@ -7,6 +7,7 @@ export const MOCK_LEAGUE_NAME = "The Paddock Club";
 export const MOCK_RACES = [
   { id: "race-1", title: "Monaco GP", date: "2026-05-24" },
   { id: "race-2", title: "Spanish GP", date: "2026-06-07" },
+  { id: "race-3", title: "Canadian GP", date: "2026-06-21" },
 ];
 
 const PLAYER_COLOR: Record<string, string> = {
@@ -76,9 +77,22 @@ const RACE_2_ENTRIES: ResultsRowData[] = [
   row("u-24", "Jack D.", 2, 24),
 ];
 
+// Podium-level tie: two entries share rank 2 (a tie for 2nd), so nobody
+// holds rank 3 -- exercises the previously-broken case where the 3rd podium
+// slot must render as a correctly-empty pedestal (not broken/blank) while
+// both tied-for-2nd names stack in the 2nd slot without either being
+// silently dropped. See app/results/rank-utils.ts.
+const RACE_3_ENTRIES: ResultsRowData[] = [
+  row("u-1", "Max V.", 40, 1),
+  row("u-2", "Lando N.", 36, 2),
+  row("u-3", "Charles L.", 36, 2),
+  row("u-4", "Hunter P.", 22, 4),
+];
+
 export const MOCK_RESULTS_BY_RACE: Record<string, ResultsRowData[]> = {
   "race-1": RACE_1_ENTRIES,
   "race-2": RACE_2_ENTRIES,
+  "race-3": RACE_3_ENTRIES,
 };
 
 export const MOCK_STATS_BY_RACE: Record<string, StatsData> = {
@@ -93,5 +107,11 @@ export const MOCK_STATS_BY_RACE: Record<string, StatsData> = {
     averageScore: { value: "21.4" },
     highestScore: { value: "45", sublabel: "Max V." },
     lowestScore: { value: "2", sublabel: "Jack D." },
+  },
+  "race-3": {
+    bestPropBet: { value: "78%", sublabel: "Driver of the Day" },
+    averageScore: { value: "33.5" },
+    highestScore: { value: "40", sublabel: "Max V." },
+    lowestScore: { value: "22", sublabel: "Hunter P." },
   },
 };

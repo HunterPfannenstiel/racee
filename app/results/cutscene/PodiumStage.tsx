@@ -5,9 +5,15 @@ import { animate, motion, useMotionValue, useTransform, type AnimationPlaybackCo
 import { cn } from "@/lib/utils";
 import { medalColor } from "@/lib/colors";
 import { PLATFORM_ORDER } from "../Podium";
+import { groupEntriesByRank } from "../rank-utils";
 import { OFF_FRAME_Y } from "./GroupStage";
 import { TeamColorShimmer } from "./TeamColorShimmer";
 import { useCountUpValue, type CountUpPhase } from "./useCountUpValue";
+
+// Same "no data" convention used elsewhere (Podium.tsx, formatStats.ts,
+// StatStrip.tsx, RaceCell.tsx) -- reused for a rank slot nobody holds (e.g.
+// a tie for 2nd means no entry has rank 3).
+const NO_DATA = "—";
 
 // Duplicated from GroupStage (not exported there) -- keeps this Stage's
 // motion feel identical without pulling every Stage into a shared utils
@@ -173,7 +179,7 @@ function rankRevealedElapsedMs(state: PodiumStageState, rank: 1 | 2 | 3, countUp
  * phase leaves "pending".
  */
 function PodiumBox({
-  entry,
+  entries,
   rank,
   rankPhase,
   localElapsedMs,
@@ -181,7 +187,10 @@ function PodiumBox({
   shimmerElapsedMs,
   playbackRate,
 }: {
-  entry: PodiumBoxEntry | undefined;
+  /** Whoever holds this rank -- 0 entries means nobody does (a legitimate
+   *  gap, e.g. a tie for 2nd leaves no one at rank 3), 2+ means a tie for
+   *  this rank, and every one of them must render, not just one. */
+  entries: PodiumBoxEntry[];
   rank: 1 | 2 | 3;
   rankPhase: PodiumRankPhase;
   localElapsedMs: number;
@@ -191,18 +200,24 @@ function PodiumBox({
   shimmerElapsedMs: number | null;
   playbackRate: number;
 }) {
+  // Tied entries land on the same rank because they share the same total by
+  // construction, so a single "primary" stands in for box-level theming
+  // (glow/border tint, the one shared count-up) while every entry still gets
+  // its own name line below.
+  const primary = entries[0] as PodiumBoxEntry | undefined;
+
   const opacity = useMotionValue(0);
   const scale = useMotionValue(0.85);
   // Soft team-color glow, derived from the box's own pop-in opacity rather
   // than a separate motion value/effect -- it just blooms in alongside the
   // box's arrival for free.
-  const glow = useTransform(opacity, (o) => `0 0 ${32 * o}px ${entry?.color ?? "transparent"}40`);
+  const glow = useTransform(opacity, (o) => `0 0 ${32 * o}px ${primary?.color ?? "transparent"}40`);
   const controlsRef = useRef<AnimationPlaybackControls[]>([]);
 
   const countUpPhase: CountUpPhase =
     rankPhase === "counting" ? "counting" : rankPhase === "revealed" ? "settled" : "zero";
   const roundedPoints = useCountUpValue({
-    target: entry?.points ?? 0,
+    target: primary?.points ?? 0,
     phase: countUpPhase,
     localElapsedMs: rankPhase === "counting" ? localElapsedMs : 0,
     durationMs: countUpMs,
@@ -236,8 +251,29 @@ function PodiumBox({
 
   const heightClassName = CEREMONIAL_HEIGHT[rank];
 
-  if (!entry) {
-    return <div className="flex-1" />;
+  // The pedestal shell (shape/height/border) always renders, even when
+  // nobody holds this rank -- e.g. a tie for 2nd legitimately leaves rank 3
+  // empty. Only the occupant content (name(s), points, glow, shimmer) is
+  // conditional, so an unoccupied rank reads as an empty pedestal rather
+  // than collapsing to blank space. There's no "landing" to announce for an
+  // empty slot, so it's rendered fully static rather than wired into the
+  // per-rank pop-in animation.
+  if (!primary) {
+    return (
+      <div className="flex flex-1 min-w-0 flex-col items-center gap-3">
+        <div className="flex min-w-0 max-w-full flex-col items-center gap-1">
+          <p className="max-w-full truncate font-heading text-lg font-bold text-white/30 sm:text-2xl">{NO_DATA}</p>
+        </div>
+        <div
+          className={cn(
+            "relative flex w-full items-start justify-center overflow-hidden rounded-t-2xl border border-white/10 bg-white/5 pt-4",
+            heightClassName,
+          )}
+        >
+          <span className="relative font-mono text-5xl font-black text-white/30 sm:text-7xl">{rank}</span>
+        </div>
+      </div>
+    );
   }
 
   // Rank digit keeps the medal (gold/silver/bronze) color -- the universal
@@ -245,22 +281,36 @@ function PodiumBox({
   // finisher's own team color, so the ceremony reads as "1st, 2nd, 3rd" AND
   // "whose" at the same time, rather than one flat rank-only palette.
   const medalTextColor = medalColor[rank] ?? "text-white";
+  // Whichever tied occupant is the viewer, if any -- drives the "this is
+  // you" shimmer, played in that occupant's own color.
+  const meEntry = entries.find((e) => e.isMe);
 
   return (
     <div className="flex flex-1 min-w-0 flex-col items-center gap-3">
       <motion.div style={{ opacity, scale }} className="flex min-w-0 max-w-full flex-col items-center gap-1">
-        <p className="max-w-full truncate font-heading text-lg font-bold text-white sm:text-2xl">{entry.name}</p>
+        {entries.map((entry) => (
+          <div key={entry.userId} className="flex min-w-0 max-w-full items-baseline gap-1.5">
+            {entries.length > 1 && (
+              <span aria-hidden="true" className="shrink-0 text-xs leading-none text-white/50 sm:text-sm">
+                •
+              </span>
+            )}
+            <p className="min-w-0 max-w-full truncate font-heading text-lg font-bold text-white sm:text-2xl">
+              {entry.name}
+            </p>
+          </div>
+        ))}
         <motion.p
           className="font-mono text-2xl font-black tabular-nums sm:text-4xl"
-          style={{ color: entry.color }}
+          style={{ color: primary.color }}
         >
           {roundedPoints}
         </motion.p>
       </motion.div>
       <motion.div
         style={{
-          backgroundColor: `${entry.color}1a`,
-          borderColor: `${entry.color}66`,
+          backgroundColor: `${primary.color}1a`,
+          borderColor: `${primary.color}66`,
           boxShadow: glow,
         }}
         className={cn(
@@ -268,7 +318,7 @@ function PodiumBox({
           heightClassName,
         )}
       >
-        {entry.isMe && <TeamColorShimmer color={entry.color} elapsedMs={shimmerElapsedMs} playbackRate={playbackRate} />}
+        {meEntry && <TeamColorShimmer color={meEntry.color} elapsedMs={shimmerElapsedMs} playbackRate={playbackRate} />}
         <motion.span
           style={{ opacity, scale }}
           className={cn("relative font-mono text-5xl font-black sm:text-7xl", medalTextColor)}
@@ -333,8 +383,7 @@ export function PodiumStage({ state, playbackRate }: PodiumStageProps) {
 
   if (!event) return null;
 
-  const byRank: Partial<Record<1 | 2 | 3, PodiumBoxEntry>> = {};
-  for (const entry of event.entries) byRank[entry.rank] = entry;
+  const byRank = groupEntriesByRank(event.entries);
 
   return (
     <div className="absolute inset-0 flex items-center justify-center px-4">
@@ -345,7 +394,7 @@ export function PodiumStage({ state, playbackRate }: PodiumStageProps) {
         {PLATFORM_ORDER.map((rank) => (
           <PodiumBox
             key={rank}
-            entry={byRank[rank]}
+            entries={byRank.get(rank) ?? []}
             rank={rank}
             rankPhase={rankPhaseFor(state, rank)}
             localElapsedMs={rankLocalElapsedMs(state, rank)}
