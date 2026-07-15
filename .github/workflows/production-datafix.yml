@@ -79,4 +79,4 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          vercel env run -e production -- pnpm run ${{ inputs.script }} -- ${{ inputs.mode == 'real' && '--yes' || '--dry-run' }}
+          vercel env run -e production -- pnpm run ${{ inputs.script }} ${{ inputs.mode == 'real' && '--yes' || '--dry-run' }}
