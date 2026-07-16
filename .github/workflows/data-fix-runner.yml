@@ -57,5 +57,6 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
           DATABASE_SCHEMA: ${{ secrets.DATABASE_SCHEMA }}
+          DATAFIX_ENVIRONMENT: ${{ inputs.environment }}
         run: |
           npx tsx "scripts/datafix/${{ inputs.script_path }}" ${{ inputs.mode == 'real' && '--yes' || '--dry-run' }}
