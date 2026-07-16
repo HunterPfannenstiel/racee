@@ -1,6 +1,8 @@
 "use client";
 
+import { InfoIcon } from "lucide-react";
 import { RaceSelector } from "@/components/prediction/RaceSelector";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Podium } from "./Podium";
 import { ResultsList } from "./ResultsList";
 import { StatsFooter } from "./StatsFooter";
@@ -22,6 +24,7 @@ type ResultsViewProps = {
   stats: StatsData | null;
   isLoading: boolean;
   currentUserId: string | null;
+  leagueId: string | null;
 };
 
 export function ResultsView({
@@ -32,13 +35,15 @@ export function ResultsView({
   stats,
   isLoading,
   currentUserId,
+  leagueId,
 }: ResultsViewProps) {
   const podiumEntries = entries.filter((entry) => entry.rank <= 3);
   const listEntries = entries.filter((entry) => entry.rank > 3);
+  const currentUserSubmitted = !currentUserId || entries.some((entry) => entry.userId === currentUserId);
 
   return (
     <div className="flex flex-col gap-6">
-      <RaceSelector races={races} selectedRaceId={selectedRaceId} onSelect={onSelectRace} />
+      <RaceSelector races={races} selectedRaceId={selectedRaceId} onSelect={onSelectRace} order="desc" />
 
       {isLoading ? (
         <ResultsSkeleton />
@@ -46,9 +51,25 @@ export function ResultsView({
         <ResultsEmpty />
       ) : (
         <>
-          <Podium entries={podiumEntries} currentUserId={currentUserId} />
+          {!currentUserSubmitted && (
+            <Alert className="mx-4">
+              <InfoIcon />
+              <AlertDescription>You didn&apos;t submit a prediction for this race.</AlertDescription>
+            </Alert>
+          )}
+          <Podium
+            entries={podiumEntries}
+            currentUserId={currentUserId}
+            leagueId={leagueId}
+            raceId={selectedRaceId}
+          />
           {listEntries.length > 0 && (
-            <ResultsList entries={listEntries} currentUserId={currentUserId} />
+            <ResultsList
+              entries={listEntries}
+              currentUserId={currentUserId}
+              leagueId={leagueId}
+              raceId={selectedRaceId}
+            />
           )}
           {stats && <StatsFooter stats={stats} />}
         </>

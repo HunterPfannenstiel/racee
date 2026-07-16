@@ -12,6 +12,10 @@ type RaceSelectorProps = {
   races: RaceSelectorRace[];
   selectedRaceId: string | null;
   onSelect: (raceId: string) => void;
+  // "asc" (oldest-first, default) preserves the existing behavior for the
+  // predict/commissioner pickers. Results uses "desc" so the newest race
+  // sits at the scroll start, where the default selection lands.
+  order?: "asc" | "desc";
 };
 
 function formatChipDate(dateStr: string) {
@@ -20,8 +24,10 @@ function formatChipDate(dateStr: string) {
     .format(new Date(year, month - 1, day));
 }
 
-export function RaceSelector({ races, selectedRaceId, onSelect }: RaceSelectorProps) {
-  const sortedRaces = [...races].sort((a, b) => a.date.localeCompare(b.date));
+export function RaceSelector({ races, selectedRaceId, onSelect, order = "asc" }: RaceSelectorProps) {
+  const sortedRaces = [...races].sort((a, b) =>
+    order === "desc" ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)
+  );
   if (sortedRaces.length <= 1) return null;
 
   return (

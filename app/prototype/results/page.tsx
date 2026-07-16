@@ -12,9 +12,9 @@ function StaticResults() {
 
   return (
     <div className="flex flex-col gap-6 p-4">
-      <Podium entries={podiumEntries} currentUserId={currentUserId} />
+      <Podium entries={podiumEntries} currentUserId={currentUserId} leagueId={null} raceId={null} />
       {listEntries.length > 0 && (
-        <ResultsList entries={listEntries} currentUserId={currentUserId} />
+        <ResultsList entries={listEntries} currentUserId={currentUserId} leagueId={null} raceId={null} />
       )}
     </div>
   );

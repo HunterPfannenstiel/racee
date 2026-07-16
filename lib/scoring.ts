@@ -10,31 +10,83 @@ const PROP_NAMES: PropName[] = [
   "overAchiever", "underAchiever", "wrecker",
 ];
 
+/** One row per prop, in propKey's declared field order. */
+export type PropPickBreakdown = {
+  propName: PropName;
+  pickedValue?: string;
+  winners: string[] | null;
+  correct: boolean;
+  points: number;
+};
+
+/**
+ * Per-prop detail behind computePropPoints's total — same winners-includes-pick
+ * rule, just surfaced one row at a time instead of summed. computePropPoints is
+ * a thin sum over this, so the two can never drift.
+ */
+export function computePropPointsBreakdown(
+  picks: Record<string, string>,
+  propKey: PropKey,
+  propPointValues: PropPointValues,
+): PropPickBreakdown[] {
+  return (Object.entries(propKey) as [keyof PropKey, string[] | null][]).map(([prop, winners]) => {
+    const pickedValue = picks[prop];
+    const correct = !!winners && winners.length > 0 && winners.includes(pickedValue);
+    return {
+      propName: prop as PropName,
+      pickedValue,
+      winners,
+      correct,
+      points: correct ? propPointValues[prop] : 0,
+    };
+  });
+}
+
 export function computePropPoints(
   picks: Record<string, string>,
   propKey: PropKey,
   propPointValues: PropPointValues,
 ): number {
-  let total = 0;
-  for (const [prop, winners] of Object.entries(propKey) as [keyof PropKey, string[] | null][]) {
-    if (!winners || winners.length === 0) continue;
-    if (winners.includes(picks[prop])) total += propPointValues[prop];
-  }
-  return total;
+  return computePropPointsBreakdown(picks, propKey, propPointValues).reduce((sum, row) => sum + row.points, 0);
+}
+
+/** One row per actual finishing position (keyOrder's order), not per predicted slot. */
+export type GridPositionBreakdown = {
+  position: number;
+  racerId: string;
+  predictedPosition: number | null;
+  scored: boolean;
+  correct: boolean;
+  points: number;
+};
+
+/**
+ * Per-racer detail behind computeGridPoints's total. Rows are keyed by the
+ * racer's actual finishing position (not the user's guessed slot) since a
+ * racer's point contribution is a property of that racer, not of whichever
+ * (possibly different) racer the user happened to guess for the same slot.
+ * computeGridPoints is a thin sum over this, so the two can never drift.
+ */
+export function computeGridPointsBreakdown(
+  userOrder: string[],
+  keyOrder: string[],
+  placementPoints: number[],
+  scoringDepth: number | undefined,
+): GridPositionBreakdown[] {
+  const depth = scoringDepth ?? keyOrder.length;
+  return keyOrder.map((racerId, position) => {
+    const userPos = userOrder.indexOf(racerId);
+    const predictedPosition = userPos === -1 ? null : userPos;
+    const scored = predictedPosition !== null && predictedPosition < depth;
+    const diff = predictedPosition !== null ? Math.abs(position - predictedPosition) : null;
+    const points = scored && diff !== null && diff < placementPoints.length ? placementPoints[diff] : 0;
+    return { position, racerId, predictedPosition, scored, correct: diff === 0, points };
+  });
 }
 
 export function computeGridPoints(userOrder: string[], keyOrder: string[], placementPoints: number[], scoringDepth: number | undefined): number {
-  const depth = scoringDepth ?? keyOrder.length;
-  let total = 0;
-  for (let keyPos = 0; keyPos < keyOrder.length; keyPos++) {
-    const racerId = keyOrder[keyPos];
-    const userPos = userOrder.indexOf(racerId);
-    if (userPos === -1) continue;
-    if (userPos >= depth) continue;
-    const diff = Math.abs(keyPos - userPos);
-    total += diff < placementPoints.length ? placementPoints[diff] : 0;
-  }
-  return total;
+  return computeGridPointsBreakdown(userOrder, keyOrder, placementPoints, scoringDepth)
+    .reduce((sum, row) => sum + row.points, 0);
 }
 
 /** Sorts entries desc by totalOf and groups consecutive equal-total entries together. */

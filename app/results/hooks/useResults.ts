@@ -11,6 +11,8 @@ import { formatStats } from "../formatStats";
 import type { ResultsRowData, StatsData } from "../types";
 
 export type UseResultsResult = {
+  // Graded (keySetAt != null) races only, newest first -- ungraded races have
+  // no results to show and are excluded from the picker entirely.
   races: Race[];
   selectedRaceId: string | null;
   onSelectRace: (raceId: string) => void;
@@ -87,7 +89,7 @@ export function useResults(): UseResultsResult {
   const rawStats = resultsQuery.data?.stats ?? null;
 
   return {
-    races,
+    races: scoredRaces,
     selectedRaceId: effectiveRaceId,
     onSelectRace: setSelectedRaceId,
     entries: rawEntries.map(toRowData),

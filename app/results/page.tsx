@@ -54,7 +54,7 @@ export default function ResultsPage() {
           >
             Play Reveal
           </Button>
-          <ResultsView {...view} />
+          <ResultsView {...view} leagueId={activeLeagueId} />
           <CutscenePlayer
             key={selectedRaceId}
             ref={playerRef}

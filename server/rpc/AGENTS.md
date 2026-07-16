@@ -6,8 +6,9 @@ This directory houses the oRPC routers that expose the backend to the frontend.
 * One router per domain, composed into the root router in server/rpc/router.ts
 * All procedure input/output must be defined with zod schemas
 * A procedure must never call a repository or service directly — it must call a query or command
-* `authed` and `adminOnly` are defined exactly once, in server/rpc/procedures.ts, and imported by every router — never re-derived locally
-* Every procedure is built off `authed` (or `adminOnly`) — session authentication is never checked by hand
+* `authed`, `adminOnly`, and `publicProcedure` are defined exactly once, in server/rpc/procedures.ts, and imported by every router — never re-derived locally
+* Every procedure is built off `authed`, `adminOnly`, or `publicProcedure` — session authentication is never checked by hand
+* `publicProcedure` is the deliberate exception to "authed by default": use it only when the underlying query performs no gating of its own (no membership check, no ownership check) and the data is meant to be openly shareable regardless of who's asking — e.g. a shareable read-only comparison view. Everything else defaults to `authed`
 
 ### Error mapping
 * `authed`'s middleware chain automatically maps thrown domain errors to ORPCError — NotFoundError → NOT_FOUND, AuthorizationError → FORBIDDEN. A procedure never hand-writes this translation; throwing the domain error from the query/command is enough

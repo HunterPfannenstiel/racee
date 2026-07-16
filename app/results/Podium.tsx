@@ -1,11 +1,15 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { medalColor } from "@/lib/colors";
 import type { ResultsRowData } from "./types";
 import { groupEntriesByRank } from "./rank-utils";
+import { buildPvpHref } from "./player-vs-player/href";
 
 type PodiumProps = {
   entries: ResultsRowData[];
   currentUserId: string | null;
+  leagueId: string | null;
+  raceId: string | null;
 };
 
 // Stand shape: 2nd (left) - 1st (center, tallest) - 3rd (right, shortest).
@@ -32,10 +36,14 @@ function PodiumPlatform({
   rank,
   entries,
   currentUserId,
+  leagueId,
+  raceId,
 }: {
   rank: number;
   entries: ResultsRowData[];
   currentUserId: string | null;
+  leagueId: string | null;
+  raceId: string | null;
 }) {
   const color = medalColor[rank] ?? "text-muted-foreground";
   const isMe = entries.some((entry) => entry.userId === currentUserId);
@@ -46,18 +54,34 @@ function PodiumPlatform({
     <div className="flex flex-1 min-w-0 flex-col items-center gap-2">
       <div className="flex min-w-0 max-w-full flex-col items-center gap-0.5">
         {entries.length > 0 ? (
-          entries.map((entry) => (
-            <div key={entry.userId} className="flex min-w-0 max-w-full items-baseline gap-1">
-              {entries.length > 1 && (
-                <span aria-hidden="true" className="shrink-0 text-[10px] leading-none text-muted-foreground">
-                  •
-                </span>
-              )}
-              <p className="min-w-0 max-w-full truncate font-heading text-base font-bold text-foreground">
-                {entry.name}
-              </p>
-            </div>
-          ))
+          entries.map((entry) => {
+            const isEntryMe = entry.userId === currentUserId;
+            // A tied slot stacks multiple names -- the link target must be
+            // the individual name, not the whole platform, or a tie would be
+            // ambiguous about which player the click meant.
+            const href =
+              !isEntryMe && leagueId && raceId && currentUserId
+                ? buildPvpHref({ leagueId, raceId, viewerId: currentUserId, opponentId: entry.userId })
+                : null;
+            const nameClassName = "min-w-0 max-w-full truncate font-heading text-base font-bold text-foreground";
+
+            return (
+              <div key={entry.userId} className="flex min-w-0 max-w-full items-baseline gap-1">
+                {entries.length > 1 && (
+                  <span aria-hidden="true" className="shrink-0 text-[10px] leading-none text-muted-foreground">
+                    •
+                  </span>
+                )}
+                {href ? (
+                  <Link href={href} className={cn(nameClassName, "hover:text-primary transition-colors")}>
+                    {entry.name}
+                  </Link>
+                ) : (
+                  <p className={nameClassName}>{entry.name}</p>
+                )}
+              </div>
+            );
+          })
         ) : (
           <p className="max-w-full truncate font-heading text-base font-bold text-muted-foreground">
             {NO_DATA}
@@ -80,7 +104,7 @@ function PodiumPlatform({
   );
 }
 
-export function Podium({ entries, currentUserId }: PodiumProps) {
+export function Podium({ entries, currentUserId, leagueId, raceId }: PodiumProps) {
   const byRank = groupEntriesByRank(entries);
 
   return (
@@ -91,6 +115,8 @@ export function Podium({ entries, currentUserId }: PodiumProps) {
           rank={rank}
           entries={byRank.get(rank) ?? []}
           currentUserId={currentUserId}
+          leagueId={leagueId}
+          raceId={raceId}
         />
       ))}
     </div>
