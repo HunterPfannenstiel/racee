@@ -20,14 +20,15 @@ if (!Number.isInteger(RETAIN) || RETAIN < 1) {
   throw new Error("BACKUP_RETENTION is not set to a valid positive integer");
 }
 
-const BACKUP_DATABASE_SCHEMA = process.env.BACKUP_DATABASE_SCHEMA;
+const DATABASE_SCHEMA = process.env.DATABASE_SCHEMA;
 
-const sourceBucket = requireEnv("BACKUP_SOURCE_BUCKET");
+const sourceBucket = requireEnv("BUCKET_NAME");
+const DIRECT_URL = requireEnv("DIRECT_URL");
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_BACKUP_KEY!
-);
+const SUPABASE_URL = requireEnv("SUPABASE_URL");
+const SUPABASE_SECRET_KEY = requireEnv("SUPABASE_SECRET_KEY");
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
 
 async function listAllObjects(bucket: string, folder = ""): Promise<string[]> {
   const { data, error } = await supabase.storage.from(bucket).list(folder);
@@ -40,11 +41,11 @@ async function listAllObjects(bucket: string, folder = ""): Promise<string[]> {
   return [...files, ...nested.flat()];
 }
 
-function dumpAuthDb(runDir: string): string {
-  const file = path.join(runDir, "auth.dump");
+function dumpDatabase(runDir: string): string {
+  const file = path.join(runDir, "db.dump");
   execFileSync("pg_dump", [
-    process.env.BACKUP_DATABASE_URL!,
-    ...(BACKUP_DATABASE_SCHEMA ? [`--schema=${BACKUP_DATABASE_SCHEMA}`] : []),
+    DIRECT_URL,
+    ...(DATABASE_SCHEMA ? [`--schema=${DATABASE_SCHEMA}`] : []),
     "--format=custom",
     `--file=${file}`,
   ]);
@@ -84,15 +85,15 @@ async function pruneOldBackups(): Promise<void> {
 const runTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
 const runDir = mkdtempSync(path.join(tmpdir(), "backup-"));
 
-const dumpFile = dumpAuthDb(runDir);
+const dumpFile = dumpDatabase(runDir);
 const { error: dumpUploadError } = await supabase.storage
   .from(BACKUP_BUCKET)
-  .upload(`${runTimestamp}/auth.dump`, readFileSync(dumpFile), { upsert: true });
+  .upload(`${runTimestamp}/db.dump`, readFileSync(dumpFile), { upsert: true });
 if (dumpUploadError) throw dumpUploadError;
 
 const objectCount = await mirrorBucket(runTimestamp);
 await pruneOldBackups();
 
 console.log(
-  `backup ${runTimestamp}: mirrored ${objectCount} object(s) from "${sourceBucket}" + auth.dump`
+  `backup ${runTimestamp}: mirrored ${objectCount} object(s) from "${sourceBucket}" + db.dump`
 );

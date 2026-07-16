@@ -70,13 +70,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Vercel CLI
-        run: npm install --global vercel@56.2.0
-
       - name: Run datafix against production
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          DATABASE_SCHEMA: ${{ secrets.DATABASE_SCHEMA }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         run: |
-          vercel env run -e production -- pnpm run ${{ inputs.script }} ${{ inputs.mode == 'real' && '--yes' || '--dry-run' }}
+          pnpm run ${{ inputs.script }} ${{ inputs.mode == 'real' && '--yes' || '--dry-run' }}
