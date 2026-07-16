@@ -1,5 +1,12 @@
 import { fileURLToPath } from "node:url";
 import type { BlobStore } from "@/lib/blob/interface";
+// lib/blob/backend.ts is a leaf module with no further imports (doesn't touch
+// supabase.ts or local.ts), so it's safe to import statically here even though
+// datafix-shared.ts (and every script that imports it) loads before
+// loadDatafixEnv() runs. usingSupabaseBlobStore is a function, not a cached
+// const, so calling it inside printDatafixBanner() below — after
+// loadDatafixEnv() has already populated process.env — reads the live value
+// instead of freezing in whatever was set (or unset) at import time.
 import { usingSupabaseBlobStore } from "@/lib/blob/backend";
 
 // Shared by every prod-datafix script (apply-corrected-race-keys, backfill-predictions,
@@ -10,7 +17,6 @@ import { usingSupabaseBlobStore } from "@/lib/blob/backend";
 export interface DatafixOpts {
   dryRun: boolean;
   confirmed: boolean;
-  verbose: boolean;
 }
 
 export interface DatafixStepResult {
@@ -33,14 +39,14 @@ export function mergeStepResults(a: DatafixStepResult, b: DatafixStepResult): Da
   };
 }
 
-const VALID_DATAFIX_FLAGS = "--dry-run, --yes, --verbose";
+const VALID_DATAFIX_FLAGS = "--dry-run, --yes";
 
-// Every argv entry must be exactly one of --dry-run, --yes, or --verbose. Anything else
-// throws instead of being silently dropped: a typo'd flag (e.g. "-dry-run") combined with
+// Every argv entry must be exactly one of --dry-run or --yes. Anything else throws
+// instead of being silently dropped: a typo'd flag (e.g. "-dry-run") combined with
 // --yes must never be mistaken by the operator for a safe preview when it's actually
 // about to perform a real write.
 export function parseDatafixArgs(argv: string[]): DatafixOpts {
-  const unrecognized = argv.filter((a) => a !== "--dry-run" && a !== "--yes" && a !== "--verbose");
+  const unrecognized = argv.filter((a) => a !== "--dry-run" && a !== "--yes");
   if (unrecognized.length > 0) {
     throw new Error(
       `unrecognized datafix argument(s): ${unrecognized.join(", ")} — valid flags are: ${VALID_DATAFIX_FLAGS}`,
@@ -49,8 +55,7 @@ export function parseDatafixArgs(argv: string[]): DatafixOpts {
 
   const dryRun = argv.includes("--dry-run");
   const confirmed = argv.includes("--yes");
-  const verbose = argv.includes("--verbose");
-  return { dryRun, confirmed, verbose };
+  return { dryRun, confirmed };
 }
 
 // Single source of truth for the three-way write-mode precedence every datafix
@@ -74,8 +79,8 @@ export function willWrite(opts: Pick<DatafixOpts, "dryRun" | "confirmed">): bool
 }
 
 export function printDatafixBanner(opts: DatafixOpts, extraLines: string[] = []): void {
-  const mode = resolveDatafixMode(opts);
   const environment = process.env.DATAFIX_ENVIRONMENT ?? "local";
+  const mode = resolveDatafixMode(opts);
   const backend = usingSupabaseBlobStore() ? "SupabaseBlobStore" : "LocalBlobStore";
   console.log("=".repeat(60));
   console.log(`environment:      ${environment}`);
@@ -148,9 +153,9 @@ export function deepEqual(a: unknown, b: unknown): boolean {
   return aKeys.every((k, i) => k === bKeys[i] && deepEqual(aObj[k], bObj[k]));
 }
 
-// Prints the exact before/after JSON for one planned change. Verbose-only (see
-// DatafixReporter.plan below) — useful when a summary line isn't enough to trust
-// the change, but too noisy to be the default for every item in a run.
+// Prints the exact before/after JSON for one planned change — the dry-run/preview
+// convention every datafix script follows (exact JSON a reviewer can read, not a
+// prose summary of what would change).
 export function printPlannedChange(before: unknown, after: unknown): void {
   console.log(
     JSON.stringify({ before, after }, null, 2)
@@ -158,47 +163,6 @@ export function printPlannedChange(before: unknown, after: unknown): void {
       .map((l) => "  " + l)
       .join("\n"),
   );
-}
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
-}
-
-// One-line human-readable diff for a planned change — the default DatafixReporter.plan
-// output, since raw before/after JSON is too noisy to read per-item across a whole run.
-// Built for the datafix standard's typical blob shape: a JSON object whose top-level
-// fields are themselves userId/entityId-keyed maps (predictions.json's predictions/
-// submittedAt/submittedBy/propPicks is the canonical example) — so it walks exactly one
-// level deep, reporting which keys were added/removed/changed inside each top-level
-// field. Anything shallower or deeper than that falls back to a coarser "changed" note
-// rather than guessing at structure.
-export function summarizeDiff(before: unknown, after: unknown): string {
-  if (deepEqual(before, after)) return "no change";
-  if (!isPlainObject(before) || !isPlainObject(after)) return "changed";
-
-  const lines: string[] = [];
-  for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
-    const b = before[key];
-    const a = after[key];
-    if (deepEqual(b, a)) continue;
-
-    if (isPlainObject(b) && isPlainObject(a)) {
-      const bKeys = new Set(Object.keys(b));
-      const aKeys = new Set(Object.keys(a));
-      const added = [...aKeys].filter((k) => !bKeys.has(k));
-      const removed = [...bKeys].filter((k) => !aKeys.has(k));
-      const changed = [...bKeys].filter((k) => aKeys.has(k) && !deepEqual(b[k], a[k]));
-      const parts = [
-        removed.length > 0 && `-${removed.length} (${removed.join(", ")})`,
-        added.length > 0 && `+${added.length} (${added.join(", ")})`,
-        changed.length > 0 && `~${changed.length} (${changed.join(", ")})`,
-      ].filter(Boolean);
-      lines.push(`${key}: ${parts.join(", ")}`);
-    } else {
-      lines.push(`${key}: changed`);
-    }
-  }
-  return lines.join("; ");
 }
 
 // Per-item outcome accumulator for a datafix step's run loop (e.g. once per race,
@@ -215,7 +179,7 @@ export function summarizeDiff(before: unknown, after: unknown): string {
 export interface DatafixReporter {
   /** No change needed for this item — already matches the target state. */
   noop(label: string, reason?: string): void;
-  /** A change is available but not being written (dry-run, or --yes not passed yet). Prints a one-line diff summary (full before/after JSON too, under --verbose). */
+  /** A change is available but not being written (dry-run, or --yes not passed yet). Prints before/after. */
   plan(label: string, before: unknown, after: unknown, reason?: string): void;
   /** A change was written for this item. */
   applied(label: string, detail?: string): void;
@@ -225,8 +189,8 @@ export interface DatafixReporter {
   result(): DatafixStepResult;
 }
 
-export function createDatafixReporter(opts: Pick<DatafixOpts, "dryRun" | "confirmed" | "verbose">): DatafixReporter {
-  const { dryRun, verbose } = opts;
+export function createDatafixReporter(opts: Pick<DatafixOpts, "dryRun" | "confirmed">): DatafixReporter {
+  const { dryRun } = opts;
   let applied = 0;
   let skipped = 0;
   let pending = 0;
@@ -240,8 +204,7 @@ export function createDatafixReporter(opts: Pick<DatafixOpts, "dryRun" | "confir
     plan(label, before, after, reason) {
       pending++;
       console.log(`${dryRun ? "would apply" : "planned"}: ${label}${reason ? ` — ${reason}` : ""}`);
-      console.log(`  ${summarizeDiff(before, after)}`);
-      if (verbose) printPlannedChange(before, after);
+      printPlannedChange(before, after);
     },
     applied(label, detail) {
       applied++;
