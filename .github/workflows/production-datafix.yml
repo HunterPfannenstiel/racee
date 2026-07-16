@@ -31,7 +31,7 @@ concurrency:
 jobs:
   run-datafix:
     runs-on: ubuntu-latest
-    environment: production-datafix
+    environment: Production
     steps:
       - name: Validate sha input
         env:
