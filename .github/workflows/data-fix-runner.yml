@@ -9,7 +9,7 @@ on:
         type: choice
         options: [Preview, Production]
       script_path:
-        description: "Path to the datafix script (e.g. scripts/datafix/remove-dan1-test-league-data.ts)"
+        description: "Script path relative to scripts/datafix/ (e.g. remove-dan1-test-league-data.ts, or backfill-predictions/backfill-predictions.ts)"
         required: true
         type: string
       mode:
@@ -34,7 +34,7 @@ jobs:
         run: |
           {
             echo "### Data fix run"
-            echo "- script: ${{ inputs.script_path }}"
+            echo "- script: scripts/datafix/${{ inputs.script_path }}"
             echo "- environment: ${{ inputs.environment }}"
             echo "- mode: ${{ inputs.mode }}"
             echo "- commit: $(git log -1 --format='%H %s (%an, %ad)' --date=short)"
@@ -58,4 +58,4 @@ jobs:
           BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
           DATABASE_SCHEMA: ${{ secrets.DATABASE_SCHEMA }}
         run: |
-          npx tsx "${{ inputs.script_path }}" ${{ inputs.mode == 'real' && '--yes' || '--dry-run' }}
+          npx tsx "scripts/datafix/${{ inputs.script_path }}" ${{ inputs.mode == 'real' && '--yes' || '--dry-run' }}
