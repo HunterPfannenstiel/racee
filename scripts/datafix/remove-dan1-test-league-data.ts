@@ -5,7 +5,6 @@ import {
   deepEqual,
   generateDatafixRunId,
   isMainModule,
-  loadDatafixEnv,
   parseDatafixArgs,
   printDatafixBanner,
   printStepSummary,
@@ -77,9 +76,9 @@ async function run(opts: DatafixOpts): Promise<DatafixStepResult> {
   const runId = generateDatafixRunId(DATAFIX_ID);
   const reporter = createDatafixReporter(opts);
 
-  // Imported dynamically, after env vars are loaded by loadDatafixEnv below —
-  // lib/blob/index.ts constructs a Supabase client at import time, so importing it
-  // statically (before env vars are set) would lock in the wrong, or missing,
+  // Imported dynamically so lib/blob/index.ts's Supabase client construction (which
+  // happens at import time) picks up the CI-injected env vars — importing it
+  // statically (before those env vars are set) would lock in the wrong, or missing,
   // credentials.
   const { blob } = await import("../../lib/blob/index.ts");
 
@@ -128,7 +127,6 @@ async function run(opts: DatafixOpts): Promise<DatafixStepResult> {
 
 if (isMainModule(import.meta.url)) {
   const opts: DatafixOpts = parseDatafixArgs(process.argv.slice(2));
-  loadDatafixEnv(opts.envFile);
   printDatafixBanner(opts, [
     `target league:    ${TARGET_LEAGUE_ID} (TEST!! USE THIS LEAGUE)`,
     `target user:      ${TARGET_USER_ID} ("Dan 1 ")`,
