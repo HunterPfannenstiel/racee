@@ -27,6 +27,16 @@ jobs:
     runs-on: ubuntu-latest
     environment: Production
     steps:
+      # repository_dispatch-triggered runs have no inherent tie to a commit
+      # SHA in GitHub's eyes, so this step explicitly reports a commit status
+      # for Vercel's Deployment Checks to find and gate on. The `name` below
+      # must exactly match what's selected in the project's Deployment Checks
+      # settings in the Vercel dashboard.
+      - name: Report status to Vercel
+        uses: vercel/repository-dispatch/actions/status@v1
+        with:
+          name: "Vercel - racee: health-check"
+
       - name: Hit health endpoint
         env:
           TARGET_URL: ${{ github.event.client_payload.url || inputs.deployment_url }}
@@ -39,14 +49,3 @@ jobs:
             echo "Health check failed with status $status"
             exit 1
           fi
-
-      # repository_dispatch-triggered runs have no inherent tie to a commit
-      # SHA in GitHub's eyes, so this step explicitly reports a commit status
-      # for Vercel's Deployment Checks to find and gate on. The `name` below
-      # must exactly match what's selected in the project's Deployment Checks
-      # settings in the Vercel dashboard.
-      - name: Report status to Vercel
-        if: always()
-        uses: vercel/repository-dispatch/actions/status@v1
-        with:
-          name: "Vercel - racee: health-check"
