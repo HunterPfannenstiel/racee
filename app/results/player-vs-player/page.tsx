@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/ui/page-shell";
 import { QueryLoading, QueryError } from "@/components/ui/query-state";
@@ -18,6 +19,23 @@ function assertNever(x: never): never {
 // publicProcedure. leagueId/raceId/leftUserId/rightUserId are all required;
 // a link missing any of them is malformed, not a loading state.
 export default function PlayerVsPlayerPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageShell title="Player vs Player">
+          <QueryLoading label="Loading comparison..." />
+        </PageShell>
+      }
+    >
+      <PlayerVsPlayerPageContent />
+    </Suspense>
+  );
+}
+
+// usePvpSearchParams() calls useSearchParams(), which requires a Suspense
+// boundary above it (or Next bails the whole route out of static rendering) --
+// kept as a separate component so the boundary above sits above this hook call.
+function PlayerVsPlayerPageContent() {
   const { leagueId, raceId, leftUserId, rightUserId } = usePvpSearchParams();
   if (!leagueId || !raceId || !leftUserId || !rightUserId) notFound();
 
