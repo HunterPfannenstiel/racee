@@ -1,0 +1,61 @@
+name: "Data Fix Runner"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options: [Preview, Production]
+      script_path:
+        description: "Path to the datafix script (e.g. scripts/datafix/remove-dan1-test-league-data.ts)"
+        required: true
+        type: string
+      mode:
+        description: "dry-run previews changes only; real performs the write"
+        required: true
+        type: choice
+        options: [dry-run, real]
+
+concurrency:
+  group: data-fix-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  run-datafix:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Summarize run
+        run: |
+          {
+            echo "### Data fix run"
+            echo "- script: ${{ inputs.script_path }}"
+            echo "- environment: ${{ inputs.environment }}"
+            echo "- mode: ${{ inputs.mode }}"
+            echo "- commit: $(git log -1 --format='%H %s (%an, %ad)' --date=short)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with: { version: 9 }
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with: { node-version: "20", cache: "pnpm" }
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run datafix
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          DATABASE_SCHEMA: ${{ secrets.DATABASE_SCHEMA }}
+        run: |
+          npx tsx "${{ inputs.script_path }}" ${{ inputs.mode == 'real' && '--yes' || '--dry-run' }}
