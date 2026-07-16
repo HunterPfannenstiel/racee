@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import type { BlobStore } from "@/lib/blob/interface";
+import { usingSupabaseBlobStore } from "@/lib/blob/backend";
 
 // Shared by every prod-datafix script (apply-corrected-race-keys, backfill-predictions,
 // remove-dan1-test-league-data, run-prod-datafixes) so the CLI conventions — env
@@ -73,8 +74,18 @@ export function willWrite(opts: Pick<DatafixOpts, "dryRun" | "confirmed">): bool
 export function printDatafixBanner(opts: DatafixOpts, extraLines: string[] = []): void {
   const mode = resolveDatafixMode(opts);
   const environment = process.env.DATAFIX_ENVIRONMENT ?? "local";
+  const backend = usingSupabaseBlobStore() ? "SupabaseBlobStore" : "LocalBlobStore";
   console.log("=".repeat(60));
   console.log(`environment:      ${environment}`);
+  console.log(
+    `storage backend:  ${backend}` +
+      (usingSupabaseBlobStore() ? "" : "  (writes to .blob-store/ on local disk, NOT Supabase — set SUPABASE_URL to target Supabase)"),
+  );
+  if (usingSupabaseBlobStore()) {
+    console.log(`SUPABASE_URL:     ${process.env.SUPABASE_URL ?? "(not set)"}`);
+    console.log(`DATABASE_SCHEMA:  ${process.env.DATABASE_SCHEMA ?? "(not set)"}`);
+    console.log(`BUCKET_NAME:      ${process.env.BUCKET_NAME ?? "(not set)"}`);
+  }
   for (const line of extraLines) console.log(line);
   console.log(
     `mode:             ${mode === "dry-run" ? "dry-run (no writes)" : mode === "write" ? "REAL WRITE (--yes)" : "preview only (pass --yes to write)"}`,
