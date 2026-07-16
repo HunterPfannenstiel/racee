@@ -1,6 +1,14 @@
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import type { BlobStore } from "@/lib/blob/interface";
+// lib/blob/backend.ts is a leaf module with no further imports (doesn't touch
+// supabase.ts or local.ts), so it's safe to import statically here even though
+// datafix-shared.ts (and every script that imports it) loads before
+// loadDatafixEnv() runs. usingSupabaseBlobStore is a function, not a cached
+// const, so calling it inside printDatafixBanner() below — after
+// loadDatafixEnv() has already populated process.env — reads the live value
+// instead of freezing in whatever was set (or unset) at import time.
+import { usingSupabaseBlobStore } from "@/lib/blob/backend";
 
 // Shared by every prod-datafix script (apply-corrected-race-keys, backfill-predictions,
 // remove-dan1-test-league-data, run-prod-datafixes) so the CLI conventions — env
@@ -94,14 +102,14 @@ export function loadDatafixEnv(envFile: string): void {
 export function printDatafixBanner(opts: DatafixOpts, extraLines: string[] = []): void {
   const { envFile } = opts;
   const mode = resolveDatafixMode(opts);
-  const backend = process.env.VERCEL ? "SupabaseBlobStore" : "LocalBlobStore";
+  const backend = usingSupabaseBlobStore() ? "SupabaseBlobStore" : "LocalBlobStore";
   console.log("=".repeat(60));
   console.log(`target env file:  ${envFile}`);
   console.log(
     `storage backend:  ${backend}` +
-      (process.env.VERCEL ? "" : "  (writes to .blob-store/ on local disk, NOT Supabase — set VERCEL=1 to target Supabase)"),
+      (usingSupabaseBlobStore() ? "" : "  (writes to .blob-store/ on local disk, NOT Supabase — set SUPABASE_URL to target Supabase)"),
   );
-  if (process.env.VERCEL) {
+  if (usingSupabaseBlobStore()) {
     console.log(`SUPABASE_URL:     ${process.env.SUPABASE_URL ?? "(not set)"}`);
     console.log(`DATABASE_SCHEMA:  ${process.env.DATABASE_SCHEMA ?? "(not set)"}`);
     console.log(`BUCKET_NAME:      ${process.env.BUCKET_NAME ?? "(not set)"}`);

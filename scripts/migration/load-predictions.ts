@@ -3,15 +3,15 @@
 // real domain/repository classes, then triggers real grading.
 //
 // Run (dry-run, default — no writes anywhere):
-//   VERCEL=1 BUCKET_NAME=<bucket> SUPABASE_URL=<url> SUPABASE_SECRET_KEY=<key> \
+//   BUCKET_NAME=<bucket> SUPABASE_URL=<url> SUPABASE_SECRET_KEY=<key> \
 //     npx tsx scripts/migration/load-predictions.ts
 //
 // Run (real write):
-//   VERCEL=1 BUCKET_NAME=<bucket> SUPABASE_URL=<url> SUPABASE_SECRET_KEY=<key> \
+//   BUCKET_NAME=<bucket> SUPABASE_URL=<url> SUPABASE_SECRET_KEY=<key> \
 //     npx tsx scripts/migration/load-predictions.ts --write
 //
 // BUCKET_NAME is the ONLY thing separating itg (racee_integration) from prod (racee)
-// in this Supabase project — there is no other environment boundary. All four vars
+// in this Supabase project — there is no other environment boundary. All three vars
 // below must be explicitly set on the invoking shell command; there is no fallback,
 // no dotenv-loading of them by this script, and no default.
 
@@ -19,14 +19,14 @@ import { readFileSync, readdirSync } from "fs";
 import { join, dirname, basename } from "path";
 import { fileURLToPath } from "url";
 
-const REQUIRED_ENV = ["VERCEL", "BUCKET_NAME", "SUPABASE_URL", "SUPABASE_SECRET_KEY"] as const;
+const REQUIRED_ENV = ["BUCKET_NAME", "SUPABASE_URL", "SUPABASE_SECRET_KEY"] as const;
 for (const key of REQUIRED_ENV) {
   if (!process.env[key]) {
     console.error(
       `\nMissing required env var: ${key}\n\n` +
       `This script refuses to run with implicit/defaulted environment selection.\n` +
       `Invoke it like:\n` +
-      `  VERCEL=1 BUCKET_NAME=<bucket> SUPABASE_URL=<url> SUPABASE_SECRET_KEY=<key> npx tsx scripts/migration/load-predictions.ts [--write]\n`
+      `  BUCKET_NAME=<bucket> SUPABASE_URL=<url> SUPABASE_SECRET_KEY=<key> npx tsx scripts/migration/load-predictions.ts [--write]\n`
     );
     process.exit(1);
   }
@@ -42,8 +42,16 @@ console.log("=".repeat(72));
 
 // Imports below are hoisted by ESM but env vars are already set on process.env
 // from the shell invocation before any module code runs, so lib/blob/index.ts's
-// module-level `process.env.VERCEL ? ... : ...` check sees the right value.
-const { blob } = await import("../../lib/blob/index.ts");
+// module-level `usingSupabaseBlobStore()` check (driven by SUPABASE_URL) sees
+// the right value.
+const { blob, usingSupabaseBlobStore } = await import("../../lib/blob/index.ts");
+
+// SUPABASE_URL is in REQUIRED_ENV above, so this should always be true here —
+// asserted rather than silently assumed, since this script talks to a real bucket.
+if (!usingSupabaseBlobStore()) {
+  console.error("\nExpected usingSupabaseBlobStore() to be true (SUPABASE_URL is required above) but it was false. Refusing to run against LocalBlobStore.");
+  process.exit(1);
+}
 const { RACERS_PATH, LEAGUES_PATH, motorsportRacesPath, teamsPath, predictionsPath } =
   await import("../../lib/paths.ts");
 const { RacePredictionBook } = await import("../../server/domain/race-prediction-book.ts");
