@@ -1,0 +1,52 @@
+name: Production Health Check
+
+# Vercel dispatches vercel.deployment.ready after a production deployment is
+# created but before Deployment Checks are evaluated, so client_payload.url
+# points at the new deployment's own unique URL, not yet aliased to the
+# production domain — this lets us test the build before it goes live.
+#
+# Caveat: repository_dispatch-triggered workflows only fire if the workflow
+# file already exists on the default branch (main). Until this file is
+# merged, it's inert for repository_dispatch — use the workflow_dispatch
+# trigger below (with a manual deployment_url input) to test it beforehand.
+on:
+  repository_dispatch:
+    types: [vercel.deployment.ready]
+  workflow_dispatch:
+    inputs:
+      deployment_url:
+        description: 'Deployment URL to test (for manual runs only), including https://'
+        required: true
+
+permissions:
+  statuses: write
+
+jobs:
+  health-check:
+    if: github.event_name == 'workflow_dispatch' || github.event.client_payload.environment == 'production'
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: Hit health endpoint
+        env:
+          TARGET_URL: ${{ github.event.client_payload.url || inputs.deployment_url }}
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "x-health-check-token: ${{ secrets.HEALTH_CHECK_TOKEN }}" \
+            -H "x-vercel-protection-bypass: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" \
+            "${TARGET_URL}/api/health")
+          if [ "$status" != "200" ]; then
+            echo "Health check failed with status $status"
+            exit 1
+          fi
+
+      # repository_dispatch-triggered runs have no inherent tie to a commit
+      # SHA in GitHub's eyes, so this step explicitly reports a commit status
+      # for Vercel's Deployment Checks to find and gate on. The `name` below
+      # must exactly match what's selected in the project's Deployment Checks
+      # settings in the Vercel dashboard.
+      - name: Report status to Vercel
+        if: always()
+        uses: vercel/repository-dispatch/actions/status@v1
+        with:
+          name: "Vercel - racee: health-check"
