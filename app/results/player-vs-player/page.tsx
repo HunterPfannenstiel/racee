@@ -1,7 +1,8 @@
 "use client";
 
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import { PageShell } from "@/components/ui/page-shell";
 import { QueryLoading, QueryError } from "@/components/ui/query-state";
 import { usePvpSearchParams } from "./hooks/usePvpSearchParams";
@@ -15,6 +16,25 @@ function assertNever(x: never): never {
   throw new Error(`Unhandled status: ${JSON.stringify(x)}`);
 }
 
+// This page is reachable as a standalone shared link (publicProcedure, no
+// league-scoped nav), so there's no single "results page for this race" href
+// to hardcode -- router.back() returns wherever the viewer actually came
+// from, falling back to /results only when there's no history to unwind
+// (e.g. the link was opened fresh from a share).
+function BackLink() {
+  const router = useRouter();
+  return (
+    <button
+      type="button"
+      onClick={() => (window.history.length > 1 ? router.back() : router.push("/results"))}
+      className="flex w-fit items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <ChevronLeft className="size-3.5" />
+      Back
+    </button>
+  );
+}
+
 // Publicly viewable (no RequireUser) -- see server/rpc/procedures.ts's
 // publicProcedure. leagueId/raceId/leftUserId/rightUserId are all required;
 // a link missing any of them is malformed, not a loading state.
@@ -23,6 +43,7 @@ export default function PlayerVsPlayerPage() {
     <Suspense
       fallback={
         <PageShell title="Player vs Player">
+          <BackLink />
           <QueryLoading label="Loading comparison..." />
         </PageShell>
       }
@@ -44,6 +65,7 @@ function PlayerVsPlayerPageContent() {
 
   return (
     <PageShell title="Player vs Player" subtitle={subtitle}>
+      <BackLink />
       {renderContent(vm)}
     </PageShell>
   );
