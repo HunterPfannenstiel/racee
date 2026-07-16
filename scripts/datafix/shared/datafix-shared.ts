@@ -1,16 +1,14 @@
 import { fileURLToPath } from "node:url";
-import { config } from "dotenv";
 import type { BlobStore } from "@/lib/blob/interface";
 
 // Shared by every prod-datafix script (apply-corrected-race-keys, backfill-predictions,
 // remove-dan1-test-league-data, run-prod-datafixes) so the CLI conventions — env
-// loading, --dry-run/--yes/--env-file parsing, banner, per-step summary — stay
+// loading, --dry-run/--yes parsing, banner, per-step summary — stay
 // identical across all of them instead of being hand-copied per file.
 
 export interface DatafixOpts {
   dryRun: boolean;
   confirmed: boolean;
-  envFile: string;
 }
 
 export interface DatafixStepResult {
@@ -33,18 +31,14 @@ export function mergeStepResults(a: DatafixStepResult, b: DatafixStepResult): Da
   };
 }
 
-const VALID_DATAFIX_FLAGS = "--dry-run, --yes, --env-file=<value>";
+const VALID_DATAFIX_FLAGS = "--dry-run, --yes";
 
-// Every argv entry must be exactly one of --dry-run, --yes, or --env-file=<value>
-// (the `=` form specifically — a bare --env-file with no value is also rejected
-// rather than silently falling back to the default envFile). Anything else throws
+// Every argv entry must be exactly one of --dry-run or --yes. Anything else throws
 // instead of being silently dropped: a typo'd flag (e.g. "-dry-run") combined with
 // --yes must never be mistaken by the operator for a safe preview when it's actually
 // about to perform a real write.
 export function parseDatafixArgs(argv: string[]): DatafixOpts {
-  const unrecognized = argv.filter(
-    (a) => a !== "--dry-run" && a !== "--yes" && !/^--env-file=.+$/.test(a),
-  );
+  const unrecognized = argv.filter((a) => a !== "--dry-run" && a !== "--yes");
   if (unrecognized.length > 0) {
     throw new Error(
       `unrecognized datafix argument(s): ${unrecognized.join(", ")} — valid flags are: ${VALID_DATAFIX_FLAGS}`,
@@ -53,9 +47,7 @@ export function parseDatafixArgs(argv: string[]): DatafixOpts {
 
   const dryRun = argv.includes("--dry-run");
   const confirmed = argv.includes("--yes");
-  const envFileArg = argv.find((a) => a.startsWith("--env-file="));
-  const envFile = envFileArg ? envFileArg.slice("--env-file=".length) : ".env.local";
-  return { dryRun, confirmed, envFile };
+  return { dryRun, confirmed };
 }
 
 // Single source of truth for the three-way write-mode precedence every datafix
@@ -78,24 +70,11 @@ export function willWrite(opts: Pick<DatafixOpts, "dryRun" | "confirmed">): bool
   return resolveDatafixMode(opts) === "write";
 }
 
-// Must be called before any import that touches lib/blob (e.g. the repository modules
-// dynamically imported inside each step's run function) — lib/blob/supabase.ts
-// constructs its Supabase client at module-evaluation time, so loading env vars after
-// that module is imported is too late. Safe to call more than once in the same
-// process (e.g. once from run-prod-datafixes.ts, once from a step's own CLI entry) —
-// dotenv does not override already-set env vars by default.
-export function loadDatafixEnv(envFile: string): void {
-  const result = config({ path: envFile });
-  if (result.error) {
-    console.warn(`warning: could not load ${envFile} (${result.error.message}) — relying on already-exported env vars`);
-  }
-}
-
 export function printDatafixBanner(opts: DatafixOpts, extraLines: string[] = []): void {
-  const { envFile } = opts;
+  const environment = process.env.DATAFIX_ENVIRONMENT ?? "local";
   const mode = resolveDatafixMode(opts);
   console.log("=".repeat(60));
-  console.log(`target env file:  ${envFile}`);
+  console.log(`environment:      ${environment}`);
   for (const line of extraLines) console.log(line);
   console.log(
     `mode:             ${mode === "dry-run" ? "dry-run (no writes)" : mode === "write" ? "REAL WRITE (--yes)" : "preview only (pass --yes to write)"}`,
@@ -104,12 +83,11 @@ export function printDatafixBanner(opts: DatafixOpts, extraLines: string[] = [])
 }
 
 export function printStepSummary(label: string, result: DatafixStepResult, opts: DatafixOpts): void {
-  const { envFile } = opts;
   const mode = resolveDatafixMode(opts);
   if (mode === "dry-run") {
     console.log(`\n[${label}] dry run done — ${result.pending} change(s) would apply, ${result.skipped} already clean`);
   } else if (mode === "preview") {
-    console.log(`\n[${label}] preview only — ${result.pending} change(s) pending, ${result.skipped} already clean. Re-run with --yes to apply against ${envFile}.`);
+    console.log(`\n[${label}] preview only — ${result.pending} change(s) pending, ${result.skipped} already clean. Re-run with --yes to apply.`);
   } else {
     console.log(`\n[${label}] done — ${result.applied} applied, ${result.skipped} already clean, ${result.failed} failed`);
   }

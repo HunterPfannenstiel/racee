@@ -46,7 +46,7 @@ jobs:
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with: { node-version: "20", cache: "pnpm" }
+        with: { node-version: "22", cache: "pnpm" }
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -57,5 +57,6 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
           DATABASE_SCHEMA: ${{ secrets.DATABASE_SCHEMA }}
+          DATAFIX_ENVIRONMENT: ${{ inputs.environment }}
         run: |
           npx tsx "scripts/datafix/${{ inputs.script_path }}" ${{ inputs.mode == 'real' && '--yes' || '--dry-run' }}
