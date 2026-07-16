@@ -4,7 +4,7 @@ import { usingSupabaseBlobStore } from "@/lib/blob/backend";
 
 // Shared by every prod-datafix script (apply-corrected-race-keys, backfill-predictions,
 // remove-dan1-test-league-data, run-prod-datafixes) so the CLI conventions — env
-// loading, --dry-run/--yes/--env-file parsing, banner, per-step summary — stay
+// loading, --dry-run/--yes parsing, banner, per-step summary — stay
 // identical across all of them instead of being hand-copied per file.
 
 export interface DatafixOpts {
