@@ -1,0 +1,32 @@
+{
+  "race": "Japan",
+  "skipped": [
+    {
+      "code": "EMPTY_PREDICTION",
+      "playerName": "Daniel Kilpadikar",
+      "teamNameRaw": "Kildaullac Motorshports",
+      "userId": "NHoznCe81FujdZqSjsxa7uvSEYnxTxlz",
+      "message": "Player \"Daniel Kilpadikar\" (team \"Kildaullac Motorshports\") has zero picks in the source Weekly Lineups — no payload generated."
+    }
+  ],
+  "flagged": [
+    {
+      "code": "PARTIAL_PROP_PICKS_OMITTED",
+      "playerName": "Tyler Fox",
+      "userId": "76Dg0Uf261SSJi8FwtFlrXEyrgIHlAOz",
+      "message": "\"Tyler Fox\" answered 6/7 props for Japan (the real app requires all 7 or none) — propPicks omitted from this payload, racerIds still included. Missing: [wrecker]. Unresolved: [none].",
+      "context": {
+        "missingProps": [
+          "wrecker"
+        ],
+        "unresolvedProps": []
+      }
+    },
+    {
+      "code": "DUPLICATE_DRIVER_IN_PREDICTION",
+      "playerName": "Zach Duck",
+      "userId": "hNW2Bf7I9b3o4OOh57Cuqh3KFOafzhaa",
+      "message": "\"Zach Duck\" has the same driver ranked more than once — carried through as-extracted per source data, not corrected. A real driver was crowded out of this ranking."
+    }
+  ]
+}

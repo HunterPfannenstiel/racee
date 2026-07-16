@@ -1,0 +1,30 @@
+{
+  "race": "Miami",
+  "skipped": [],
+  "flagged": [
+    {
+      "code": "DUPLICATE_DRIVER_IN_PREDICTION",
+      "playerName": "Johnson Miller",
+      "userId": "cwVeKgqGcSNoiTlC03e0RqCiXQ5pg69l",
+      "message": "\"Johnson Miller\" has the same driver ranked more than once — carried through as-extracted per source data, not corrected. A real driver was crowded out of this ranking."
+    },
+    {
+      "code": "PARTIAL_PROP_PICKS_OMITTED",
+      "playerName": "Tyler Fox",
+      "userId": "76Dg0Uf261SSJi8FwtFlrXEyrgIHlAOz",
+      "message": "\"Tyler Fox\" answered 6/7 props for Miami (the real app requires all 7 or none) — propPicks omitted from this payload, racerIds still included. Missing: [wrecker]. Unresolved: [none].",
+      "context": {
+        "missingProps": [
+          "wrecker"
+        ],
+        "unresolvedProps": []
+      }
+    },
+    {
+      "code": "DUPLICATE_DRIVER_IN_PREDICTION",
+      "playerName": "Russell Henderson",
+      "userId": "Qgt4Jk89IuZ8UkWgD5lX0h61PjP6Gk6b",
+      "message": "\"Russell Henderson\" has the same driver ranked more than once — carried through as-extracted per source data, not corrected. A real driver was crowded out of this ranking."
+    }
+  ]
+}

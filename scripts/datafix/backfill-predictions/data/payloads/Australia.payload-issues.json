@@ -1,0 +1,57 @@
+{
+  "race": "Australia",
+  "skipped": [],
+  "flagged": [
+    {
+      "code": "DUPLICATE_DRIVER_IN_PREDICTION",
+      "playerName": "Chris Michels",
+      "userId": "4CVFS8ZmjqA8nK7aGw3K1WL5UWSupKPp",
+      "message": "\"Chris Michels\" has the same driver ranked more than once — carried through as-extracted per source data, not corrected. A real driver was crowded out of this ranking."
+    },
+    {
+      "code": "PARTIAL_PROP_PICKS_OMITTED",
+      "playerName": "Tyler Fox",
+      "userId": "76Dg0Uf261SSJi8FwtFlrXEyrgIHlAOz",
+      "message": "\"Tyler Fox\" answered 6/7 props for Australia (the real app requires all 7 or none) — propPicks omitted from this payload, racerIds still included. Missing: [wrecker]. Unresolved: [none].",
+      "context": {
+        "missingProps": [
+          "wrecker"
+        ],
+        "unresolvedProps": []
+      }
+    },
+    {
+      "code": "DUPLICATE_DRIVER_IN_PREDICTION",
+      "playerName": "Skipper Bertrand",
+      "userId": "t1Y95rf1WZtNdbJ117fdiap8u4sovAAH",
+      "message": "\"Skipper Bertrand\" has the same driver ranked more than once — carried through as-extracted per source data, not corrected. A real driver was crowded out of this ranking."
+    },
+    {
+      "code": "DUPLICATE_DRIVER_IN_PREDICTION",
+      "playerName": "Matt Bishop",
+      "userId": "6NgaKXnzBAdU6nOPiWWJ5Acy63CP5ZwY",
+      "message": "\"Matt Bishop\" has the same driver ranked more than once — carried through as-extracted per source data, not corrected. A real driver was crowded out of this ranking."
+    },
+    {
+      "code": "DUPLICATE_DRIVER_IN_PREDICTION",
+      "playerName": "Daniel Kilpadikar",
+      "userId": "NHoznCe81FujdZqSjsxa7uvSEYnxTxlz",
+      "message": "\"Daniel Kilpadikar\" has the same driver ranked more than once — carried through as-extracted per source data, not corrected. A real driver was crowded out of this ranking."
+    },
+    {
+      "code": "DUPLICATE_DRIVER_IN_PREDICTION",
+      "playerName": "Zach Duck",
+      "userId": "hNW2Bf7I9b3o4OOh57Cuqh3KFOafzhaa",
+      "message": "\"Zach Duck\" has the same driver ranked more than once — carried through as-extracted per source data, not corrected. A real driver was crowded out of this ranking."
+    },
+    {
+      "code": "UNEXPECTED_RANKING_LENGTH",
+      "playerName": "Sarah Duck",
+      "userId": "ye2lsDm8gCH2aiKp9497MiQfWmQJKaoN",
+      "message": "Expected 22 ranked picks, got 21 for \"Sarah Duck\" (team \"Scooty Puff Jr\")",
+      "context": {
+        "count": 21
+      }
+    }
+  ]
+}

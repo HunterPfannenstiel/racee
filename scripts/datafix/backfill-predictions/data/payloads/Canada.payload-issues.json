@@ -1,0 +1,42 @@
+{
+  "race": "Canada",
+  "skipped": [],
+  "flagged": [
+    {
+      "code": "PARTIAL_PROP_PICKS_OMITTED",
+      "playerName": "Tyler Fox",
+      "userId": "76Dg0Uf261SSJi8FwtFlrXEyrgIHlAOz",
+      "message": "\"Tyler Fox\" answered 6/7 props for Canada (the real app requires all 7 or none) — propPicks omitted from this payload, racerIds still included. Missing: [wrecker]. Unresolved: [none].",
+      "context": {
+        "missingProps": [
+          "wrecker"
+        ],
+        "unresolvedProps": []
+      }
+    },
+    {
+      "code": "PARTIAL_PROP_PICKS_OMITTED",
+      "playerName": "Antonio LaMonica",
+      "userId": "ZosoXWcsFZNn60nuidANR0f24fKj0k9I",
+      "message": "\"Antonio LaMonica\" answered 6/7 props for Canada (the real app requires all 7 or none) — propPicks omitted from this payload, racerIds still included. Missing: [wrecker]. Unresolved: [none].",
+      "context": {
+        "missingProps": [
+          "wrecker"
+        ],
+        "unresolvedProps": []
+      }
+    },
+    {
+      "code": "DUPLICATE_DRIVER_IN_PREDICTION",
+      "playerName": "Ryan Sherlock",
+      "userId": "6Wx2tQKDrm0Ywgfxtpnb8Dly6a1rKm3Y",
+      "message": "\"Ryan Sherlock\" has the same driver ranked more than once — carried through as-extracted per source data, not corrected. A real driver was crowded out of this ranking."
+    },
+    {
+      "code": "DUPLICATE_DRIVER_IN_PREDICTION",
+      "playerName": "Sarah Duck",
+      "userId": "ye2lsDm8gCH2aiKp9497MiQfWmQJKaoN",
+      "message": "\"Sarah Duck\" has the same driver ranked more than once — carried through as-extracted per source data, not corrected. A real driver was crowded out of this ranking."
+    }
+  ]
+}
