@@ -43,7 +43,13 @@ export function ResultsView({
 
   return (
     <div className="flex flex-col gap-6">
-      <RaceSelector races={races} selectedRaceId={selectedRaceId} onSelect={onSelectRace} order="desc" />
+      <RaceSelector
+        races={races}
+        selectedRaceId={selectedRaceId}
+        onSelect={onSelectRace}
+        order="asc"
+        autoScrollToSelected
+      />
 
       {isLoading ? (
         <ResultsSkeleton />

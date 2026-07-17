@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { medalColor } from "@/lib/colors";
+import { medalBorderColor, medalColor } from "@/lib/colors";
 import type { ResultsRowData } from "./types";
 import { groupEntriesByRank } from "./rank-utils";
 import { buildPvpHref } from "./player-vs-player/href";
@@ -60,9 +60,11 @@ function PodiumPlatform({
             // the individual name, not the whole platform, or a tie would be
             // ambiguous about which player the click meant.
             const href =
-              !isEntryMe && leagueId && raceId && currentUserId
-                ? buildPvpHref({ leagueId, raceId, viewerId: currentUserId, opponentId: entry.userId })
-                : null;
+              isEntryMe && leagueId && raceId && currentUserId
+                ? `/picks/${currentUserId}?leagueId=${leagueId}&raceId=${raceId}`
+                : !isEntryMe && leagueId && raceId && currentUserId
+                  ? buildPvpHref({ leagueId, raceId, viewerId: currentUserId, opponentId: entry.userId })
+                  : null;
             const nameClassName = "min-w-0 max-w-full truncate font-heading text-base font-bold text-foreground";
 
             return (
@@ -93,7 +95,8 @@ function PodiumPlatform({
       </div>
       <div
         className={cn(
-          "flex w-full items-start justify-center rounded-t-lg border border-border-strong pt-2",
+          "flex w-full items-start justify-center rounded-t-lg border pt-2",
+          medalBorderColor[rank] ?? "border-border-strong",
           PLATFORM_HEIGHT[rank],
           isMe ? "bg-primary-subtle" : "bg-surface"
         )}

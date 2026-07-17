@@ -15,12 +15,14 @@ export function ResultsList({ entries, currentUserId, leagueId, raceId }: Result
     <div className="mx-4 rounded-lg border border-border bg-surface overflow-hidden">
       {entries.map((entry) => {
         const isMe = entry.userId === currentUserId;
-        // Comparing yourself to yourself is meaningless -- your own row is
-        // never a link, regardless of whether the other ids are available.
+        // Your own row links to your picks page; everyone else's links to
+        // the head-to-head comparison view.
         const href =
-          !isMe && leagueId && raceId && currentUserId
-            ? buildPvpHref({ leagueId, raceId, viewerId: currentUserId, opponentId: entry.userId })
-            : null;
+          isMe && leagueId && raceId && currentUserId
+            ? `/picks/${currentUserId}?leagueId=${leagueId}&raceId=${raceId}`
+            : !isMe && leagueId && raceId && currentUserId
+              ? buildPvpHref({ leagueId, raceId, viewerId: currentUserId, opponentId: entry.userId })
+              : null;
 
         const content = (
           <>
