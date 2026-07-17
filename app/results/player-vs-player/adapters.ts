@@ -108,14 +108,4 @@ export function buildGridPredictionRows(
   });
 }
 
-export function buildRollupText(
-  left: PvpPlayer,
-  right: PvpPlayer,
-  propRows: PropPickRow[],
-  gridRows: GridPredictionRow[],
-): string {
-  const propWins = propRows.filter((row) => row.leftPoints > row.rightPoints).length;
-  const gridWins = gridRows.filter((row) => row.leftPoints > row.rightPoints).length;
-  const leftName = left.isCurrentUser ? "You" : left.name;
-  return `${leftName} beat ${right.name} on ${gridWins}/${gridRows.length} grid picks, ${propWins}/${propRows.length} props`;
-}
+export { buildRollupText } from "./rollup-text";

@@ -1,5 +1,6 @@
 import type { PropName } from "@/lib/schemas";
 import type { PvpPlayer, PropPickRow, GridPredictionRow, JumpablePlayer } from "./types";
+import { buildRollupText } from "./rollup-text";
 
 export const MOCK_CURRENT_USER_ID = "u-4";
 export const MOCK_RACE_TITLE = "Spanish GP";
@@ -250,13 +251,6 @@ export const MOCK_JUMPABLE_PLAYERS: JumpablePlayer[] = [
   ...MOCK_ROSTER.map((p) => ({ userId: p.userId, name: p.name, color: p.color, rank: p.rank, hasSubmitted: true })),
   ...NON_SUBMITTED_BASE.map((p) => ({ userId: p.userId, name: p.name, color: p.color, rank: null, hasSubmitted: false })),
 ];
-
-function buildRollupText(left: PvpPlayer, right: PvpPlayer, propRows: PropPickRow[], gridRows: GridPredictionRow[]): string {
-  const propWins = propRows.filter((row) => row.leftPoints > row.rightPoints).length;
-  const gridWins = gridRows.filter((row) => row.leftPoints > row.rightPoints).length;
-  const leftName = left.isCurrentUser ? "You" : left.name;
-  return `${leftName} beat ${right.name} on ${gridWins}/${gridRows.length} grid picks, ${propWins}/${propRows.length} props`;
-}
 
 export function getPropPickRows(leftUserId: string, rightUserId: string): PropPickRow[] {
   const leftData = PICK_DATA_BY_USER[leftUserId];

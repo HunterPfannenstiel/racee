@@ -15,11 +15,18 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 // Same rule as ComparisonCard's Score card deltas (left minus right), applied
-// to the left player's points-earned number only -- this drawer is scoped to
-// the left seat, so the right player's numbers are never colored.
-function leftPointsColorClass(leftPoints: number, rightPoints: number): string {
-  if (leftPoints === rightPoints) return "text-foreground";
-  return leftPoints > rightPoints ? "text-state-success" : "text-state-error";
+// to both players' points-earned numbers -- whoever scored more on the row
+// gets the win color, the other gets the loss color, ties stay neutral.
+function pickPointsColorClasses(
+  leftPoints: number,
+  rightPoints: number
+): { leftClass: string; rightClass: string } {
+  if (leftPoints === rightPoints) {
+    return { leftClass: "text-foreground", rightClass: "text-foreground" };
+  }
+  return leftPoints > rightPoints
+    ? { leftClass: "text-state-success", rightClass: "text-state-error" }
+    : { leftClass: "text-state-error", rightClass: "text-state-success" };
 }
 
 function DriverColorDot({ color }: { color?: string }) {
@@ -48,6 +55,7 @@ function PickRow({
   rightPoints: number;
   scored?: boolean;
 }) {
+  const { leftClass, rightClass } = pickPointsColorClasses(leftPoints, rightPoints);
   return (
     <div className="flex items-center gap-2">
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -57,7 +65,7 @@ function PickRow({
       <p
         className={cn(
           "w-8 shrink-0 text-right font-mono text-sm font-bold tabular-nums",
-          scored ? leftPointsColorClass(leftPoints, rightPoints) : "text-muted-foreground"
+          scored ? leftClass : "text-muted-foreground"
         )}
       >
         {scored ? leftPoints : "–"}
@@ -66,7 +74,7 @@ function PickRow({
       <p
         className={cn(
           "w-8 shrink-0 font-mono text-sm font-bold tabular-nums",
-          scored ? "text-foreground" : "text-muted-foreground"
+          scored ? rightClass : "text-muted-foreground"
         )}
       >
         {scored ? rightPoints : "–"}
@@ -188,11 +196,6 @@ export function PickDetailDrawer({
         </div>
 
         <div className="overflow-y-auto">
-          <SectionLabel>Prop Picks</SectionLabel>
-          {propPickRows.map((row) => (
-            <PropPickRowItem key={row.prop} row={row} />
-          ))}
-
           <SectionLabel>Grid Prediction</SectionLabel>
           {gridPredictionRows.map((row) => (
             <Fragment key={row.position}>
@@ -205,6 +208,11 @@ export function PickDetailDrawer({
                 hideBottomBorder={scoringDepth != null && row.position === scoringDepth}
               />
             </Fragment>
+          ))}
+
+          <SectionLabel>Prop Picks</SectionLabel>
+          {propPickRows.map((row) => (
+            <PropPickRowItem key={row.prop} row={row} />
           ))}
         </div>
       </DrawerContent>
