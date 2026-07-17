@@ -7,6 +7,12 @@ on:
         description: "Optional note for the run summary (e.g. 'pre-datafix backup')"
         type: string
         required: false
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options: [Preview, Production]
+        default: Production
   schedule:
     - cron: "0 8 * * *" # 08:00 UTC daily
 
@@ -17,7 +23,7 @@ concurrency:
 jobs:
   backup:
     runs-on: ubuntu-latest
-    environment: Production
+    environment: ${{ github.event_name == 'schedule' && 'Production' || inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,6 +53,7 @@ jobs:
           {
             echo "### Backup run"
             echo "- trigger: ${{ github.event_name }}"
+            echo "- environment: ${{ github.event_name == 'schedule' && 'Production' || inputs.environment }}"
             echo "- reason: ${{ inputs.reason || '(scheduled)' }}"
             echo "- commit: $(git log -1 --format='%H %s (%an, %ad)' --date=short)"
           } >> "$GITHUB_STEP_SUMMARY"
