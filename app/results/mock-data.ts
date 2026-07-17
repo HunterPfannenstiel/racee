@@ -23,7 +23,9 @@ const PLAYER_COLOR: Record<string, string> = {
   "u-10": "#2293D1",
   "u-11": "#6692FF",
   "u-12": "#B6BABD",
-  "u-13": "#0090FF",
+  // Shares MOCK_CURRENT_USER_ID's ("u-4") color on purpose -- a teammate
+  // pair, so the cutscene's teammate row treatment is previewable in mock data.
+  "u-13": "#3671C6",
   "u-14": "#B6BABD",
   "u-15": "#37BEDD",
   "u-16": "#00594F",

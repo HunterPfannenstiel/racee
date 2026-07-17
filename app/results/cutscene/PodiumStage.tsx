@@ -31,10 +31,10 @@ export type PodiumBoxEntry = {
   name: string;
   rank: 1 | 2 | 3;
   points: number;
-  /** The finisher's own identity color (ResultsRowData.color) -- tints the
-   *  box (background/border/glow) and the points count-up, independent of
-   *  rank-based medalColor (which stays reserved for the achievement-tier
-   *  signal: the rank digit itself). */
+  /** The finisher's own identity color (ResultsRowData.color) -- used only to
+   *  color the viewer's own box's landing shimmer (TeamColorShimmer). Box
+   *  background/border/glow and the points count-up use rank-based
+   *  medalColor/MEDAL_HEX instead, matching the real page's Podium.tsx. */
   color: string;
   isMe: boolean;
 };
@@ -91,6 +91,17 @@ const CEREMONIAL_HEIGHT: Record<1 | 2 | 3, string> = {
   1: "h-64 sm:h-80",
   2: "h-48 sm:h-60",
   3: "h-40 sm:h-52",
+};
+
+// Raw hex twins of lib/colors.ts's medalColor/medalBorderColor (Tailwind's
+// amber-400 / slate-400 / amber-700) -- the box background/border/glow below
+// are inline motion styles built via hex+alpha string concatenation, which a
+// Tailwind class string can't drive, so the same three rank colors need a
+// hex form here too.
+const MEDAL_HEX: Record<1 | 2 | 3, string> = {
+  1: "#fbbf24",
+  2: "#94a3b8",
+  3: "#b45309",
 };
 
 // Each box's own fill-in (fade + pop) once its rank's reveal begins -- short
@@ -208,10 +219,10 @@ function PodiumBox({
 
   const opacity = useMotionValue(0);
   const scale = useMotionValue(0.85);
-  // Soft team-color glow, derived from the box's own pop-in opacity rather
+  // Soft medal-color glow, derived from the box's own pop-in opacity rather
   // than a separate motion value/effect -- it just blooms in alongside the
   // box's arrival for free.
-  const glow = useTransform(opacity, (o) => `0 0 ${32 * o}px ${primary?.color ?? "transparent"}40`);
+  const glow = useTransform(opacity, (o) => `0 0 ${32 * o}px ${MEDAL_HEX[rank]}40`);
   const controlsRef = useRef<AnimationPlaybackControls[]>([]);
 
   const countUpPhase: CountUpPhase =
@@ -276,10 +287,10 @@ function PodiumBox({
     );
   }
 
-  // Rank digit keeps the medal (gold/silver/bronze) color -- the universal
-  // achievement-tier signal. The points count-up instead takes the
-  // finisher's own team color, so the ceremony reads as "1st, 2nd, 3rd" AND
-  // "whose" at the same time, rather than one flat rank-only palette.
+  // Rank digit and points count-up both take the medal (gold/silver/bronze)
+  // color -- the universal achievement-tier signal, matching the real page's
+  // Podium.tsx. "Whose" is instead carried by the box's own landing shimmer
+  // (TeamColorShimmer, below) for the viewer's own box.
   const medalTextColor = medalColor[rank] ?? "text-white";
   // Whichever tied occupant is the viewer, if any -- drives the "this is
   // you" shimmer, played in that occupant's own color.
@@ -300,17 +311,14 @@ function PodiumBox({
             </p>
           </div>
         ))}
-        <motion.p
-          className="font-mono text-2xl font-black tabular-nums sm:text-4xl"
-          style={{ color: primary.color }}
-        >
+        <motion.p className={cn("font-mono text-2xl font-black tabular-nums sm:text-4xl", medalTextColor)}>
           {roundedPoints}
         </motion.p>
       </motion.div>
       <motion.div
         style={{
-          backgroundColor: `${primary.color}1a`,
-          borderColor: `${primary.color}66`,
+          backgroundColor: `${MEDAL_HEX[rank]}1a`,
+          borderColor: `${MEDAL_HEX[rank]}66`,
           boxShadow: glow,
         }}
         className={cn(

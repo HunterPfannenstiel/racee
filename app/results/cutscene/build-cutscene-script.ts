@@ -28,6 +28,12 @@ export type CutsceneGroupMember = {
    *  out into a separate event -- see GroupStage.tsx for the inline flourish
    *  this drives. Absent (not just false) on every other member. */
   isYou?: true;
+  /** True for members who share the viewer's fantasy-team color (i.e. are on
+   *  the viewer's team) but aren't the viewer themself, tagged in place by
+   *  `tagTeammateMembers`. Absent (not just false) on every other member,
+   *  including the viewer's own row. Not yet consumed by GroupStage -- this
+   *  is data-layer prep for the teammate row variant. */
+  isTeammate?: true;
 };
 
 export type CutsceneGroupEvent = {
@@ -63,54 +69,29 @@ export type CutsceneGroupEvent = {
  */
 export const GROUP_SIZE = 5;
 
-// --- Pacing curve anchors -------------------------------------------------
-// t = i / (G - 1): 0 = worst-of-field group (revealed first), 1 = best-of-
-// field group (revealed last, right before the podium threshold). Every
-// timing lerps from its "bottom of field" value toward its "top of field"
-// value as t climbs, each along its own power curve. Named + exported so
-// they're easy to retune without touching the shaping logic.
-export const STAGGER_MS_MIN = 110;
-export const STAGGER_MS_MAX = 220;
-export const STAGGER_EASE_K = 1.3;
-
-export const RISE_MS_MIN = 220;
-export const RISE_MS_MAX = 380;
-export const RISE_EASE_K = 1.3;
-
-export const COUNT_UP_MS_MIN = 220;
-export const COUNT_UP_MS_MAX = 700;
-export const COUNT_UP_EASE_K = 1.5;
-
-export const HOLD_MS_MIN = 900;
-export const HOLD_MS_MAX = 2200;
-export const HOLD_EASE_K = 1.6;
-
-export const FALL_MS_MIN = 280;
-export const FALL_MS_MAX = 420;
-export const FALL_EASE_K = 1.2;
-
-export const GAP_MS_MIN = 150;
-export const GAP_MS_MAX = 500;
-export const GAP_EASE_K = 2.0;
+// --- Uniform pacing constants ----------------------------------------------
+// Every group now uses the same timing regardless of groupIndex -- no more
+// "fastest at the bottom of the field, slowest near the podium threshold"
+// curve. Placeholder values (roughly the old curve's midpoints); subject to
+// tuning once the ladder rendering rework (persistent, bottom-up growing
+// list) lands and these can be judged against the real visual.
+export const STAGGER_MS = 165;
+export const RISE_MS = 300;
+export const COUNT_UP_MS = 460;
+export const HOLD_MS = 1550;
+export const FALL_MS = 350;
+export const GAP_MS = 325;
 
 // --- "You" row (Beat 3) ------------------------------------------------
 // No longer its own fixed timing block: the viewer's row is now just an
 // ordinary member of whichever group it naturally lands in (see
-// tagYouMember below), so it shares that group's own curve-derived
+// tagYouMember below), so it shares that group's own uniform
 // staggerMs/riseMs/countUpMs/holdMs/fallMs/gapMs like every other row --
 // nothing here schedules it separately anymore. The brief lift/shimmy/glow
 // flourish that used to need this dedicated timing block is a purely local,
 // non-scheduling animation layered on top by GroupStage.tsx (its
 // YOU_LIFT_MS/YOU_SHIMMY_MS/YOU_SETTLE_MS), timed to fit comfortably inside
-// even the smallest curve-derived holdMs (HOLD_MS_MIN above).
-
-function lerp(min: number, max: number, t: number) {
-  return min + (max - min) * t;
-}
-
-function ease(t: number, k: number) {
-  return Math.pow(t, k);
-}
+// HOLD_MS above.
 
 /**
  * Stable worst-to-best comparator for same-rank ties: ascending by the
@@ -159,11 +140,12 @@ function chunkEvenly<T>(items: T[]): T[][] {
  * (1-3, out of scope for this beat), orders remaining entries by rank
  * descending (worst first) with a stable ascending-userId tiebreak, chunks
  * them into `Math.ceil(field.length / GROUP_SIZE)` evenly-sized groups
- * (larger groups first), computes per-group timings from the pacing curve
+ * (larger groups first), applies the uniform per-group timing constants
  * above, then -- if `currentUserId` lands in this (non-podium) field --
- * tags their row in place with `isYou: true` (see `tagYouMember`) so it
- * renders inline in its natural group instead of being pulled out. Podium-
- * ranked viewers get no tag here at all; that's Beat 4's "YOU" marker instead.
+ * tags their row in place with `isYou: true` (see `tagYouMember`) and tags
+ * any teammates' rows with `isTeammate: true` (see `tagTeammateMembers`) so
+ * they render inline in their natural groups instead of being pulled out.
+ * Podium-ranked viewers get no tag here at all; that's Beat 4's "YOU" marker instead.
  */
 export function buildCutsceneScript(
   entries: ResultsRowData[],
@@ -182,38 +164,24 @@ export function buildCutsceneScript(
   // member's group/timing shifts because of the viewer's presence.
   const chunks = chunkEvenly(field);
 
-  const g = chunks.length;
+  const groups = chunks.map((members, i) => ({
+    groupIndex: i,
+    members: members.map((entry) => ({
+      userId: entry.userId,
+      name: entry.name,
+      rank: entry.rank,
+      points: entry.total,
+      color: entry.color,
+    })),
+    staggerMs: STAGGER_MS,
+    riseMs: RISE_MS,
+    countUpMs: COUNT_UP_MS,
+    holdMs: HOLD_MS,
+    fallMs: FALL_MS,
+    gapMs: GAP_MS,
+  }));
 
-  const groups = chunks.map((members, i) => {
-    // G=1 has no meaningful i/(G-1); treat the lone group as top-of-field pacing.
-    const t = g > 1 ? i / (g - 1) : 1;
-
-    const staggerMs = lerp(STAGGER_MS_MIN, STAGGER_MS_MAX, ease(t, STAGGER_EASE_K));
-    const riseMs = lerp(RISE_MS_MIN, RISE_MS_MAX, ease(t, RISE_EASE_K));
-    const countUpMs = lerp(COUNT_UP_MS_MIN, COUNT_UP_MS_MAX, ease(t, COUNT_UP_EASE_K));
-    const holdMs = lerp(HOLD_MS_MIN, HOLD_MS_MAX, ease(t, HOLD_EASE_K));
-    const fallMs = lerp(FALL_MS_MIN, FALL_MS_MAX, ease(t, FALL_EASE_K));
-    const gapMs = lerp(GAP_MS_MIN, GAP_MS_MAX, ease(t, GAP_EASE_K));
-
-    return {
-      groupIndex: i,
-      members: members.map((entry) => ({
-        userId: entry.userId,
-        name: entry.name,
-        rank: entry.rank,
-        points: entry.total,
-        color: entry.color,
-      })),
-      staggerMs,
-      riseMs,
-      countUpMs,
-      holdMs,
-      fallMs,
-      gapMs,
-    };
-  });
-
-  return tagYouMember(groups, currentUserId);
+  return tagTeammateMembers(tagYouMember(groups, currentUserId), currentUserId);
 }
 
 /**
@@ -239,6 +207,29 @@ function tagYouMember(groups: CutsceneGroupEvent[], currentUserId: string | null
       ),
     };
   });
+}
+
+/**
+ * Flags every member who shares the viewer's fantasy-team color -- i.e. is on
+ * the viewer's team -- with `isTeammate: true`, excluding the viewer's own
+ * row (already covered by `tagYouMember`). Mirrors `tagYouMember`'s in-place,
+ * no-op-if-absent shape. No-op if the viewer has no row in this (non-podium)
+ * field, e.g. because they're on the podium or `currentUserId` is unset.
+ */
+function tagTeammateMembers(groups: CutsceneGroupEvent[], currentUserId: string | null): CutsceneGroupEvent[] {
+  if (!currentUserId) return groups;
+
+  const viewerColor = groups.flatMap((group) => group.members).find((m) => m.userId === currentUserId)?.color;
+  if (!viewerColor) return groups;
+
+  return groups.map((group) => ({
+    ...group,
+    members: group.members.map((member) =>
+      member.userId !== currentUserId && member.color === viewerColor
+        ? { ...member, isTeammate: true as const }
+        : member,
+    ),
+  }));
 }
 
 /**

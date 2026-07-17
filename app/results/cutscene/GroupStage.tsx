@@ -422,26 +422,6 @@ function YouGroupRow({
   );
 }
 
-// --- Temporary joke overlay --------------------------------------------------
-// Placeholder gag, not a spec'd feature -- flip this to `false` (or delete
-// this constant, the `<TauntOverlay />` usage below, and the TauntOverlay
-// function itself) to remove it in one shot. Only ever rendered alongside a
-// non-podium "you" row -- GroupStage is never mounted for the podium beat.
-const SHOW_TAUNT_EASTER_EGG = true;
-
-function TauntOverlay() {
-  return (
-    <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-6">
-      <span
-        className="-rotate-6 select-none text-center text-3xl leading-none font-black tracking-tight text-red-500 uppercase sm:text-5xl"
-        style={{ WebkitTextStroke: "1.5px black", textShadow: "0 4px 0 rgba(0,0,0,0.85)" }}
-      >
-        YOU SUCK, YOU LOST
-      </span>
-    </div>
-  );
-}
-
 export function GroupStage({ state: { event, phase, elapsedMs }, playbackRate }: GroupStageProps) {
   const groupY = useMotionValue(0);
   const groupOpacity = useMotionValue(1);
@@ -488,8 +468,6 @@ export function GroupStage({ state: { event, phase, elapsedMs }, playbackRate }:
   // order, via YouGroupRow -- see that component above for why it no longer
   // needs a separate branch/container: it IS a GroupRow, just with an extra
   // flourish layered on top once the group settles into its hold.
-  const hasYouMember = event?.members.some((member) => member.isYou) ?? false;
-  const taunting = SHOW_TAUNT_EASTER_EGG && hasYouMember && phase === "holding" && elapsedMs < YOU_FLOURISH_TOTAL_MS;
 
   return (
     <div className="absolute inset-0 flex items-center justify-center px-4">
@@ -527,7 +505,6 @@ export function GroupStage({ state: { event, phase, elapsedMs }, playbackRate }:
           );
         })}
       </motion.div>
-      {taunting && <TauntOverlay />}
     </div>
   );
 }
