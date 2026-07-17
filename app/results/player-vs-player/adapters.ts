@@ -107,5 +107,3 @@ export function buildGridPredictionRows(
     };
   });
 }
-
-export { buildRollupText } from "./rollup-text";

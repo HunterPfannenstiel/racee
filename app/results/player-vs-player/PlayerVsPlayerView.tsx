@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { ComparisonHeader } from "./ComparisonHeader";
-import { RollupLine } from "./RollupLine";
 import { ComparisonCard } from "./ComparisonCard";
 import { PickDetailDrawer } from "./PickDetailDrawer";
 import { PlayerJumpDrawer } from "./PlayerJumpDrawer";
@@ -25,7 +24,7 @@ export function PlayerVsPlayerView({
   onBackToYou,
   onSwapSides,
 }: PlayerVsPlayerViewModel) {
-  const { left, right, rollupText, scoringDepth } = comparison;
+  const { left, right, scoringDepth } = comparison;
 
   return (
     <div className="flex flex-col gap-4 pb-6">
@@ -38,7 +37,6 @@ export function PlayerVsPlayerView({
         onBackToYou={onBackToYou}
         onSwapSides={onSwapSides}
       />
-      <RollupLine text={rollupText} />
       <ComparisonCard left={left} right={right} />
       <div className="px-4">
         <Button className="h-11 w-full" onClick={onOpenPickDrawer}>

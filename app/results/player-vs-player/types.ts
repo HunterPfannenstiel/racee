@@ -16,7 +16,6 @@ export type PvpComparison = {
   raceTitle: string;
   left: PvpPlayer;
   right: PvpPlayer;
-  rollupText: string;
   // League's scoring depth (Grid Prediction rows past this position never
   // score) -- undefined means the league scores the full grid.
   scoringDepth?: number;

@@ -20,6 +20,10 @@ type RaceSelectorProps = {
   // predict/commissioner pickers (which don't want the scroll position
   // hijacked on load) are unaffected.
   autoScrollToSelected?: boolean;
+  // The next upcoming race that still accepts predictions, if any. Rendered
+  // with a persistent ring so it stays a visible landmark even when the
+  // user has selected a different (e.g. past) race to view.
+  nextOpenRaceId?: string | null;
 };
 
 function formatChipDate(dateStr: string) {
@@ -34,6 +38,7 @@ export function RaceSelector({
   onSelect,
   order = "asc",
   autoScrollToSelected = false,
+  nextOpenRaceId = null,
 }: RaceSelectorProps) {
   const sortedRaces = [...races].sort((a, b) =>
     order === "desc" ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)
@@ -56,6 +61,7 @@ export function RaceSelector({
       <div className="flex gap-2 pb-0.5">
         {sortedRaces.map((race) => {
           const active = selectedRaceId === race.id;
+          const isNextOpen = nextOpenRaceId === race.id;
           return (
             <button
               key={race.id}
@@ -65,7 +71,8 @@ export function RaceSelector({
                 "shrink-0 rounded-sm px-3 py-2 text-left transition-colors",
                 active
                   ? "bg-primary text-primary-foreground"
-                  : "bg-subtle text-muted-foreground hover:text-foreground"
+                  : "bg-subtle text-muted-foreground hover:text-foreground",
+                isNextOpen && "ring-2 ring-primary ring-offset-2 ring-offset-background"
               )}
             >
               <p className="text-xs font-mono font-semibold leading-snug max-w-[120px] truncate">{race.title}</p>

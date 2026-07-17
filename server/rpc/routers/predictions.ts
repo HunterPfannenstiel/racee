@@ -9,6 +9,7 @@ import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepositor
 import { BlobRacePredictionBookRepository } from "@/server/repositories/race-prediction-book/BlobRacePredictionBookRepository";
 import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
 import { UserOpenRacesQuery } from "@/server/queries/user-open-races/UserOpenRacesQuery";
+import { UserPastRacesQuery } from "@/server/queries/user-past-races/UserPastRacesQuery";
 import { UserRacePicksQuery } from "@/server/queries/user-race-picks/UserRacePicksQuery";
 import { SubmitPredictionCommand } from "@/server/commands/submit-prediction/SubmitPredictionCommand";
 
@@ -20,6 +21,7 @@ const bookRepo = new BlobRacePredictionBookRepository();
 const userRepo = new PrismaUserRepository();
 
 const userOpenRacesQuery = new UserOpenRacesQuery(leagueRepo, teamRepo, racerRepo, raceRepo, userRepo, bookRepo);
+const userPastRacesQuery = new UserPastRacesQuery(leagueRepo, teamRepo, racerRepo, raceRepo, userRepo, bookRepo);
 const userRacePicksQuery = new UserRacePicksQuery(leagueRepo, racerRepo, raceRepo, bookRepo);
 const submitPredictionCommand = new SubmitPredictionCommand(leagueRepo, teamRepo, raceRepo, bookRepo);
 
@@ -43,8 +45,11 @@ const TeammateSchema = z.object({
   name: z.string(),
 });
 
-// Mirrors IUserOpenRacesQuery.ts's OpenRaceDTO exactly.
-const OpenRaceSchema = RaceSchema.pick({
+// Mirrors server/queries/shared/race-prediction-dto.ts's RacePredictionDTO
+// exactly. Shared by openRaces and pastRaces since both now return this
+// same shape (see IUserOpenRacesQuery.ts's OpenRaceDTO / IUserPastRacesQuery.ts's
+// PastRaceDTO aliases).
+const RacePredictionSchema = RaceSchema.pick({
   title: true,
   label: true,
   date: true,
@@ -59,11 +64,17 @@ const OpenRaceSchema = RaceSchema.pick({
 
 // Mirrors IUserOpenRacesQuery.ts's UserOpenRacesResult exactly.
 const UserOpenRacesResultSchema = z.object({
-  openRaces: z.array(OpenRaceSchema),
+  openRaces: z.array(RacePredictionSchema),
   racersById: z.record(z.string(), RacerDTOSchema),
   teammates: z.array(TeammateSchema),
   teamColor: z.string().optional(),
   teammatePicks: z.record(z.string(), z.record(z.string(), MyPickSchema)),
+});
+
+// Mirrors IUserPastRacesQuery.ts's UserPastRacesResult exactly.
+const UserPastRacesResultSchema = z.object({
+  pastRaces: z.array(RacePredictionSchema),
+  racersById: z.record(z.string(), RacerDTOSchema),
 });
 
 const ScoreSchema = z.object({
@@ -103,6 +114,18 @@ export const predictionsRouter = {
     .output(UserOpenRacesResultSchema)
     .handler(async ({ context, input }) => {
       return await userOpenRacesQuery.execute(context.session.user.id, input.leagueId);
+    }),
+
+  /**
+   * The current user's own past (locked/graded) race predictions for a
+   * league, for the read-only "locked" prediction UI on /predict. Unlike
+   * `openRaces`, this never exposes teammate lineup/picks.
+   */
+  pastRaces: authed
+    .input(z.object({ leagueId: z.string().uuid() }))
+    .output(UserPastRacesResultSchema)
+    .handler(async ({ context, input }) => {
+      return await userPastRacesQuery.execute(context.session.user.id, input.leagueId);
     }),
 
   /**

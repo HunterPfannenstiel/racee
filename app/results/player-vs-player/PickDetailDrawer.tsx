@@ -4,13 +4,23 @@ import { Fragment } from "react";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { countOutcomes } from "./outcome-counts";
 import type { PropPickRow, GridPredictionRow, PvpPlayer } from "./types";
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({
+  children,
+  counts,
+}: {
+  children: React.ReactNode;
+  counts: { won: number; lost: number; tied: number };
+}) {
   return (
-    <p className="px-4 pt-4 pb-2 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-      {children}
-    </p>
+    <div className="flex items-baseline justify-between gap-2 px-4 pt-4 pb-2">
+      <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">{children}</p>
+      <p className="shrink-0 font-mono text-[10px] tracking-widest text-muted-foreground normal-case">
+        Won: {counts.won}, Lost: {counts.lost}, Tied: {counts.tied}
+      </p>
+    </div>
   );
 }
 
@@ -173,6 +183,9 @@ export function PickDetailDrawer({
   gridPredictionRows,
   scoringDepth,
 }: PickDetailDrawerProps) {
+  const gridCounts = countOutcomes(gridPredictionRows);
+  const propCounts = countOutcomes(propPickRows);
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
@@ -196,7 +209,7 @@ export function PickDetailDrawer({
         </div>
 
         <div className="overflow-y-auto">
-          <SectionLabel>Grid Prediction</SectionLabel>
+          <SectionLabel counts={gridCounts}>Grid Prediction</SectionLabel>
           {gridPredictionRows.map((row) => (
             <Fragment key={row.position}>
               {scoringDepth != null && row.position === scoringDepth + 1 && (
@@ -210,7 +223,7 @@ export function PickDetailDrawer({
             </Fragment>
           ))}
 
-          <SectionLabel>Prop Picks</SectionLabel>
+          <SectionLabel counts={propCounts}>Prop Picks</SectionLabel>
           {propPickRows.map((row) => (
             <PropPickRowItem key={row.prop} row={row} />
           ))}

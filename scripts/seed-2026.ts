@@ -1,29 +1,61 @@
-// Run with: node --env-file=.env.local seed-2026.mjs
-// WARNING: wipes all blob storage before seeding, including participants
+// Seeds a full 2026 F1 league (league, teams, racers, races, predictions,
+// scores, standings) for local development.
+//
+// Blob storage is hardcoded to LocalBlobStore (writes under .blob-store/ on
+// disk) — there is no env var that can redirect it, so this can never touch
+// Supabase or Vercel Blob no matter what's set in .env.local.
+//
+// Prisma is NOT hardcoded — it connects using DATABASE_URL/DATABASE_SCHEMA
+// from the environment, same as the app itself. The banner below prints the
+// resolved target every run so it's never ambiguous which DB `users` land in.
+//
+// Run:  node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts
 
-const BASE_URL = "http://localhost:3000";
+import { randomUUID } from "crypto";
+import { LocalBlobStore } from "../lib/blob/local.ts";
+import { PrismaClient } from "../server/generated/client.ts";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-// ---- League ----
-const league = {
-  id: crypto.randomUUID(),
-  name: "Shrek's F1 2026",
-  placementPoints: [10, 7, 3],
-  mulliganCount: 2,
-  propPointValues: {
-    driverOfDay: 5,
-    lapsLed: 5,
-    fastestPitStop: 5,
-    fastestLap: 5,
-    overAchiever: 5,
-    underAchiever: 5,
-    wrecker: 5,
-  },
-};
+const blob = new LocalBlobStore();
 
-// ---- Team Colors (2026 Official) ----
-// Source: https://www.infysia.com/design/f1-team-color-codes/ (practical digital reference values)
-// Haas officially runs white (#FFFFFF) but we use silver for visibility
-const TEAM_COLORS = {
+const prisma = new PrismaClient({
+  adapter: new PrismaPg(
+    { connectionString: process.env.DATABASE_URL! },
+    { schema: process.env.DATABASE_SCHEMA }
+  ),
+});
+
+// ---- Fixed user IDs (stable across seed runs — lives in Prisma) ----
+const SHREK_ID    = "00000000-seed-0000-0000-000000000001";
+const DONKEY_ID   = "00000000-seed-0000-0000-000000000002";
+const PUSS_ID     = "00000000-seed-0000-0000-000000000003";
+const FIONA_ID    = "00000000-seed-0000-0000-000000000004";
+const FARQUAAD_ID = "00000000-seed-0000-0000-000000000005";
+const GINGY_ID    = "00000000-seed-0000-0000-000000000006";
+// Real, already-authenticated account (created via better-auth sign-in) — this
+// seed never upserts it in Prisma, only references it for league membership,
+// commissioner/co-commissioner status, and predictions.
+const YOU_ID = "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J";
+
+const fictionalUsers = [
+  { id: SHREK_ID,    name: "Shrek" },
+  { id: DONKEY_ID,   name: "Donkey" },
+  { id: PUSS_ID,     name: "Puss in Boots" },
+  { id: FIONA_ID,    name: "Fiona" },
+  { id: FARQUAAD_ID, name: "Lord Farquaad" },
+  { id: GINGY_ID,    name: "Gingy" },
+];
+const [shrek, donkey, puss, fiona, farquaad, gingy] = fictionalUsers;
+
+// Everyone who participates in predictions/standings, including the real account.
+const you = { id: YOU_ID, name: "You" };
+const users = [...fictionalUsers, you];
+
+// ---- Motorsport ----
+const motorsportId = randomUUID();
+
+// ---- Team Colors ----
+const TEAM_COLORS: Record<string, string> = {
   "Red Bull Racing": "#1E5BC6",
   "Mercedes":        "#00D2BE",
   "Ferrari":         "#DC0000",
@@ -61,72 +93,78 @@ const racers = [
   { name: "Arvid Lindblad",    team: "Racing Bulls" },
   { name: "Sergio Perez",      team: "Cadillac" },
   { name: "Valtteri Bottas",   team: "Cadillac" },
-].map((r) => ({ id: crypto.randomUUID(), ...r, teamColor: TEAM_COLORS[r.team] }));
+].map(r => ({ id: randomUUID(), name: r.name, team: r.team, teamColor: TEAM_COLORS[r.team], motorsportId }));
 
-// Lookup racer ID by name
-const R = Object.fromEntries(racers.map((r) => [r.name, r.id]));
+const R: Record<string, string> = Object.fromEntries(racers.map(r => [r.name, r.id]));
+const allRacerIds = racers.map(r => r.id);
 
-const allRacerIds = racers.map((r) => r.id);
-
-// ---- Participants ----
-const users = [
-  { id: crypto.randomUUID(), name: "Shrek" },
-  { id: crypto.randomUUID(), name: "Donkey" },
-  { id: crypto.randomUUID(), name: "Puss in Boots" },
-  { id: crypto.randomUUID(), name: "Fiona" },
-  { id: crypto.randomUUID(), name: "Lord Farquaad" },
-  { id: crypto.randomUUID(), name: "Gingy" },
-];
-const [shrek, donkey, puss, fiona, farquaad, gingy] = users;
+// ---- League ----
+const leagueId = randomUUID();
+const PLACEMENT_POINTS = [10, 7, 3];
+const MULLIGAN_COUNT = 2;
+// Weekly team points by finish rank — bottom 2 always earn 0
+const TEAM_POSITION_POINTS = [6, 5, 4, 3, 0, 0];
+const PROP_POINT_VALUES = {
+  driverOfDay: 5,
+  lapsLed: 5,
+  fastestPitStop: 5,
+  fastestLap: 5,
+  overAchiever: 5,
+  underAchiever: 5,
+  wrecker: 5,
+};
 
 // ---- League Teams ----
 const leagueTeams = [
-  {
-    id: crypto.randomUUID(),
-    name: "Swamp Dwellers",
-    color: "#6B8E23",
-    memberIds: [shrek.id, donkey.id, puss.id],
-  },
-  {
-    id: crypto.randomUUID(),
-    name: "Far Far Away",
-    color: "#9B59B6",
-    memberIds: [fiona.id, farquaad.id, gingy.id],
-  },
+  { id: randomUUID(), name: "Swamp Dwellers", color: "#6B8E23", memberIds: [shrek.id, donkey.id, puss.id] },
+  { id: randomUUID(), name: "Far Far Away",   color: "#9B59B6", memberIds: [fiona.id, farquaad.id, gingy.id] },
 ];
+// teamId lookup for scoring
+const teamMembership = new Map<string, string>();
+for (const team of leagueTeams) {
+  for (const userId of team.memberIds) teamMembership.set(userId, team.id);
+}
+const activeTeamIds = new Set<string>(leagueTeams.map(t => t.id));
 
 // ---- Races ----
-const races = [
-  { title: "Australian Grand Prix",         date: "2026-03-08" },
-  { title: "Chinese Grand Prix",            date: "2026-03-15" },
-  { title: "Japanese Grand Prix",           date: "2026-03-29" },
-  { title: "Miami Grand Prix",              date: "2026-05-03" },
-  { title: "Canadian Grand Prix",           date: "2026-05-24" },
-  { title: "Monaco Grand Prix",             date: "2026-06-07" },
-  { title: "Barcelona-Catalunya Grand Prix",date: "2026-06-14" },
-  { title: "Austrian Grand Prix",           date: "2026-06-28" },
-  { title: "British Grand Prix",            date: "2026-07-05" },
-  { title: "Belgian Grand Prix",            date: "2026-07-19" },
-  { title: "Hungarian Grand Prix",          date: "2026-07-26" },
-  { title: "Dutch Grand Prix",              date: "2026-08-23" },
-  { title: "Italian Grand Prix",            date: "2026-09-06" },
-  { title: "Spanish Grand Prix",            date: "2026-09-13" },
-  { title: "Azerbaijan Grand Prix",         date: "2026-09-26" },
-  { title: "Singapore Grand Prix",          date: "2026-10-11" },
-  { title: "United States Grand Prix",      date: "2026-10-25" },
-  { title: "Mexican Grand Prix",            date: "2026-11-01" },
-  { title: "Brazilian Grand Prix",          date: "2026-11-08" },
-  { title: "Las Vegas Grand Prix",          date: "2026-11-22" },
-  { title: "Qatar Grand Prix",              date: "2026-11-29" },
-  { title: "Abu Dhabi Grand Prix",          date: "2026-12-06" },
-].map((r) => ({ id: crypto.randomUUID(), leagueId: league.id, racerIds: allRacerIds, ...r }));
+const NOW = new Date().toISOString();
+const GRADED_RACE_KEYS = ["australian", "chinese", "japanese", "miami"] as const;
+type RaceKey = typeof GRADED_RACE_KEYS[number];
 
-const raceByTitle = Object.fromEntries(races.map((r) => [r.title, r]));
+const raceDefinitions = [
+  { title: "Australian Grand Prix",          date: "2026-03-08" },
+  { title: "Chinese Grand Prix",             date: "2026-03-15" },
+  { title: "Japanese Grand Prix",            date: "2026-03-29" },
+  { title: "Miami Grand Prix",               date: "2026-05-03" },
+  { title: "Canadian Grand Prix",            date: "2026-05-24" },
+  { title: "Monaco Grand Prix",              date: "2026-06-07" },
+  { title: "Barcelona-Catalunya Grand Prix", date: "2026-06-14" },
+  { title: "Austrian Grand Prix",            date: "2026-06-28" },
+  { title: "British Grand Prix",             date: "2026-07-05" },
+  { title: "Belgian Grand Prix",             date: "2026-07-19" },
+  { title: "Hungarian Grand Prix",           date: "2026-07-26" },
+  { title: "Dutch Grand Prix",               date: "2026-08-23" },
+  { title: "Italian Grand Prix",             date: "2026-09-06" },
+  { title: "Spanish Grand Prix",             date: "2026-09-13" },
+  { title: "Azerbaijan Grand Prix",          date: "2026-09-26" },
+  { title: "Singapore Grand Prix",           date: "2026-10-11" },
+  { title: "United States Grand Prix",       date: "2026-10-25" },
+  { title: "Mexican Grand Prix",             date: "2026-11-01" },
+  { title: "Brazilian Grand Prix",           date: "2026-11-08" },
+  { title: "Las Vegas Grand Prix",           date: "2026-11-22" },
+  { title: "Qatar Grand Prix",               date: "2026-11-29" },
+  { title: "Abu Dhabi Grand Prix",           date: "2026-12-06" },
+];
 
-// ---- Actual Finishing Orders (race keys) ----
-// Source: https://www.formula1.com/en/results/2026/races (official F1 results)
-// DNFs are placed at the end of the order.
-const ACTUAL = {
+const titleToKey: Record<string, RaceKey> = {
+  "Australian Grand Prix": "australian",
+  "Chinese Grand Prix":    "chinese",
+  "Japanese Grand Prix":   "japanese",
+  "Miami Grand Prix":      "miami",
+};
+
+// ---- Actual finishing orders ----
+const ACTUAL: Record<RaceKey, string[]> = {
   australian: [
     R["George Russell"],    R["Kimi Antonelli"],    R["Charles Leclerc"],  R["Lewis Hamilton"],
     R["Lando Norris"],      R["Max Verstappen"],    R["Oliver Bearman"],   R["Arvid Lindblad"],
@@ -161,61 +199,51 @@ const ACTUAL = {
   ],
 };
 
-// ---- Prop Keys (official answers) ----
-const PROP_KEYS = {
+// ---- Prop keys ----
+const PROP_KEYS: Record<RaceKey, Record<string, string[]>> = {
   australian: {
-    lapsLed:       [R["George Russell"]],   // led from pole, dominated
-    fastestLap:    [R["Lando Norris"]],     // fastest lap charge through the field
-    driverOfDay:   [R["Oliver Bearman"]],   // P7 in the Haas, fan favourite result
-    fastestPitStop:["Mercedes"],            // Mercedes slick stop
-    overAchiever:  [R["Oliver Bearman"]],   // Haas P7 massively outperformed
-    underAchiever: [R["Fernando Alonso"]],  // Expected points, DNF
-    wrecker:       [R["Isack Hadjar"]],     // Incident causing his own DNF
+    lapsLed:        [R["George Russell"]],
+    fastestLap:     [R["Lando Norris"]],
+    driverOfDay:    [R["Oliver Bearman"]],
+    fastestPitStop: ["Mercedes"],
+    overAchiever:   [R["Oliver Bearman"]],
+    underAchiever:  [R["Fernando Alonso"]],
+    wrecker:        [R["Isack Hadjar"]],
   },
   chinese: {
-    lapsLed:       [R["Kimi Antonelli"]],   // Led the whole way
-    fastestLap:    [R["George Russell"]],   // Russell fastest lap chasing Antonelli
-    driverOfDay:   [R["Oliver Bearman"]],   // P5 in Haas — crowd goes wild
-    fastestPitStop:["Ferrari"],             // Ferrari nailed the stop
-    overAchiever:  [R["Oliver Bearman"]],   // Haas punching way above weight
-    underAchiever: [R["Lando Norris"]],     // Norris favourite, DNF
-    wrecker:       [R["Max Verstappen"]],   // Red Bull issue, DNF
+    lapsLed:        [R["Kimi Antonelli"]],
+    fastestLap:     [R["George Russell"]],
+    driverOfDay:    [R["Oliver Bearman"]],
+    fastestPitStop: ["Ferrari"],
+    overAchiever:   [R["Oliver Bearman"]],
+    underAchiever:  [R["Lando Norris"]],
+    wrecker:        [R["Max Verstappen"]],
   },
   japanese: {
-    lapsLed:       [R["Kimi Antonelli"]],   // Dominated Suzuka
-    fastestLap:    [R["Lando Norris"]],     // Norris sets fastest lap
-    driverOfDay:   [R["Oscar Piastri"]],    // Brilliant P2 from Piastri
-    fastestPitStop:["McLaren"],             // McLaren fastest pit
-    overAchiever:  [R["Pierre Gasly"]],     // Alpine P7 — strong result
-    underAchiever: [R["Max Verstappen"]],   // Red Bull only P8, expected more
-    wrecker:       [R["Lance Stroll"]],     // Stroll incident, DNF
+    lapsLed:        [R["Kimi Antonelli"]],
+    fastestLap:     [R["Lando Norris"]],
+    driverOfDay:    [R["Oscar Piastri"]],
+    fastestPitStop: ["McLaren"],
+    overAchiever:   [R["Pierre Gasly"]],
+    underAchiever:  [R["Max Verstappen"]],
+    wrecker:        [R["Lance Stroll"]],
   },
   miami: {
-    lapsLed:       [R["Kimi Antonelli"]],   // Led from lights to flag again
-    fastestLap:    [R["Max Verstappen"]],   // Verstappen fastest lap after penalty
-    driverOfDay:   [R["Franco Colapinto"]], // P7 Alpine — sensational drive
-    fastestPitStop:["McLaren"],             // McLaren rapid stop
-    overAchiever:  [R["Franco Colapinto"]], // Colapinto delivers in Miami
-    underAchiever: [R["Charles Leclerc"]],  // Leclerc expected podium, got P8 + penalty
-    wrecker:       [R["Pierre Gasly"]],     // Gasly DNF, incident with Lawson
+    lapsLed:        [R["Kimi Antonelli"]],
+    fastestLap:     [R["Max Verstappen"]],
+    driverOfDay:    [R["Franco Colapinto"]],
+    fastestPitStop: ["McLaren"],
+    overAchiever:   [R["Franco Colapinto"]],
+    underAchiever:  [R["Charles Leclerc"]],
+    wrecker:        [R["Pierre Gasly"]],
   },
 };
 
-// ---- User Predictions ----
-// Each user has a distinct prediction style. Points are earned when
-// a racer is within `placementPoints.length` positions of their actual finish.
-// placementPoints: [10, 7, 3] → exact=10pts, 1-off=7pts, 2-off=3pts
-//
-// Fiona        (~leader)    gets top-3 mostly right, solid props
-// Shrek        (~2nd)       good grid calls, mixed props
-// Lord Farquaad(~3rd)       one great race (Miami), otherwise solid
-// Donkey       (~4th)       consistent mediocre — always close, never quite right
-// Puss in Boots(~5th)       improving, decent props sometimes
-// Gingy        (~last)      out of their depth, lots of upsets predicted
-
-const PREDICTIONS = {
+// ---- Predictions ----
+type PropPicks = Record<string, string>;
+type UserPrediction = { order: string[]; props: PropPicks };
+const PREDICTIONS: Record<RaceKey, Record<string, UserPrediction>> = {
   australian: {
-    // Actual: Russell, Antonelli, Leclerc, Hamilton, Norris, Verstappen, Bearman...
     [fiona.id]: {
       order: [R["George Russell"], R["Kimi Antonelli"], R["Charles Leclerc"], R["Lewis Hamilton"],
               R["Lando Norris"], R["Max Verstappen"], R["Oliver Bearman"], R["Oscar Piastri"],
@@ -282,10 +310,20 @@ const PREDICTIONS = {
                fastestPitStop: "Red Bull Racing", overAchiever: R["Lance Stroll"],
                underAchiever: R["George Russell"], wrecker: R["Carlos Sainz Jr."] },
     },
+    [you.id]: {
+      order: [R["Kimi Antonelli"], R["George Russell"], R["Charles Leclerc"], R["Lewis Hamilton"],
+              R["Lando Norris"], R["Max Verstappen"], R["Arvid Lindblad"], R["Oliver Bearman"],
+              R["Gabriel Bortoleto"], R["Pierre Gasly"], R["Esteban Ocon"], R["Alex Albon"],
+              R["Franco Colapinto"], R["Liam Lawson"], R["Carlos Sainz Jr."], R["Sergio Perez"],
+              R["Lance Stroll"], R["Fernando Alonso"], R["Valtteri Bottas"], R["Isack Hadjar"],
+              R["Oscar Piastri"], R["Nico Hulkenberg"]],
+      props: { lapsLed: R["George Russell"], fastestLap: R["Max Verstappen"], driverOfDay: R["Oliver Bearman"],
+               fastestPitStop: "Mercedes", overAchiever: R["Oliver Bearman"],
+               underAchiever: R["Fernando Alonso"], wrecker: R["Valtteri Bottas"] },
+    },
   },
 
   chinese: {
-    // Actual: Antonelli, Russell, Hamilton, Leclerc, Bearman, Gasly, Lawson, Hadjar...
     [fiona.id]: {
       order: [R["Kimi Antonelli"], R["George Russell"], R["Lewis Hamilton"], R["Charles Leclerc"],
               R["Oliver Bearman"], R["Pierre Gasly"], R["Liam Lawson"], R["Isack Hadjar"],
@@ -352,10 +390,20 @@ const PREDICTIONS = {
                fastestPitStop: "Red Bull Racing", overAchiever: R["Lance Stroll"],
                underAchiever: R["George Russell"], wrecker: R["Oscar Piastri"] },
     },
+    [you.id]: {
+      order: [R["George Russell"], R["Kimi Antonelli"], R["Lewis Hamilton"], R["Charles Leclerc"],
+              R["Oliver Bearman"], R["Pierre Gasly"], R["Isack Hadjar"], R["Liam Lawson"],
+              R["Carlos Sainz Jr."], R["Franco Colapinto"], R["Nico Hulkenberg"], R["Arvid Lindblad"],
+              R["Esteban Ocon"], R["Valtteri Bottas"], R["Sergio Perez"], R["Fernando Alonso"],
+              R["Lance Stroll"], R["Alex Albon"], R["Gabriel Bortoleto"], R["Max Verstappen"],
+              R["Oscar Piastri"], R["Lando Norris"]],
+      props: { lapsLed: R["Kimi Antonelli"], fastestLap: R["George Russell"], driverOfDay: R["Liam Lawson"],
+               fastestPitStop: "Ferrari", overAchiever: R["Oliver Bearman"],
+               underAchiever: R["Lando Norris"], wrecker: R["Nico Hulkenberg"] },
+    },
   },
 
   japanese: {
-    // Actual: Antonelli, Piastri, Leclerc, Russell, Norris, Hamilton, Gasly, Verstappen...
     [fiona.id]: {
       order: [R["Kimi Antonelli"], R["Oscar Piastri"], R["Charles Leclerc"], R["George Russell"],
               R["Lando Norris"], R["Lewis Hamilton"], R["Pierre Gasly"], R["Max Verstappen"],
@@ -422,10 +470,20 @@ const PREDICTIONS = {
                fastestPitStop: "Red Bull Racing", overAchiever: R["Fernando Alonso"],
                underAchiever: R["George Russell"], wrecker: R["Valtteri Bottas"] },
     },
+    [you.id]: {
+      order: [R["Oscar Piastri"], R["Kimi Antonelli"], R["Charles Leclerc"], R["George Russell"],
+              R["Lando Norris"], R["Lewis Hamilton"], R["Max Verstappen"], R["Pierre Gasly"],
+              R["Liam Lawson"], R["Esteban Ocon"], R["Nico Hulkenberg"], R["Isack Hadjar"],
+              R["Arvid Lindblad"], R["Gabriel Bortoleto"], R["Carlos Sainz Jr."], R["Franco Colapinto"],
+              R["Sergio Perez"], R["Fernando Alonso"], R["Valtteri Bottas"], R["Alex Albon"],
+              R["Lance Stroll"], R["Oliver Bearman"]],
+      props: { lapsLed: R["Kimi Antonelli"], fastestLap: R["Lando Norris"], driverOfDay: R["Oscar Piastri"],
+               fastestPitStop: "McLaren", overAchiever: R["Pierre Gasly"],
+               underAchiever: R["Max Verstappen"], wrecker: R["Alex Albon"] },
+    },
   },
 
   miami: {
-    // Actual: Antonelli, Norris, Piastri, Russell, Verstappen, Hamilton, Colapinto, Leclerc...
     [fiona.id]: {
       order: [R["Kimi Antonelli"], R["Lando Norris"], R["Oscar Piastri"], R["George Russell"],
               R["Max Verstappen"], R["Lewis Hamilton"], R["Franco Colapinto"], R["Charles Leclerc"],
@@ -460,15 +518,17 @@ const PREDICTIONS = {
                underAchiever: R["Charles Leclerc"], wrecker: R["Pierre Gasly"] },
     },
     [donkey.id]: {
-      order: [R["Lando Norris"], R["Kimi Antonelli"], R["Oscar Piastri"], R["George Russell"],
-              R["Lewis Hamilton"], R["Max Verstappen"], R["Charles Leclerc"], R["Franco Colapinto"],
-              R["Carlos Sainz Jr."], R["Alex Albon"], R["Oliver Bearman"], R["Esteban Ocon"],
-              R["Gabriel Bortoleto"], R["Arvid Lindblad"], R["Fernando Alonso"], R["Sergio Perez"],
-              R["Lance Stroll"], R["Nico Hulkenberg"], R["Valtteri Bottas"], R["Liam Lawson"],
+      // Identical to Farquaad — engineers a 2-way cross-team tie at weekly positions 2-3,
+      // demonstrating the pool-split mechanic: both get (5+4)/2 = 4.5 team points
+      order: [R["Kimi Antonelli"], R["Oscar Piastri"], R["Lando Norris"], R["George Russell"],
+              R["Max Verstappen"], R["Lewis Hamilton"], R["Franco Colapinto"], R["Charles Leclerc"],
+              R["Carlos Sainz Jr."], R["Alex Albon"], R["Oliver Bearman"], R["Gabriel Bortoleto"],
+              R["Esteban Ocon"], R["Arvid Lindblad"], R["Fernando Alonso"], R["Sergio Perez"],
+              R["Lance Stroll"], R["Valtteri Bottas"], R["Nico Hulkenberg"], R["Liam Lawson"],
               R["Pierre Gasly"], R["Isack Hadjar"]],
-      props: { lapsLed: R["Lando Norris"], fastestLap: R["Lando Norris"], driverOfDay: R["Alex Albon"],
-               fastestPitStop: "McLaren", overAchiever: R["Carlos Sainz Jr."],
-               underAchiever: R["Charles Leclerc"], wrecker: R["Isack Hadjar"] },
+      props: { lapsLed: R["Kimi Antonelli"], fastestLap: R["Max Verstappen"], driverOfDay: R["Franco Colapinto"],
+               fastestPitStop: "McLaren", overAchiever: R["Franco Colapinto"],
+               underAchiever: R["Charles Leclerc"], wrecker: R["Pierre Gasly"] },
     },
     [puss.id]: {
       order: [R["Kimi Antonelli"], R["Lando Norris"], R["George Russell"], R["Oscar Piastri"],
@@ -492,108 +552,271 @@ const PREDICTIONS = {
                fastestPitStop: "Red Bull Racing", overAchiever: R["Lance Stroll"],
                underAchiever: R["Kimi Antonelli"], wrecker: R["Liam Lawson"] },
     },
+    [you.id]: {
+      order: [R["Lando Norris"], R["Kimi Antonelli"], R["Oscar Piastri"], R["George Russell"],
+              R["Max Verstappen"], R["Lewis Hamilton"], R["Charles Leclerc"], R["Franco Colapinto"],
+              R["Carlos Sainz Jr."], R["Alex Albon"], R["Oliver Bearman"], R["Gabriel Bortoleto"],
+              R["Arvid Lindblad"], R["Esteban Ocon"], R["Fernando Alonso"], R["Sergio Perez"],
+              R["Lance Stroll"], R["Valtteri Bottas"], R["Nico Hulkenberg"], R["Liam Lawson"],
+              R["Pierre Gasly"], R["Isack Hadjar"]],
+      props: { lapsLed: R["Kimi Antonelli"], fastestLap: R["Max Verstappen"], driverOfDay: R["Franco Colapinto"],
+               fastestPitStop: "McLaren", overAchiever: R["Franco Colapinto"],
+               underAchiever: R["Charles Leclerc"], wrecker: R["Liam Lawson"] },
+    },
   },
 };
 
-// ---- Helpers ----
-async function wipeStorage() {
-  console.log("Wiping existing storage...");
-  if (process.env.USE_LOCAL_BLOB === "true") {
-    const { rm } = await import("fs/promises");
-    const { join } = await import("path");
-    await rm(join(process.cwd(), ".blob-store"), { recursive: true, force: true });
-  } else {
-    const { list, del } = await import("@vercel/blob");
-    let cursor;
-    do {
-      const { blobs, cursor: next } = await list({ cursor, limit: 1000 });
-      if (blobs.length > 0) await del(blobs.map((b) => b.url));
-      cursor = next;
-    } while (cursor);
+// ---- Inlined scoring helpers (same logic as lib/scoring.ts, no @/ import needed) ----
+function computeGridPoints(userOrder: string[], keyOrder: string[], placementPoints: number[], scoringDepth?: number): number {
+  const depth = scoringDepth ?? keyOrder.length;
+  let total = 0;
+  for (let keyPos = 0; keyPos < keyOrder.length; keyPos++) {
+    const racerId = keyOrder[keyPos];
+    const userPos = userOrder.indexOf(racerId);
+    if (userPos === -1) continue;
+    if (userPos >= depth) continue;
+    const diff = Math.abs(keyPos - userPos);
+    total += diff < placementPoints.length ? placementPoints[diff] : 0;
   }
-  console.log("  Done");
+  return total;
 }
 
-async function put(path, body) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+function computePropPoints(picks: Record<string, string>, propKey: Record<string, string[] | null>, propPointValues: Record<string, number>): number {
+  let total = 0;
+  for (const [prop, winners] of Object.entries(propKey)) {
+    if (!winners || winners.length === 0) continue;
+    if (winners.includes(picks[prop])) total += propPointValues[prop] ?? 0;
+  }
+  return total;
+}
+
+function computeWeeklyTeamPoints(
+  entries: { userId: string; total: number }[],
+  positionPoints: number[],
+): Map<string, number> {
+  const sorted = [...entries].sort((a, b) => b.total - a.total);
+  const result = new Map<string, number>();
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i;
+    while (j < sorted.length && sorted[j].total === sorted[i].total) j++;
+    const pool = positionPoints.slice(i, j).reduce((sum, v) => sum + v, 0);
+    const share = pool / (j - i);
+    for (let k = i; k < j; k++) result.set(sorted[k].userId, share);
+    i = j;
+  }
+  return result;
+}
+
+function assignMedals(entries: { userId: string; gridPoints: number; propPoints: number }[]) {
+  const totalPts = (e: { gridPoints: number; propPoints: number }) => e.gridPoints + e.propPoints;
+  const sorted = [...entries].sort((a, b) => totalPts(b) - totalPts(a));
+  const medals: (string | null)[] = new Array(sorted.length).fill(null);
+  const podium = ["gold", "silver", "bronze"];
+  let podiumIdx = 0;
+  let i = 0;
+  while (i < sorted.length && podiumIdx < podium.length) {
+    const score = totalPts(sorted[i]);
+    let j = i;
+    while (j < sorted.length && totalPts(sorted[j]) === score) {
+      medals[j] = podium[podiumIdx];
+      j++;
+    }
+    podiumIdx++;
+    i = j;
+  }
+  return sorted.map((entry, idx) => ({ ...entry, medal: medals[idx] as "gold" | "silver" | "bronze" | null }));
+}
+
+// ============================================================
+// Main
+// ============================================================
+
+console.log("=".repeat(60));
+console.log("blob storage : LOCAL ONLY -> .blob-store/ (hardcoded LocalBlobStore)");
+console.log(
+  `prisma       : ${process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).host : "(DATABASE_URL not set)"}` +
+  ` schema=${process.env.DATABASE_SCHEMA ?? "(none)"}`
+);
+console.log("=".repeat(60));
+
+console.log("Wiping local blob storage (.blob-store/ on disk)...");
+await blob.wipe();
+console.log("  Done");
+
+// 1. Users (Prisma — upsert so re-runs are safe). Only the fictional cast is
+// created here; YOU_ID already exists as a real authenticated account and is
+// never upserted, so it's untouched even if it's already in the DB.
+console.log("Seeding users...");
+for (const user of fictionalUsers) {
+  await prisma.user.upsert({
+    where: { id: user.id },
+    update: { name: user.name },
+    create: { id: user.id, name: user.name, emailVerified: false, isAdmin: false },
   });
-  if (!res.ok) throw new Error(`PUT ${path} failed: ${res.status} ${await res.text()}`);
+  console.log(`  ✓ ${user.name}`);
 }
 
-async function post(path, body) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`POST ${path} failed: ${res.status} ${await res.text()}`);
-}
+// 2. Motorsport
+console.log("Seeding motorsport...");
+await blob.write("motorsports.json", [{ id: motorsportId, name: "Formula 1", slug: "f1" }]);
+console.log(`  ✓ Formula 1 (${motorsportId})`);
 
-// ---- Seed ----
-await wipeStorage();
-
-console.log("Seeding league...");
-await put("/api/leagues", [league]);
-
+// 3. Racers
 console.log("Seeding racers...");
-await put("/api/racers", racers);
+await blob.write("racers.json", racers);
+console.log(`  ✓ ${racers.length} racers`);
 
-console.log("Seeding participants...");
-await put("/api/participants", { users });
-
+// 4. Races (build with keys for already-graded rounds)
 console.log("Seeding races...");
-for (const race of races) {
-  await put("/api/races", race);
+const races = raceDefinitions.map(def => {
+  const key = titleToKey[def.title] as RaceKey | undefined;
+  return {
+    id: randomUUID(),
+    motorsportId,
+    title: def.title,
+    date: def.date,
+    lockTime: `${def.date}T13:55:00.000Z`,
+    startingGrid: allRacerIds,
+    keyOrder: key ? ACTUAL[key] : null,
+    propKey: key ? PROP_KEYS[key] : null,
+    keySetAt: key ? NOW : null,
+  };
+});
+await blob.write(`motorsports/${motorsportId}/races.json`, races);
+const raceByTitle = Object.fromEntries(races.map(r => [r.title, r]));
+console.log(`  ✓ ${races.length} races (${Object.keys(titleToKey).length} graded)`);
+
+// 5. League
+console.log("Seeding league...");
+await blob.write("leagues.json", [{
+  id: leagueId,
+  // Shrek (the league's namesake) is commissioner; YOU_ID is co-commissioner.
+  // The domain layer's promoteToCoCommissioner() explicitly forbids a user
+  // from being both, so these two must stay disjoint.
+  commissionerId: shrek.id,
+  coCommissionerIds: [YOU_ID],
+  memberIds: users.map(u => u.id),
+  pendingMemberIds: [],
+  name: "Shrek's F1 2026",
+  placementPoints: PLACEMENT_POINTS,
+  mulliganCount: MULLIGAN_COUNT,
+  scoringDepth: 17,
+  stageCount: 4,
+  propPointValues: PROP_POINT_VALUES,
+  teamPositionPoints: TEAM_POSITION_POINTS,
+  motorsportId,
+}]);
+console.log(`  ✓ Shrek's F1 2026 (${leagueId})`);
+
+// 6. Teams
+console.log("Seeding teams...");
+await blob.write(`leagues/${leagueId}/teams.json`,
+  leagueTeams.map(t => ({ id: t.id, name: t.name, memberIds: t.memberIds, color: t.color }))
+);
+for (const team of leagueTeams) {
+  console.log(`  ✓ ${team.name} [${team.memberIds.length} members]`);
+}
+
+// 7. Predictions + scores
+console.log("Seeding predictions and scores...");
+const standingsIndividual = new Map<string, { raceId: string; gridPoints: number; propPoints: number; weeklyTeamPoints: number }[]>();
+const standingsTeams = new Map<string, { raceId: string; gridPoints: number; propPoints: number; weeklyTeamPoints: number }[]>();
+const gradedRaceIds: string[] = [];
+
+for (const key of GRADED_RACE_KEYS) {
+  const titleMap: Record<RaceKey, string> = {
+    australian: "Australian Grand Prix",
+    chinese:    "Chinese Grand Prix",
+    japanese:   "Japanese Grand Prix",
+    miami:      "Miami Grand Prix",
+  };
+  const race = raceByTitle[titleMap[key]];
+  const preds = PREDICTIONS[key];
+  const keyOrder = ACTUAL[key];
+  const propKey = PROP_KEYS[key];
+
+  // Write predictions blob
+  const predictionsData: Record<string, string[]> = {};
+  const propPicksData: Record<string, PropPicks> = {};
+  const submittedAtData: Record<string, string> = {};
+  for (const user of users) {
+    predictionsData[user.id] = preds[user.id].order;
+    propPicksData[user.id] = preds[user.id].props;
+    submittedAtData[user.id] = NOW;
+  }
+  await blob.write(`leagues/${leagueId}/races/${race.id}/predictions.json`, {
+    predictions: predictionsData,
+    propPicks: propPicksData,
+    submittedAt: submittedAtData,
+  });
+
+  // Compute scores
+  const rawEntries = users.map(user => ({
+    userId: user.id,
+    gridPoints: computeGridPoints(preds[user.id].order, keyOrder, PLACEMENT_POINTS, 17),
+    propPoints: computePropPoints(preds[user.id].props, propKey, PROP_POINT_VALUES),
+  }));
+  const gradedEntries = assignMedals(rawEntries);
+
+  // Compute weekly team points — tied users split the points pool for their positions
+  const weeklyMap = computeWeeklyTeamPoints(
+    gradedEntries.map(e => ({ userId: e.userId, total: e.gridPoints + e.propPoints })),
+    TEAM_POSITION_POINTS,
+  );
+  const entriesWithTeamPoints = gradedEntries.map(e => ({
+    ...e,
+    weeklyTeamPoints: weeklyMap.get(e.userId) ?? 0,
+  }));
+
+  await blob.write(`leagues/${leagueId}/races/${race.id}/scores.json`, {
+    raceId: race.id,
+    leagueId,
+    raceTitle: race.title,
+    raceDate: race.date,
+    entries: entriesWithTeamPoints,
+  });
+
+  // Accumulate standings
+  gradedRaceIds.push(race.id);
+  for (const entry of entriesWithTeamPoints) {
+    const existing = standingsIndividual.get(entry.userId) ?? [];
+    standingsIndividual.set(entry.userId, [...existing, {
+      raceId: race.id,
+      gridPoints: entry.gridPoints,
+      propPoints: entry.propPoints,
+      weeklyTeamPoints: entry.weeklyTeamPoints,
+    }]);
+
+    const teamId = teamMembership.get(entry.userId);
+    if (teamId && activeTeamIds.has(teamId)) {
+      const existingTeam = standingsTeams.get(teamId) ?? [];
+      standingsTeams.set(teamId, [...existingTeam, {
+        raceId: race.id,
+        gridPoints: entry.gridPoints,
+        propPoints: entry.propPoints,
+        weeklyTeamPoints: entry.weeklyTeamPoints,
+      }]);
+    }
+  }
+
   console.log(`  ✓ ${race.title}`);
 }
 
-console.log("Seeding league teams...");
-for (const team of leagueTeams) {
-  await put(`/api/leagues/${league.id}/teams/${team.id}`, team);
-  console.log(`  ✓ ${team.name}`);
-}
+// 8. Standings
+console.log("Writing standings...");
+await blob.write(`leagues/${leagueId}/standings.json`, {
+  leagueId,
+  gradedRaceIds,
+  individual: Array.from(standingsIndividual.entries()).map(([userId, raceScores]) => ({ userId, raceScores })),
+  teams: Array.from(standingsTeams.entries()).map(([teamId, raceScores]) => ({ teamId, raceScores })),
+});
 
-const GRADED_RACES = [
-  { key: "australian", title: "Australian Grand Prix" },
-  { key: "chinese",    title: "Chinese Grand Prix" },
-  { key: "japanese",   title: "Japanese Grand Prix" },
-  { key: "miami",      title: "Miami Grand Prix" },
-];
-
-console.log("Seeding predictions...");
-for (const { key, title } of GRADED_RACES) {
-  const race = raceByTitle[title];
-  const preds = PREDICTIONS[key];
-  for (const user of users) {
-    const { order, props } = preds[user.id];
-    await post("/api/predict/prediction", {
-      leagueId: league.id,
-      raceId: race.id,
-      userId: user.id,
-      racerIds: order,
-      propPicks: props,
-    });
-  }
-  console.log(`  ✓ ${title} (${users.length} predictions)`);
-}
-
-console.log("Seeding race keys (grading)...");
-for (const { key, title } of GRADED_RACES) {
-  const race = raceByTitle[title];
-  await put("/api/races/key", {
-    leagueId: league.id,
-    raceId: race.id,
-    racerIds: ACTUAL[key],
-    propKey: PROP_KEYS[key],
-  });
-  console.log(`  ✓ ${title}`);
-}
+await prisma.$disconnect();
 
 console.log("\nDone! 🏁");
-console.log(`  League:       ${league.name} (${league.id})`);
+console.log(`  League:       Shrek's F1 2026 (${leagueId})`);
+console.log(`  Motorsport:   Formula 1 (${motorsportId})`);
 console.log(`  Participants: ${users.map(u => u.name).join(", ")}`);
 console.log(`  Teams:        ${leagueTeams.map(t => t.name).join(", ")}`);
-console.log(`  Graded races: ${GRADED_RACES.length} / ${races.length}`);
+console.log(`  Graded races: ${gradedRaceIds.length} / ${races.length}`);

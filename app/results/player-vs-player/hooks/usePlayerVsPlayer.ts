@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useUser } from "@/app/context/UserContext";
-import { toPvpPlayer, buildPropPickRows, buildGridPredictionRows, buildRollupText } from "../adapters";
+import { toPvpPlayer, buildPropPickRows, buildGridPredictionRows } from "../adapters";
 import type { JumpDrawerSide, PropPickRow, GridPredictionRow, PvpComparison, PlayerVsPlayerViewModel } from "../types";
 import { usePvpSearchParams } from "./usePvpSearchParams";
 import { usePlayerVsPlayerRaceData, type PvpEntry, type PvpRacer } from "./usePlayerVsPlayerRaceData";
@@ -46,7 +46,6 @@ function buildComparisonBundle(
       raceTitle,
       left: leftPlayer,
       right: rightPlayer,
-      rollupText: buildRollupText(leftPlayer, rightPlayer, propPickRows, gridPredictionRows),
       scoringDepth,
     },
     propPickRows,

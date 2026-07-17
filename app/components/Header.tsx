@@ -9,6 +9,7 @@ import { useLeague } from "@/app/context/LeagueContext";
 import { orpc } from "@/lib/orpc/client";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { SidebarContent } from "@/app/components/SidebarContent";
+import EnvBadge from "@/app/components/EnvBadge";
 
 export default function Header() {
   const { user } = useUser();
@@ -41,6 +42,8 @@ export default function Header() {
             </>
           )}
         </div>
+
+        <EnvBadge />
 
       </div>
 

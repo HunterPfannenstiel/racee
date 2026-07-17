@@ -8,3 +8,4 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 **Never visually verify your code**
 **Never add tests unprompted**
+**I will manually make git commits so don't get freaked out when git commits appear that you are not aware of**

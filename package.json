@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "backup": "tsx scripts/backup.ts",
+    "seed-2026": "node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts",
     "apply-race-keys": "tsx scripts/datafix/apply-corrected-race-keys/apply-corrected-race-keys.ts",
     "remove-dan1-data": "tsx scripts/datafix/remove-dan1-test-league-data.ts",
     "backfill-predictions": "tsx scripts/datafix/backfill-predictions.ts",

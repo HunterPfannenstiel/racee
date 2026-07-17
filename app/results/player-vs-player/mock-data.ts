@@ -1,6 +1,5 @@
 import type { PropName } from "@/lib/schemas";
 import type { PvpPlayer, PropPickRow, GridPredictionRow, JumpablePlayer } from "./types";
-import { buildRollupText } from "./rollup-text";
 
 export const MOCK_CURRENT_USER_ID = "u-4";
 export const MOCK_RACE_TITLE = "Spanish GP";
@@ -299,7 +298,6 @@ export function buildComparison(leftUserId: string, rightUserId: string) {
     raceTitle: MOCK_RACE_TITLE,
     left,
     right,
-    rollupText: buildRollupText(left, right, propRows, gridRows),
     scoringDepth: MOCK_SCORING_DEPTH,
   };
 }

@@ -14,9 +14,9 @@ import { PageShell } from "@/components/ui/page-shell";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { FlagIcon } from "lucide-react";
-import type { OpenRaceDTO } from "@/server/queries/user-open-races/IUserOpenRacesQuery";
+import type { RacePredictionDTO } from "@/server/queries/shared/race-prediction-dto";
 
-type OpenRace = OpenRaceDTO;
+type OpenRace = RacePredictionDTO;
 
 function PredictPagePlaceholder() {
   return (
@@ -50,11 +50,23 @@ function PredictPagePlaceholder() {
   );
 }
 
-function autoSelectRace(races: OpenRace[]): string | null {
+// The next upcoming open race, if any. This is the "still accepting
+// predictions" landmark used both as the default selection (via
+// autoSelectRace) and as a persistent outline on the race chip, independent
+// of whatever race is currently selected.
+function nextOpenRace(openRaces: OpenRace[]): string | null {
   const today = new Date().toISOString().split("T")[0];
+  return openRaces.filter((r) => r.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0]?.id ?? null;
+}
+
+// Prefers the next upcoming open race (unchanged from the original
+// open-races-only behavior); falls back to the most recent past race by
+// date only when there are no open races at all.
+function autoSelectRace(openRaces: OpenRace[], pastRaces: OpenRace[]): string | null {
   return (
-    races.filter((r) => r.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0]?.id ??
-    races.sort((a, b) => b.date.localeCompare(a.date))[0]?.id ??
+    nextOpenRace(openRaces) ??
+    [...openRaces].sort((a, b) => b.date.localeCompare(a.date))[0]?.id ??
+    [...pastRaces].sort((a, b) => b.date.localeCompare(a.date))[0]?.id ??
     null
   );
 }
@@ -70,23 +82,34 @@ export default function PredictPage() {
       enabled: !!user && !!activeLeagueId,
     }),
   );
+  const pastRacesQuery = useQuery(
+    orpc.predictions.pastRaces.queryOptions({
+      input: { leagueId: activeLeagueId ?? "" },
+      enabled: !!user && !!activeLeagueId,
+    }),
+  );
   const data = openRacesQuery.data;
+  const pastData = pastRacesQuery.data;
 
   const { displayName, isProxy, selectedPlayerId, next, prev } =
     useTeammateSelector(data?.teammates ?? []);
 
   const openRaces = data?.openRaces ?? [];
-  const sortedRaces = [...openRaces].sort((a, b) => a.date.localeCompare(b.date));
+  const pastRaces = pastData?.pastRaces ?? [];
+  const allRaces = [...openRaces, ...pastRaces];
+  const sortedRaces = [...allRaces].sort((a, b) => a.date.localeCompare(b.date));
+  const racersById = { ...(data?.racersById ?? {}), ...(pastData?.racersById ?? {}) };
 
   // Derived, not stored: keeps the explicit selection when it's still present
   // in a refreshed result (e.g. after a submit invalidates this query),
   // otherwise falls back to auto-selecting the next relevant race. No effect
-  // needed since this is a pure function of `openRaces` + `selectedRaceId`.
+  // needed since this is a pure function of `openRaces`/`pastRaces` + `selectedRaceId`.
   const effectiveRaceId =
-    selectedRaceId && openRaces.some((r) => r.id === selectedRaceId)
+    selectedRaceId && allRaces.some((r) => r.id === selectedRaceId)
       ? selectedRaceId
-      : autoSelectRace(openRaces);
-  const selectedRace = openRaces.find((r) => r.id === effectiveRaceId) ?? null;
+      : autoSelectRace(openRaces, pastRaces);
+  const selectedRace = allRaces.find((r) => r.id === effectiveRaceId) ?? null;
+  const nextOpenRaceId = nextOpenRace(openRaces);
 
   const activePick = (() => {
     if (!selectedRace || !data) return null;
@@ -103,12 +126,18 @@ export default function PredictPage() {
   return (
     <PageShell title="Predict">
       <RequireUser>
-        {!data ? (
+        {!data || !pastData ? (
           <PredictPagePlaceholder />
         ) : (
           <div className="space-y-5">
 
-            <RaceSelector races={sortedRaces} selectedRaceId={effectiveRaceId} onSelect={setSelectedRaceId} />
+            <RaceSelector
+              races={sortedRaces}
+              selectedRaceId={effectiveRaceId}
+              onSelect={setSelectedRaceId}
+              autoScrollToSelected
+              nextOpenRaceId={nextOpenRaceId}
+            />
 
             {data.teammates.length > 0 && (
               <TeammateSelector
@@ -125,7 +154,7 @@ export default function PredictPage() {
                 key={`${activeLeagueId}_${selectedRace.id}_${selectedPlayerId ?? user?.id}`}
                 race={selectedRace}
                 leagueId={activeLeagueId!}
-                racersById={data.racersById}
+                racersById={racersById}
                 existingPrediction={activePick?.racerIds ?? null}
                 existingSubmittedAt={activePick?.submittedAt ?? null}
                 existingPropPicks={activePick?.propPicks ?? {}}
