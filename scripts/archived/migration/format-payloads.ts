@@ -1,13 +1,13 @@
 // Phase B (format step) of the Excel -> app migration: pure transform.
 //
-// Takes Phase A's extraction output (scripts/migration/output/*.json) plus
-// the human-reviewed resolution manifest (scripts/migration/output/resolution/)
+// Takes Phase A's extraction output (scripts/archived/migration/output/*.json) plus
+// the human-reviewed resolution manifest (scripts/archived/migration/output/resolution/)
 // and produces PredictionMutationSchema-shaped payloads per race. Does NOT
 // write to blob storage, does NOT call PredictionService or any app code,
 // does NOT make network calls. A separate load script (not yet written)
 // consumes these payload files to actually write predictions.
 //
-// Run: npx tsx scripts/migration/format-payloads.ts
+// Run: npx tsx scripts/archived/migration/format-payloads.ts
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";

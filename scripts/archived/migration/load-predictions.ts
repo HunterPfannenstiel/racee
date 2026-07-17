@@ -1,14 +1,14 @@
 // Phase B load script — writes the finalized prediction payloads
-// (scripts/migration/output/payloads/*.payloads.json) into blob storage via the
+// (scripts/archived/migration/output/payloads/*.payloads.json) into blob storage via the
 // real domain/repository classes, then triggers real grading.
 //
 // Run (dry-run, default — no writes anywhere):
 //   BUCKET_NAME=<bucket> SUPABASE_URL=<url> SUPABASE_SECRET_KEY=<key> \
-//     npx tsx scripts/migration/load-predictions.ts
+//     npx tsx scripts/archived/migration/load-predictions.ts
 //
 // Run (real write):
 //   BUCKET_NAME=<bucket> SUPABASE_URL=<url> SUPABASE_SECRET_KEY=<key> \
-//     npx tsx scripts/migration/load-predictions.ts --write
+//     npx tsx scripts/archived/migration/load-predictions.ts --write
 //
 // BUCKET_NAME is the ONLY thing separating itg (racee_integration) from prod (racee)
 // in this Supabase project — there is no other environment boundary. All three vars
@@ -26,7 +26,7 @@ for (const key of REQUIRED_ENV) {
       `\nMissing required env var: ${key}\n\n` +
       `This script refuses to run with implicit/defaulted environment selection.\n` +
       `Invoke it like:\n` +
-      `  BUCKET_NAME=<bucket> SUPABASE_URL=<url> SUPABASE_SECRET_KEY=<key> npx tsx scripts/migration/load-predictions.ts [--write]\n`
+      `  BUCKET_NAME=<bucket> SUPABASE_URL=<url> SUPABASE_SECRET_KEY=<key> npx tsx scripts/archived/migration/load-predictions.ts [--write]\n`
     );
     process.exit(1);
   }
@@ -40,27 +40,16 @@ console.log(`SUPABASE HOST   : ${new URL(process.env.SUPABASE_URL!).host}`);
 console.log(`MODE            : ${WRITE ? "*** WRITE (will persist) ***" : "dry-run (no writes)"}`);
 console.log("=".repeat(72));
 
-// Imports below are hoisted by ESM but env vars are already set on process.env
-// from the shell invocation before any module code runs, so lib/blob/index.ts's
-// module-level `usingSupabaseBlobStore()` check (driven by SUPABASE_URL) sees
-// the right value.
-const { blob, usingSupabaseBlobStore } = await import("../../lib/blob/index.ts");
-
-// SUPABASE_URL is in REQUIRED_ENV above, so this should always be true here —
-// asserted rather than silently assumed, since this script talks to a real bucket.
-if (!usingSupabaseBlobStore()) {
-  console.error("\nExpected usingSupabaseBlobStore() to be true (SUPABASE_URL is required above) but it was false. Refusing to run against LocalBlobStore.");
-  process.exit(1);
-}
+const { blob } = await import("../../../lib/blob/index.ts");
 const { RACERS_PATH, LEAGUES_PATH, motorsportRacesPath, teamsPath, predictionsPath } =
-  await import("../../lib/paths.ts");
-const { RacePredictionBook } = await import("../../server/domain/race-prediction-book.ts");
-const { RecalculateRaceCommand } = await import("../../server/commands/recalculate-race/RecalculateRaceCommand.ts");
-const { BlobLeagueRepository } = await import("../../server/repositories/league/BlobLeagueRepository.ts");
-const { BlobRaceRepository } = await import("../../server/repositories/race/BlobRaceRepository.ts");
-const { BlobRacePredictionBookRepository } = await import("../../server/repositories/race-prediction-book/BlobRacePredictionBookRepository.ts");
-const { BlobLeagueStandingsRepository } = await import("../../server/repositories/league-standings/BlobLeagueStandingsRepository.ts");
-const { BlobTeamRepository } = await import("../../server/repositories/team/BlobTeamRepository.ts");
+  await import("../../../lib/paths.ts");
+const { RacePredictionBook } = await import("../../../server/domain/race-prediction-book.ts");
+const { RecalculateRaceCommand } = await import("../../../server/commands/recalculate-race/RecalculateRaceCommand.ts");
+const { BlobLeagueRepository } = await import("../../../server/repositories/league/BlobLeagueRepository.ts");
+const { BlobRaceRepository } = await import("../../../server/repositories/race/BlobRaceRepository.ts");
+const { BlobRacePredictionBookRepository } = await import("../../../server/repositories/race-prediction-book/BlobRacePredictionBookRepository.ts");
+const { BlobLeagueStandingsRepository } = await import("../../../server/repositories/league-standings/BlobLeagueStandingsRepository.ts");
+const { BlobTeamRepository } = await import("../../../server/repositories/team/BlobTeamRepository.ts");
 
 // ---------------------------------------------------------------------------
 // Fixed identifiers for this batch

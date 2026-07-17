@@ -5,8 +5,8 @@
 // grading/prediction service, does NOT touch prod. Output is meant to be
 // read by a human before Phase B (load) is ever written.
 //
-// Run: npx tsx scripts/migration/extract.ts
-// Override source dir: MIGRATION_EXCEL_DIR=/path/to/xlsx-folder npx tsx scripts/migration/extract.ts
+// Run: npx tsx scripts/archived/migration/extract.ts
+// Override source dir: MIGRATION_EXCEL_DIR=/path/to/xlsx-folder npx tsx scripts/archived/migration/extract.ts
 
 import ExcelJS from "exceljs";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";

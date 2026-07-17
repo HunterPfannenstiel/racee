@@ -1,22 +1,17 @@
 // Seeds a full 2026 F1 league (league, teams, racers, races, predictions,
 // scores, standings) for local development.
 //
-// Blob storage is hardcoded to LocalBlobStore (writes under .blob-store/ on
-// disk) — there is no env var that can redirect it, so this can never touch
-// Supabase or Vercel Blob no matter what's set in .env.local.
-//
-// Prisma is NOT hardcoded — it connects using DATABASE_URL/DATABASE_SCHEMA
-// from the environment, same as the app itself. The banner below prints the
-// resolved target every run so it's never ambiguous which DB `users` land in.
+// Blob storage and Prisma both connect using the same env vars as the app
+// itself (SUPABASE_URL/SUPABASE_SECRET_KEY/BUCKET_NAME, DATABASE_URL/
+// DATABASE_SCHEMA) — nothing here is hardcoded. The banner below prints the
+// resolved targets every run so it's never ambiguous where data lands.
 //
 // Run:  node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts
 
 import { randomUUID } from "crypto";
-import { LocalBlobStore } from "../lib/blob/local.ts";
+import { blob } from "../lib/blob/index.ts";
 import { PrismaClient } from "../server/generated/client.ts";
 import { PrismaPg } from "@prisma/adapter-pg";
-
-const blob = new LocalBlobStore();
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg(
@@ -35,7 +30,7 @@ const GINGY_ID    = "00000000-seed-0000-0000-000000000006";
 // Real, already-authenticated account (created via better-auth sign-in) — this
 // seed never upserts it in Prisma, only references it for league membership,
 // commissioner/co-commissioner status, and predictions.
-const YOU_ID = "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J";
+const YOU_ID = "BnkGVZOFs1XY2V3Vq1x5iCiTecSHED8k";
 
 const fictionalUsers = [
   { id: SHREK_ID,    name: "Shrek" },
@@ -633,14 +628,17 @@ function assignMedals(entries: { userId: string; gridPoints: number; propPoints:
 // ============================================================
 
 console.log("=".repeat(60));
-console.log("blob storage : LOCAL ONLY -> .blob-store/ (hardcoded LocalBlobStore)");
+console.log(
+  `blob storage : ${process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).host : "(SUPABASE_URL not set)"}` +
+  ` bucket=${process.env.BUCKET_NAME ?? "(none)"}`
+);
 console.log(
   `prisma       : ${process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).host : "(DATABASE_URL not set)"}` +
   ` schema=${process.env.DATABASE_SCHEMA ?? "(none)"}`
 );
 console.log("=".repeat(60));
 
-console.log("Wiping local blob storage (.blob-store/ on disk)...");
+console.log("Wiping blob storage...");
 await blob.wipe();
 console.log("  Done");
 

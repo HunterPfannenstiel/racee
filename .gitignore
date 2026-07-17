@@ -36,13 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
-# local blob store
-.blob-store/
-
 # generated migration output (regeneratable from source spreadsheets)
-/scripts/migration/output/*
+/scripts/archived/migration/output/*
 # ...except the human-reviewed resolution manifest, which is not regeneratable
-!/scripts/migration/output/resolution/
+!/scripts/archived/migration/output/resolution/
 
 # typescript
 *.tsbuildinfo
