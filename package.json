@@ -7,7 +7,8 @@
     "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "backup": "tsx scripts/backup.ts"
   },
   "dependencies": {
     "@better-fetch/fetch": "^1.1.21",

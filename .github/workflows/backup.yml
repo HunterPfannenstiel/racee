@@ -1,0 +1,70 @@
+name: Backup Supabase
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Optional note for the run summary (e.g. 'pre-datafix backup')"
+        type: string
+        required: false
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options: [Preview, Production]
+        default: Production
+  schedule:
+    - cron: "0 8 * * *" # 08:00 UTC daily
+
+concurrency:
+  group: supabase-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'schedule' && 'Production' || inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ubuntu-latest's default postgresql-client major version may not match
+      # the Supabase project's Postgres version exactly, but pg_dump --format=custom
+      # is compatible with nearby major versions for this purpose.
+      - name: Install pg_dump
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Summarize run
+        run: |
+          {
+            echo "### Backup run"
+            echo "- trigger: ${{ github.event_name }}"
+            echo "- environment: ${{ github.event_name == 'schedule' && 'Production' || inputs.environment }}"
+            echo "- reason: ${{ inputs.reason || '(scheduled)' }}"
+            echo "- commit: $(git log -1 --format='%H %s (%an, %ad)' --date=short)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run backup
+        env:
+          BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+          BACKUP_RETENTION: ${{ secrets.BACKUP_RETENTION }}
+          DATABASE_SCHEMA: ${{ secrets.DATABASE_SCHEMA }}
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: pnpm run backup
