@@ -36,11 +36,6 @@ yarn-error.log*
 # vercel
 .vercel
 
-# generated migration output (regeneratable from source spreadsheets)
-/scripts/archived/migration/output/*
-# ...except the human-reviewed resolution manifest, which is not regeneratable
-!/scripts/archived/migration/output/resolution/
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
