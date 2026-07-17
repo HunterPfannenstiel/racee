@@ -1,7 +1,7 @@
 "use client";
 
 import { InfoIcon } from "lucide-react";
-import { RaceSelector } from "@/components/prediction/RaceSelector";
+import { RaceSelectorGate } from "@/components/prediction/RaceSelectorGate";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Podium } from "./Podium";
 import { ResultsList } from "./ResultsList";
@@ -23,6 +23,7 @@ type ResultsViewProps = {
   entries: ResultsRowData[];
   stats: StatsData | null;
   isLoading: boolean;
+  isRacesLoading: boolean;
   currentUserId: string | null;
   leagueId: string | null;
 };
@@ -34,6 +35,7 @@ export function ResultsView({
   entries,
   stats,
   isLoading,
+  isRacesLoading,
   currentUserId,
   leagueId,
 }: ResultsViewProps) {
@@ -43,12 +45,13 @@ export function ResultsView({
 
   return (
     <div className="flex flex-col gap-6">
-      <RaceSelector
+      <RaceSelectorGate
         races={races}
         selectedRaceId={selectedRaceId}
         onSelect={onSelectRace}
         order="asc"
         autoScrollToSelected
+        isReady={!isRacesLoading}
       />
 
       {isLoading ? (

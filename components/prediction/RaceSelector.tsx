@@ -9,7 +9,7 @@ type RaceSelectorRace = {
   date: string;
 };
 
-type RaceSelectorProps = {
+export type RaceSelectorProps = {
   races: RaceSelectorRace[];
   selectedRaceId: string | null;
   onSelect: (raceId: string) => void;

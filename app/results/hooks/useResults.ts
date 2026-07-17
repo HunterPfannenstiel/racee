@@ -19,6 +19,14 @@ export type UseResultsResult = {
   entries: ResultsRowData[];
   stats: StatsData | null;
   isLoading: boolean;
+  // Narrower than `isLoading`: true only until the races list itself has
+  // resolved, regardless of whether a results query for the selected race
+  // is in flight. `isLoading` also reflects results-query pending state,
+  // which flips back on across race switches -- unsuitable as a mount gate
+  // for RaceSelector (it would unmount/remount on every selection, which is
+  // exactly what RaceSelector's mount-only scroll effect must not see).
+  // Once the races list has loaded once, this stays false.
+  isRacesLoading: boolean;
   currentUserId: string | null;
   // Surfaced separately from `isLoading`/`entries` (rather than folded into
   // them) because ResultsView has no error slot of its own: a failed
@@ -83,6 +91,7 @@ export function useResults(): UseResultsResult {
 
   const queries = resultsEnabled ? [racesQuery, resultsQuery] : [racesQuery];
   const isLoading = userLoading || (enabled && queries.some((q) => q.isPending));
+  const isRacesLoading = userLoading || (enabled && racesQuery.isPending);
   const firstError = queries.find((q) => q.isError);
 
   const rawEntries = resultsQuery.data?.entries ?? [];
@@ -95,6 +104,7 @@ export function useResults(): UseResultsResult {
     entries: rawEntries.map(toRowData),
     stats: rawStats ? formatStats(rawStats, rawEntries) : null,
     isLoading,
+    isRacesLoading,
     currentUserId: user?.id ?? null,
     error: firstError?.error ?? null,
     onRetry: () => queries.forEach((q) => q.refetch()),
