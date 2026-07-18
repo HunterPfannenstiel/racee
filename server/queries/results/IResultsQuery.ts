@@ -9,6 +9,7 @@ export type ResultsEntryDTO = {
   medal: "gold" | "silver" | "bronze" | null;
   rank: number;
   color: string;
+  teamName: string;
 };
 
 export type ResultsStatsDTO = {

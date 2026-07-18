@@ -11,6 +11,7 @@ import { assignRanks, computeScoreStats, computeBestPropBet } from "@/lib/scorin
 import type { IResultsQuery, ResultsResult } from "./IResultsQuery";
 
 const DEFAULT_TEAM_COLOR = "#6b7280";
+const DEFAULT_TEAM_NAME = "Free Agent";
 
 /**
  * A single race's full leaderboard for one league — every scored entrant,
@@ -48,6 +49,9 @@ export class ResultsQuery implements IResultsQuery {
     const colorByUserId = new Map(
       teams.flatMap(t => t.memberIds.map(userId => [userId, t.color ?? DEFAULT_TEAM_COLOR])),
     );
+    const teamNameByUserId = new Map(
+      teams.flatMap(t => t.memberIds.map(userId => [userId, t.name])),
+    );
 
     const ranked = assignRanks([...entries], e => e.gridPoints + e.propPoints);
 
@@ -66,6 +70,7 @@ export class ResultsQuery implements IResultsQuery {
         medal: e.medal,
         rank: e.rank,
         color: colorByUserId.get(e.userId) ?? DEFAULT_TEAM_COLOR,
+        teamName: teamNameByUserId.get(e.userId) ?? DEFAULT_TEAM_NAME,
       })),
       stats: {
         averageScore: scoreStats.average,

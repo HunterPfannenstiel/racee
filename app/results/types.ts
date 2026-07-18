@@ -4,6 +4,7 @@ export type ResultsRowData = {
   total: number;
   rank: number;
   color: string;
+  teamName: string;
 };
 
 export type StatCell = {

@@ -53,6 +53,7 @@ function build(data: CutsceneData, startMs: number): BeatBuildResult<PodiumEvent
       rank: entry.rank as 1 | 2 | 3,
       points: entry.total,
       color: entry.color,
+      teamName: entry.teamName,
       isMe: entry.userId === data.currentUserId,
     }));
 

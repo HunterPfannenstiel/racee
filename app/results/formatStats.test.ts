@@ -14,6 +14,7 @@ const entry = (userId: string, name: string): ResultsEntryDTO => ({
   medal: null,
   rank: 1,
   color: "#000000",
+  teamName: "Test Team",
 });
 
 const ENTRIES: ResultsEntryDTO[] = [

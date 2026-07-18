@@ -45,6 +45,7 @@ function toRowData(entry: ResultsEntryDTO): ResultsRowData {
     total: entry.total,
     rank: entry.rank,
     color: entry.color,
+    teamName: entry.teamName,
   };
 }
 

@@ -31,11 +31,13 @@ export type PodiumBoxEntry = {
   name: string;
   rank: 1 | 2 | 3;
   points: number;
-  /** The finisher's own identity color (ResultsRowData.color) -- used only to
-   *  color the viewer's own box's landing shimmer (TeamColorShimmer). Box
-   *  background/border/glow and the points count-up use rank-based
-   *  medalColor/MEDAL_HEX instead, matching the real page's Podium.tsx. */
+  /** The finisher's own identity color (ResultsRowData.color) -- colors the
+   *  team-name line under their name. Box background/border/glow, the
+   *  points count-up, and (for the viewer only) the box's landing
+   *  TeamColorShimmer all use rank-based medalColor/MEDAL_HEX instead,
+   *  matching the real page's Podium.tsx. */
   color: string;
+  teamName: string;
   isMe: boolean;
 };
 
@@ -289,25 +291,30 @@ function PodiumBox({
 
   // Rank digit and points count-up both take the medal (gold/silver/bronze)
   // color -- the universal achievement-tier signal, matching the real page's
-  // Podium.tsx. "Whose" is instead carried by the box's own landing shimmer
-  // (TeamColorShimmer, below) for the viewer's own box.
+  // Podium.tsx. The box's own landing shimmer (TeamColorShimmer, below) uses
+  // that same medal color for the viewer's own box, rather than team color.
   const medalTextColor = medalColor[rank] ?? "text-white";
   // Whichever tied occupant is the viewer, if any -- drives the "this is
-  // you" shimmer, played in that occupant's own color.
+  // you" shimmer, played in the rank's medal color.
   const meEntry = entries.find((e) => e.isMe);
 
   return (
     <div className="flex flex-1 min-w-0 flex-col items-center gap-3">
       <motion.div style={{ opacity, scale }} className="flex min-w-0 max-w-full flex-col items-center gap-1">
         {entries.map((entry) => (
-          <div key={entry.userId} className="flex min-w-0 max-w-full items-baseline gap-1.5">
-            {entries.length > 1 && (
-              <span aria-hidden="true" className="shrink-0 text-xs leading-none text-white/50 sm:text-sm">
-                •
-              </span>
-            )}
-            <p className="min-w-0 max-w-full truncate font-heading text-lg font-bold text-white sm:text-2xl">
-              {entry.name}
+          <div key={entry.userId} className="flex min-w-0 max-w-full flex-col items-center">
+            <div className="flex min-w-0 max-w-full items-baseline gap-1.5">
+              {entries.length > 1 && (
+                <span aria-hidden="true" className="shrink-0 text-xs leading-none text-white/50 sm:text-sm">
+                  •
+                </span>
+              )}
+              <p className="min-w-0 max-w-full truncate font-heading text-lg font-bold text-white sm:text-2xl">
+                {entry.name}
+              </p>
+            </div>
+            <p className="max-w-full truncate text-xs font-semibold sm:text-sm" style={{ color: entry.color }}>
+              {entry.teamName}
             </p>
           </div>
         ))}
@@ -326,7 +333,7 @@ function PodiumBox({
           heightClassName,
         )}
       >
-        {meEntry && <TeamColorShimmer color={meEntry.color} elapsedMs={shimmerElapsedMs} playbackRate={playbackRate} />}
+        {meEntry && <TeamColorShimmer color={MEDAL_HEX[rank]} elapsedMs={shimmerElapsedMs} playbackRate={playbackRate} />}
         <motion.span
           style={{ opacity, scale }}
           className={cn("relative font-mono text-5xl font-black sm:text-7xl", medalTextColor)}

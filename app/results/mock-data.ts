@@ -39,8 +39,30 @@ const PLAYER_COLOR: Record<string, string> = {
   "u-24": "#6692FF",
 };
 
+// Keyed by color (not userId) so teammates -- who already share a color, see
+// PLAYER_COLOR above -- also share a team name, mirroring how a real Team
+// aggregate has exactly one name and one color for all its memberIds.
+const TEAM_NAME_BY_COLOR: Record<string, string> = {
+  "#FF8000": "Sunset Racing",
+  "#E8002D": "Crimson Motorsport",
+  "#27F4D2": "Neon Velocity",
+  "#3671C6": "Blue Thunder Racing",
+  "#229971": "Emerald Circuit",
+  "#FF87BC": "Pink Panthers Racing",
+  "#64C4FF": "Sky Runners",
+  "#F58020": "Amber Apex",
+  "#00594F": "Deep Teal Racing",
+  "#2293D1": "Azure Motorsport",
+  "#6692FF": "Periwinkle Racing",
+  "#B6BABD": "Silver Streak Racing",
+  "#37BEDD": "Cyan Circuit",
+  "#52E252": "Viper Green Racing",
+  "#0090FF": "Cobalt Racing",
+};
+
 function row(userId: string, name: string, total: number, rank: number): ResultsRowData {
-  return { userId, name, total, rank, color: PLAYER_COLOR[userId] };
+  const color = PLAYER_COLOR[userId];
+  return { userId, name, total, rank, color, teamName: TEAM_NAME_BY_COLOR[color] ?? "Free Agent" };
 }
 
 // Only 3 scored entries: podium-only, no list panel.

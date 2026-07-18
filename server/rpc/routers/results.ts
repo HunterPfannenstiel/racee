@@ -25,6 +25,7 @@ const ResultsEntrySchema = z.object({
   medal: z.enum(["gold", "silver", "bronze"]).nullable(),
   rank: z.number(),
   color: z.string(),
+  teamName: z.string(),
 });
 
 const ResultsStatsSchema = z.object({
