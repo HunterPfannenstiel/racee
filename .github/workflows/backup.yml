@@ -28,11 +28,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ubuntu-latest's default postgresql-client major version may not match
-      # the Supabase project's Postgres version exactly, but pg_dump --format=custom
-      # is compatible with nearby major versions for this purpose.
-      - name: Install pg_dump
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      # ubuntu-latest ships postgresql-client 16.x, but our Supabase project runs
+      # Postgres 17. pg_dump refuses to dump from a server whose major version is
+      # newer than its own, so pull the matching client from the official PGDG
+      # (PostgreSQL Global Development Group) APT repo instead of the distro package.
+      - name: Install matching PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
