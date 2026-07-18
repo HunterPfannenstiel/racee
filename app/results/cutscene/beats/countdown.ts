@@ -1,55 +1,32 @@
 import {
   buildCutsceneScript,
-  getCascadeDurationMs,
-  getCutsceneTimeline,
-  type CutsceneTimelineEntry,
+  getCutsceneRowTimeline,
+  type CutsceneRowEvent,
 } from "../build-cutscene-script";
-import { GroupStage, type CountdownStageState } from "../GroupStage";
+import { LadderStage, type CountdownStageState } from "../LadderStage";
 import type { BeatBuildResult, BeatDefinition, CutsceneData } from "./types";
 
-function build(data: CutsceneData, startMs: number): BeatBuildResult<CutsceneTimelineEntry> {
-  const script = buildCutsceneScript(data.entries, data.currentUserId);
-  const timeline = getCutsceneTimeline(script, startMs);
-  return { events: timeline.entries, durationMs: timeline.totalMs };
+function build(data: CutsceneData, startMs: number): BeatBuildResult<CutsceneRowEvent> {
+  const rows = buildCutsceneScript(data.entries, data.currentUserId);
+  const { events, totalMs } = getCutsceneRowTimeline(rows, startMs);
+  return { events, durationMs: totalMs };
 }
 
-/** Locates the timeline entry active at canonical time `t`, plus phase + elapsed-in-phase. */
-export function resolveCountdownStateAt(events: CutsceneTimelineEntry[], t: number): CountdownStageState {
-  if (events.length === 0) {
-    return { event: null, phase: "idle", elapsedMs: 0 };
-  }
-
-  let active = events[events.length - 1];
-  for (const entry of events) {
-    if (t < entry.startMs + entry.durationMs) {
-      active = entry;
-      break;
-    }
-  }
-
-  const local = t - active.startMs;
-  const { event } = active;
-  const cascadeEnd = getCascadeDurationMs(event);
-  const holdEnd = cascadeEnd + event.holdMs;
-  const fallEnd = holdEnd + event.fallMs;
-
-  if (local < cascadeEnd) {
-    return { event, phase: "cascading", elapsedMs: local };
-  }
-  if (local < holdEnd) {
-    return { event, phase: "holding", elapsedMs: local - cascadeEnd };
-  }
-  if (local < fallEnd) {
-    return { event, phase: "falling", elapsedMs: local - holdEnd };
-  }
-  // Trailing gap: nothing on stage.
-  return { event: null, phase: "idle", elapsedMs: 0 };
+/**
+ * Rows already carry absolute canonical times (see getCutsceneRowTimeline),
+ * and LadderStage derives every row's own visual state itself -- it also
+ * needs viewport capacity (measured via ResizeObserver), which isn't
+ * available at this resolution layer -- so this just threads the rows and
+ * the current time straight through.
+ */
+export function resolveCountdownStateAt(events: CutsceneRowEvent[], t: number): CountdownStageState {
+  return { rows: events, t };
 }
 
-export const countdownBeat: BeatDefinition<CutsceneTimelineEntry, CountdownStageState> = {
+export const countdownBeat: BeatDefinition<CutsceneRowEvent, CountdownStageState> = {
   id: "countdown",
   label: "Countdown",
   build,
   resolveAt: resolveCountdownStateAt,
-  Stage: GroupStage,
+  Stage: LadderStage,
 };

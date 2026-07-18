@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { medalColor } from "@/lib/colors";
 import { PLATFORM_ORDER } from "../Podium";
 import { groupEntriesByRank } from "../rank-utils";
-import { OFF_FRAME_Y } from "./GroupStage";
+import { OFF_FRAME_Y } from "./LadderStage";
 import { TeamColorShimmer } from "./TeamColorShimmer";
 import { useCountUpValue, type CountUpPhase } from "./useCountUpValue";
 
