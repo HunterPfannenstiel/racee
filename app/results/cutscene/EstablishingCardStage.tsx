@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { animate, motion, useMotionValue, useTransform, type AnimationPlaybackControls } from "motion/react";
 import { RaceBug, RACE_BUG_REST_TOP_PCT, RACE_BUG_REST_LEFT_PCT } from "./RaceBug";
-import { fluidClampFontSize } from "./fluid-font-size";
 import type { EstablishingCardEvent, EstablishingCardState } from "./beats/establishing";
 
 // Hard-decelerating, never-overshoots easing -- duplicated from GroupStage
@@ -16,6 +15,24 @@ function easeOutQuart(t: number) {
 const BIG_SCALE = 3.6;
 const APPEAR_RISE_Y = 20;
 const CENTER_PCT = 50;
+
+// Target *effective* (post-transform) max-width, in vw, for the race/league
+// name text -- held constant across the whole appear->hold->demote animation
+// by dividing it back out through the live `scale` motion value below,
+// rather than applying one static pre-transform max-width class everywhere.
+// A static class sized safe for the big BIG_SCALE appear/hold card (e.g.
+// 24vw, safe because 24 * 3.6 ~= 86vw) is WAY too narrow once the card
+// shrinks back down to scale 1 in the small corner rest state -- 24vw would
+// then mean literally 24% of the viewport, truncating names that trivially
+// fit at that size. Deriving max-width as NAME_TARGET_VISUAL_VW / scale
+// keeps the same ~86vw safety margin at every point of the animation,
+// including exactly at rest (scale 1 -> ~86vw, plenty of room). Rather than
+// shrinking the font to fit (the old fluid-font-size.ts approach, which
+// broke on real devices when the webfont hadn't finished loading yet -- see
+// fluid-font-size.ts's removal), long names are simply truncated with an
+// ellipsis as a safety net, matching how the real results Podium handles
+// long names.
+const NAME_TARGET_VISUAL_VW = 24 * BIG_SCALE;
 
 // Horizontal anchor fraction, driven through the standalone CSS `translate`
 // property (Tailwind v4's `-translate-x-1/2` also targets this property, NOT
@@ -130,24 +147,9 @@ export function EstablishingCardStage({
   // Full `translate` shorthand (x y): x is the phase-driven anchor, y stays
   // pinned at -50% (vertical centering) always -- see xAnchor's comment.
   const translatePct = useTransform(xAnchor, (v) => `${v}% -50%`);
-
-  // Character-count-derived, viewport-relative font sizes -- guarantee the
-  // text can never exceed a safe fraction of the viewport width even at
-  // BIG_SCALE (see fluid-font-size.ts). Memoized on the strings themselves
-  // since they're pure functions of `.length`, nothing else.
-  const raceTitleFontSize = useMemo(
-    () => fluidClampFontSize(event?.raceName ?? "", { maxScale: BIG_SCALE, maxRem: 0.875 }),
-    [event?.raceName],
-  );
-  const leagueNameFontSize = useMemo(
-    () =>
-      fluidClampFontSize(event?.leagueName ?? "", {
-        maxScale: BIG_SCALE,
-        maxRem: 0.75,
-        avgCharWidthEm: 0.58,
-      }),
-    [event?.leagueName],
-  );
+  // Tracks `scale` automatically (no separate imperative animate() needed) --
+  // see NAME_TARGET_VISUAL_VW's comment.
+  const nameMaxWidth = useTransform(scale, (s) => `${(NAME_TARGET_VISUAL_VW / s).toFixed(2)}vw`);
 
   const controlsRef = useRef<AnimationPlaybackControls[]>([]);
 
@@ -220,10 +222,10 @@ export function EstablishingCardStage({
         isCorner ? "items-start text-left" : "items-center text-center"
       }`}
     >
-      <RaceBug raceName={event.raceName} style={{ fontSize: raceTitleFontSize }} />
+      <RaceBug raceName={event.raceName} style={{ maxWidth: nameMaxWidth }} />
       <motion.p
-        style={{ opacity: leagueOpacity, fontSize: leagueNameFontSize }}
-        className="whitespace-nowrap font-sans text-xs font-medium uppercase tracking-wide text-muted-foreground"
+        style={{ opacity: leagueOpacity, maxWidth: nameMaxWidth }}
+        className="min-w-0 truncate font-sans text-xs font-medium uppercase tracking-wide text-muted-foreground"
       >
         {event.leagueName}
       </motion.p>

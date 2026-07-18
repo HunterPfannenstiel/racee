@@ -103,7 +103,11 @@ export function rowAbsY(rowIndex: number, totalRows: number): number {
  *   computed upstream (see build-cutscene-script.ts).
  *
  * For a field that never overflows (`totalRows <= visibleRowCount`), the
- * camera never moves at all (stays at 0, i.e. the starting offset is 0).
+ * camera never moves -- it stays flat at a fixed centering offset (0 if the
+ * field exactly fills the container, negative -- i.e. shifted down, since
+ * `y = rowAbsY - scrollOffset` -- by half the leftover space otherwise) so a
+ * small field renders centered in the container instead of pinned to its
+ * top-anchored slot-0 position.
  *
  * Pause window: whichever row carries a nonzero `postPaddingMs` (today: only
  * the isYou row, see build-cutscene-script.ts's YOU_POST_PADDING_MS) reserves
@@ -130,14 +134,29 @@ export function rowAbsY(rowIndex: number, totalRows: number): number {
  * would -- no change to the domain-shrink compensation below is needed to
  * account for the smoothing.
  */
-export function resolveScrollOffset(rows: CutsceneRowEvent[], t: number, visibleRowCount: number): number {
+export function resolveScrollOffset(
+  rows: CutsceneRowEvent[],
+  t: number,
+  visibleRowCount: number,
+  containerHeightPx: number,
+): number {
   const totalRows = rows.length;
-  if (totalRows === 0 || totalRows <= visibleRowCount) return 0;
+  if (totalRows === 0 || totalRows <= visibleRowCount) {
+    const contentHeightPx = totalRows * ROW_HEIGHT_PX;
+    const leftoverPx = Math.max(0, containerHeightPx - contentHeightPx);
+    return -leftoverPx / 2;
+  }
 
   const startOffset = (totalRows - visibleRowCount) * ROW_HEIGHT_PX;
-  const firstOverflowRow = rows[visibleRowCount];
   const lastRow = rows[totalRows - 1];
-  const domainStart = firstOverflowRow.arriveAt;
+  // Anchor domainStart to the arrival of the last row that filled the window
+  // WITHOUT overflowing (rows[visibleRowCount - 1]), not the first
+  // overflowing row's own arrival (rows[visibleRowCount]). eased(0) = 0
+  // exactly at domainStart, so anchoring it to the overflow row's own
+  // arrival placed that row a full ROW_HEIGHT_PX above the container's top
+  // edge at the instant it popped in; starting the ease one row earlier
+  // gives the camera a head start so it has already moved by then.
+  const domainStart = rows[visibleRowCount - 1].arriveAt;
   const domainEnd = lastRow.slideEnd;
 
   if (t < domainStart) return startOffset;

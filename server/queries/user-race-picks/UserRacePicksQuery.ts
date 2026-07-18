@@ -5,7 +5,7 @@ import type {
   IRacePredictionBookRepository,
 } from "@/server/repositories";
 import type { IUserRacePicksQuery, UserRacePicksResult, RacerDTO } from "./IUserRacePicksQuery";
-import { assignRanks } from "@/lib/scoring";
+import { assignRanks, computeGridPointsBreakdown } from "@/lib/scoring";
 
 /**
  * A single user's picks, key, and score for one race. A missing league yields
@@ -54,6 +54,10 @@ export class UserRacePicksQuery implements IUserRacePicksQuery {
     const userRank = rankedEntries.find((e) => e.userId === userId)?.rank ?? null;
     const userEntry = scores?.entryFor(userId) ?? null;
 
+    const gridBreakdown = prediction && race?.keyOrder
+      ? computeGridPointsBreakdown(prediction, race.keyOrder as string[], league.placementPoints as number[], league.scoringDepth)
+      : null;
+
     return {
       race: race ? { title: race.title, label: race.label } : null,
       prediction,
@@ -67,6 +71,8 @@ export class UserRacePicksQuery implements IUserRacePicksQuery {
       totalParticipants: rankedEntries.length,
       placementPoints: [...league.placementPoints],
       propPointValues: { ...league.propPointValues },
+      scoringDepth: league.scoringDepth,
+      gridBreakdown,
       racersById,
     };
   }
@@ -84,6 +90,8 @@ function emptyResult(): UserRacePicksResult {
     totalParticipants: 0,
     placementPoints: [],
     propPointValues: null,
+    scoringDepth: undefined,
+    gridBreakdown: null,
     racersById: {},
   };
 }

@@ -37,7 +37,7 @@ const THIRD_HOLD_MS = 500;
 const SECOND_COUNT_UP_MS = 520;
 const SECOND_HOLD_MS = 950;
 const FIRST_COUNT_UP_MS = 1500;
-const FIRST_HOLD_MS = 3200;
+const FIRST_HOLD_MS = 750;
 
 // Brief breathing room between announcements -- longer before 1st, so that
 // biggest moment gets a beat of anticipation first.
@@ -186,3 +186,9 @@ export const podiumBeat: BeatDefinition<PodiumEvent, PodiumStageState> = {
   resolveAt: resolvePodiumStateAt,
   Stage: PodiumStage,
 };
+
+// Re-exported so the resolve beat (Beat 5) can rebuild the exact same
+// PodiumEvent -- same entries/timing -- to render a frozen replica of this
+// beat's own terminal frame during its hold/curtain-pull, without a second,
+// possibly-drifting copy of the rank-filtering logic above.
+export { build as buildPodiumEvent };

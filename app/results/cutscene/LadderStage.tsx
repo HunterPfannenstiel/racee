@@ -6,6 +6,15 @@ import { cn } from "@/lib/utils";
 import type { CutsceneRowEvent, CutsceneRowMember } from "./build-cutscene-script";
 import { ROW_HEIGHT_PX, resolveRowVisualState, resolveScrollOffset, type RowVisualState } from "./ladder-geometry";
 import { TeamColorShimmer } from "./TeamColorShimmer";
+import { RACE_BUG_REST_TOP_PCT } from "./RaceBug";
+
+// Clears the persistent RaceBug corner mark (centered on the RACE_BUG_REST_TOP_PCT
+// line, ~40px content block) and the CutscenePlayer Skip button (top-4 + ~16px
+// line-height, ~32px). RaceBug's bottom edge grows with viewport height (a %
+// anchor), so this is computed rather than a flat px constant -- 36px covers
+// its ~20px block half-height plus a 16px buffer; 48px is the floor, matching
+// the ladder's original symmetric py-12 and comfortably clearing Skip alone.
+const LADDER_TOP_CLEARANCE = `max(${RACE_BUG_REST_TOP_PCT}vh + 36px, 48px)`;
 
 // WP5: the teammate row's treatment. Two strokes "shoot out" from the top
 // and bottom of the persistent left-edge accent span (the `<span>` a bit
@@ -347,10 +356,13 @@ export function LadderStage({ state: { rows, t }, playbackRate }: LadderStagePro
   const visibleRowCount =
     containerSize.height > 0 ? Math.max(1, Math.floor(containerSize.height / ROW_HEIGHT_PX)) : totalRows;
 
-  const scrollOffset = resolveScrollOffset(rows, t, visibleRowCount);
+  const scrollOffset = resolveScrollOffset(rows, t, visibleRowCount, containerSize.height);
 
   return (
-    <div className="absolute inset-0 flex justify-center px-4 py-12">
+    <div
+      className="absolute inset-0 flex justify-center px-4 pb-12"
+      style={{ paddingTop: LADDER_TOP_CLEARANCE }}
+    >
       <div ref={containerRef} className="relative h-full w-full max-w-sm">
         {rows.map((row) => {
           const visual = resolveRowVisualState(row, t, scrollOffset, totalRows);

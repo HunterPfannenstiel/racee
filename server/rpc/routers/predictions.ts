@@ -83,6 +83,18 @@ const ScoreSchema = z.object({
   medal: z.enum(["gold", "silver", "bronze"]).nullable(),
 });
 
+// Mirrors server/queries/player-vs-player/IPlayerVsPlayerRaceDataQuery.ts's
+// GridPositionBreakdownSchema (server/rpc/routers/player-vs-player.ts) /
+// lib/scoring.ts's GridPositionBreakdown exactly.
+const GridPositionBreakdownSchema = z.object({
+  position: z.number(),
+  racerId: z.string(),
+  predictedPosition: z.number().nullable(),
+  scored: z.boolean(),
+  correct: z.boolean(),
+  points: z.number(),
+});
+
 // Mirrors server/queries/user-race-picks/IUserRacePicksQuery.ts's UserRacePicksResult exactly.
 const UserRacePicksResultSchema = z.object({
   race: z.object({ title: z.string(), label: z.string().optional() }).nullable(),
@@ -95,6 +107,8 @@ const UserRacePicksResultSchema = z.object({
   totalParticipants: z.number(),
   placementPoints: z.array(z.number()),
   propPointValues: PropPointValuesSchema.nullable(),
+  scoringDepth: z.number().optional(),
+  gridBreakdown: z.array(GridPositionBreakdownSchema).nullable(),
   racersById: z.record(z.string(), RacerDTOSchema),
 });
 

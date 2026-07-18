@@ -1,8 +1,9 @@
 "use client";
 
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, Play } from "lucide-react";
 import { RaceSelectorGate } from "@/components/prediction/RaceSelectorGate";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Podium } from "./Podium";
 import { ResultsList } from "./ResultsList";
 import { StatsFooter } from "./StatsFooter";
@@ -26,6 +27,8 @@ type ResultsViewProps = {
   isRacesLoading: boolean;
   currentUserId: string | null;
   leagueId: string | null;
+  onPlayCutscene: () => void;
+  playCutsceneDisabled?: boolean;
 };
 
 export function ResultsView({
@@ -38,6 +41,8 @@ export function ResultsView({
   isRacesLoading,
   currentUserId,
   leagueId,
+  onPlayCutscene,
+  playCutsceneDisabled,
 }: ResultsViewProps) {
   const podiumEntries = entries.filter((entry) => entry.rank <= 3);
   const listEntries = entries.filter((entry) => entry.rank > 3);
@@ -81,6 +86,14 @@ export function ResultsView({
             />
           )}
           {stats && <StatsFooter stats={stats} />}
+          <Button
+            size="icon"
+            onClick={onPlayCutscene}
+            disabled={playCutsceneDisabled}
+            aria-label="Play cutscene"
+          >
+            <Play />
+          </Button>
         </>
       )}
     </div>

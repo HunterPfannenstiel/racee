@@ -9,22 +9,6 @@ import { PicksGrid } from "./PicksGrid";
 import { PropRows } from "./PropRows";
 import { PicksHero } from "./PicksHero";
 
-function computeDriverPoints(
-  prediction: string[],
-  key: string[],
-  placementPoints: number[],
-): Record<string, number> {
-  const result: Record<string, number> = {};
-  for (let keyPos = 0; keyPos < key.length; keyPos++) {
-    const racerId = key[keyPos];
-    const userPos = prediction.indexOf(racerId);
-    if (userPos === -1) continue;
-    const diff = Math.abs(keyPos - userPos);
-    result[racerId] = diff < placementPoints.length ? placementPoints[diff] : 0;
-  }
-  return result;
-}
-
 export default function PicksPage() {
   const { userId } = useParams<{ userId: string }>();
   const searchParams = useSearchParams();
@@ -56,9 +40,6 @@ export default function PicksPage() {
   }
 
   const raceData = racePicksQuery.data;
-  const driverPoints = raceData.prediction && raceData.key && raceData.placementPoints.length
-    ? computeDriverPoints(raceData.prediction, raceData.key, raceData.placementPoints)
-    : null;
 
   return (
     <PageShell title="Picks">
@@ -92,7 +73,8 @@ export default function PicksPage() {
             prediction={raceData.prediction}
             racersById={raceData.racersById}
             keyOrder={raceData.key}
-            driverPoints={driverPoints}
+            gridBreakdown={raceData.gridBreakdown}
+            scoringDepth={raceData.scoringDepth}
           />
           <PropRows
             propPicks={raceData.propPicks}

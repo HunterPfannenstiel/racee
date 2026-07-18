@@ -1,19 +1,28 @@
-import type { CSSProperties } from "react";
+import type { ComponentProps } from "react";
+import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
-type RaceBugProps = { raceName: string; className?: string; style?: CSSProperties };
+// `motion.p` (not a plain `<p>`) so callers can pass a MotionValue (e.g. a
+// `useTransform`-derived max-width that tracks an animating scale) through
+// `style` and have it update reactively -- a plain element would just
+// stringify the MotionValue object instead of subscribing to it.
+type RaceBugProps = {
+  raceName: string;
+  className?: string;
+  style?: ComponentProps<typeof motion.p>["style"];
+};
 
 export function RaceBug({ raceName, className, style }: RaceBugProps) {
   return (
-    <p
+    <motion.p
       style={style}
       className={cn(
-        "whitespace-nowrap font-heading text-sm font-bold uppercase tracking-wide text-foreground",
+        "min-w-0 truncate font-heading text-sm font-bold uppercase tracking-wide text-foreground",
         className,
       )}
     >
       {raceName}
-    </p>
+    </motion.p>
   );
 }
 

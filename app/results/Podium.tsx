@@ -68,12 +68,7 @@ function PodiumPlatform({
             const nameClassName = "min-w-0 max-w-full truncate font-heading text-base font-bold text-foreground";
 
             return (
-              <div key={entry.userId} className="flex min-w-0 max-w-full items-baseline gap-1">
-                {entries.length > 1 && (
-                  <span aria-hidden="true" className="shrink-0 text-[10px] leading-none text-muted-foreground">
-                    •
-                  </span>
-                )}
+              <div key={entry.userId} className="flex min-w-0 max-w-full flex-col items-center">
                 {href ? (
                   <Link href={href} className={cn(nameClassName, "hover:text-primary transition-colors")}>
                     {entry.name}
@@ -81,6 +76,9 @@ function PodiumPlatform({
                 ) : (
                   <p className={nameClassName}>{entry.name}</p>
                 )}
+                <p className="max-w-full truncate text-xs font-medium" style={{ color: entry.color }}>
+                  {entry.teamName}
+                </p>
               </div>
             );
           })

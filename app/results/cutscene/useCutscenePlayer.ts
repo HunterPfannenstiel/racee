@@ -41,7 +41,7 @@ export type UseCutscenePlayerResult = CutscenePlayerState & {
   pause: () => void;
   reset: () => void;
   scrubTo: (fraction: number) => void;
-  scrubToBeat: (beatId: BeatId) => void;
+  scrubToBeat: (beatId: BeatId, offsetMs?: number) => void;
   playbackRate: number;
   setPlaybackRate: (rate: number) => void;
   /** Beat boundaries as scrub-bar fractions, in registered order -- chapter markers. */
@@ -165,10 +165,10 @@ export function useCutscenePlayer(
   );
 
   const scrubToBeat = useCallback(
-    (beatId: BeatId) => {
+    (beatId: BeatId, offsetMs = 0) => {
       const range = beatMap[beatId];
       if (!range) return;
-      scrubTo(totalMs > 0 ? range.startMs / totalMs : 0);
+      scrubTo(totalMs > 0 ? (range.startMs + offsetMs) / totalMs : 0);
     },
     [beatMap, totalMs, scrubTo],
   );
