@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { RaceScores } from "./race-prediction-book";
 
-const UserRaceScoreSchema = z.object({
+export const UserRaceScoreSchema = z.object({
   raceId: z.string().uuid(),
   gridPoints: z.number().int().min(0),
   propPoints: z.number().int().min(0),

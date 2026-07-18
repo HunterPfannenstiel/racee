@@ -1,44 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useSearchParams, notFound } from "next/navigation";
-import { type PropKey, type PropPointValues } from "@/lib/schemas";
+import { useQuery } from "@tanstack/react-query";
+import { orpc } from "@/lib/orpc/client";
 import { PageShell } from "@/components/ui/page-shell";
-import { Spinner } from "@/components/ui/spinner";
+import { QueryLoading, QueryError } from "@/components/ui/query-state";
 import { PicksGrid } from "./PicksGrid";
 import { PropRows } from "./PropRows";
 import { PicksHero } from "./PicksHero";
-import type { RacerDTO } from "@/server/queries/user-race-picks/IUserRacePicksQuery";
-
-type RaceData = {
-  race: { title: string; label?: string } | null;
-  prediction: string[] | null;
-  key: string[] | null;
-  propPicks: Record<string, string>;
-  propKey: PropKey | null;
-  scores: { gridPoints: number; propPoints: number; medal: string | null } | null;
-  rank: number | null;
-  totalParticipants: number;
-  placementPoints: number[];
-  propPointValues: PropPointValues | null;
-  racersById: Record<string, RacerDTO>;
-};
-
-function computeDriverPoints(
-  prediction: string[],
-  key: string[],
-  placementPoints: number[],
-): Record<string, number> {
-  const result: Record<string, number> = {};
-  for (let keyPos = 0; keyPos < key.length; keyPos++) {
-    const racerId = key[keyPos];
-    const userPos = prediction.indexOf(racerId);
-    if (userPos === -1) continue;
-    const diff = Math.abs(keyPos - userPos);
-    result[racerId] = diff < placementPoints.length ? placementPoints[diff] : 0;
-  }
-  return result;
-}
 
 export default function PicksPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -48,29 +17,33 @@ export default function PicksPage() {
 
   if (!leagueId || !raceId) notFound();
 
-  const [raceData, setRaceData] = useState<RaceData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const racePicksQuery = useQuery(
+    orpc.predictions.racePicks.queryOptions({
+      input: { leagueId, raceId, userId },
+    }),
+  );
 
-  useEffect(() => {
-    setLoading(true);
-    setRaceData(null);
-    fetch(`/api/profile/race?leagueId=${leagueId}&raceId=${raceId}&userId=${userId}`)
-      .then((r) => r.json() as Promise<RaceData>)
-      .then((d) => { setRaceData(d); setLoading(false); });
-  }, [leagueId, raceId, userId]);
+  if (racePicksQuery.isPending) {
+    return (
+      <PageShell title="Picks">
+        <QueryLoading />
+      </PageShell>
+    );
+  }
 
-  const driverPoints = raceData?.prediction && raceData.key && raceData.placementPoints.length
-    ? computeDriverPoints(raceData.prediction, raceData.key, raceData.placementPoints)
-    : null;
+  if (racePicksQuery.isError) {
+    return (
+      <PageShell title="Picks">
+        <QueryError error={racePicksQuery.error} onRetry={() => racePicksQuery.refetch()} />
+      </PageShell>
+    );
+  }
+
+  const raceData = racePicksQuery.data;
 
   return (
     <PageShell title="Picks">
-      {loading ? (
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <Spinner className="w-4 h-4" />
-          <span className="text-xs tracking-widest uppercase">Loading</span>
-        </div>
-      ) : !raceData?.prediction ? (
+      {!raceData.prediction ? (
         <p className="text-xs tracking-widest uppercase text-muted-foreground">No prediction submitted.</p>
       ) : (
         <div className="space-y-8">
@@ -100,7 +73,8 @@ export default function PicksPage() {
             prediction={raceData.prediction}
             racersById={raceData.racersById}
             keyOrder={raceData.key}
-            driverPoints={driverPoints}
+            gridBreakdown={raceData.gridBreakdown}
+            scoringDepth={raceData.scoringDepth}
           />
           <PropRows
             propPicks={raceData.propPicks}

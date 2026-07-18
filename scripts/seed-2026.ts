@@ -1,17 +1,17 @@
-// Run (local):  USE_LOCAL_BLOB=true node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts
-// Run (remote): USE_LOCAL_BLOB=false node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts
-// WARNING: wipes all blob storage before seeding
+// Seeds a full 2026 F1 league (league, teams, racers, races, predictions,
+// scores, standings) for local development.
+//
+// Blob storage and Prisma both connect using the same env vars as the app
+// itself (SUPABASE_URL/SUPABASE_SECRET_KEY/BUCKET_NAME, DATABASE_URL/
+// DATABASE_SCHEMA) — nothing here is hardcoded. The banner below prints the
+// resolved targets every run so it's never ambiguous where data lands.
+//
+// Run:  node --env-file=.env.local --experimental-strip-types scripts/seed-2026.ts
 
 import { randomUUID } from "crypto";
-import { rm } from "fs/promises";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
 import { blob } from "../lib/blob/index.ts";
 import { PrismaClient } from "../server/generated/client.ts";
 import { PrismaPg } from "@prisma/adapter-pg";
-
-const __currentDir = dirname(fileURLToPath(import.meta.url));
-const APP_DIR = join(__currentDir, "..");
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg(
@@ -27,8 +27,12 @@ const PUSS_ID     = "00000000-seed-0000-0000-000000000003";
 const FIONA_ID    = "00000000-seed-0000-0000-000000000004";
 const FARQUAAD_ID = "00000000-seed-0000-0000-000000000005";
 const GINGY_ID    = "00000000-seed-0000-0000-000000000006";
+// Real, already-authenticated account (created via better-auth sign-in) — this
+// seed never upserts it in Prisma, only references it for league membership,
+// commissioner/co-commissioner status, and predictions.
+const YOU_ID = "BnkGVZOFs1XY2V3Vq1x5iCiTecSHED8k";
 
-const users = [
+const fictionalUsers = [
   { id: SHREK_ID,    name: "Shrek" },
   { id: DONKEY_ID,   name: "Donkey" },
   { id: PUSS_ID,     name: "Puss in Boots" },
@@ -36,7 +40,11 @@ const users = [
   { id: FARQUAAD_ID, name: "Lord Farquaad" },
   { id: GINGY_ID,    name: "Gingy" },
 ];
-const [shrek, donkey, puss, fiona, farquaad, gingy] = users;
+const [shrek, donkey, puss, fiona, farquaad, gingy] = fictionalUsers;
+
+// Everyone who participates in predictions/standings, including the real account.
+const you = { id: YOU_ID, name: "You" };
+const users = [...fictionalUsers, you];
 
 // ---- Motorsport ----
 const motorsportId = randomUUID();
@@ -297,6 +305,17 @@ const PREDICTIONS: Record<RaceKey, Record<string, UserPrediction>> = {
                fastestPitStop: "Red Bull Racing", overAchiever: R["Lance Stroll"],
                underAchiever: R["George Russell"], wrecker: R["Carlos Sainz Jr."] },
     },
+    [you.id]: {
+      order: [R["Kimi Antonelli"], R["George Russell"], R["Charles Leclerc"], R["Lewis Hamilton"],
+              R["Lando Norris"], R["Max Verstappen"], R["Arvid Lindblad"], R["Oliver Bearman"],
+              R["Gabriel Bortoleto"], R["Pierre Gasly"], R["Esteban Ocon"], R["Alex Albon"],
+              R["Franco Colapinto"], R["Liam Lawson"], R["Carlos Sainz Jr."], R["Sergio Perez"],
+              R["Lance Stroll"], R["Fernando Alonso"], R["Valtteri Bottas"], R["Isack Hadjar"],
+              R["Oscar Piastri"], R["Nico Hulkenberg"]],
+      props: { lapsLed: R["George Russell"], fastestLap: R["Max Verstappen"], driverOfDay: R["Oliver Bearman"],
+               fastestPitStop: "Mercedes", overAchiever: R["Oliver Bearman"],
+               underAchiever: R["Fernando Alonso"], wrecker: R["Valtteri Bottas"] },
+    },
   },
 
   chinese: {
@@ -366,6 +385,17 @@ const PREDICTIONS: Record<RaceKey, Record<string, UserPrediction>> = {
                fastestPitStop: "Red Bull Racing", overAchiever: R["Lance Stroll"],
                underAchiever: R["George Russell"], wrecker: R["Oscar Piastri"] },
     },
+    [you.id]: {
+      order: [R["George Russell"], R["Kimi Antonelli"], R["Lewis Hamilton"], R["Charles Leclerc"],
+              R["Oliver Bearman"], R["Pierre Gasly"], R["Isack Hadjar"], R["Liam Lawson"],
+              R["Carlos Sainz Jr."], R["Franco Colapinto"], R["Nico Hulkenberg"], R["Arvid Lindblad"],
+              R["Esteban Ocon"], R["Valtteri Bottas"], R["Sergio Perez"], R["Fernando Alonso"],
+              R["Lance Stroll"], R["Alex Albon"], R["Gabriel Bortoleto"], R["Max Verstappen"],
+              R["Oscar Piastri"], R["Lando Norris"]],
+      props: { lapsLed: R["Kimi Antonelli"], fastestLap: R["George Russell"], driverOfDay: R["Liam Lawson"],
+               fastestPitStop: "Ferrari", overAchiever: R["Oliver Bearman"],
+               underAchiever: R["Lando Norris"], wrecker: R["Nico Hulkenberg"] },
+    },
   },
 
   japanese: {
@@ -434,6 +464,17 @@ const PREDICTIONS: Record<RaceKey, Record<string, UserPrediction>> = {
       props: { lapsLed: R["Max Verstappen"], fastestLap: R["Max Verstappen"], driverOfDay: R["Lance Stroll"],
                fastestPitStop: "Red Bull Racing", overAchiever: R["Fernando Alonso"],
                underAchiever: R["George Russell"], wrecker: R["Valtteri Bottas"] },
+    },
+    [you.id]: {
+      order: [R["Oscar Piastri"], R["Kimi Antonelli"], R["Charles Leclerc"], R["George Russell"],
+              R["Lando Norris"], R["Lewis Hamilton"], R["Max Verstappen"], R["Pierre Gasly"],
+              R["Liam Lawson"], R["Esteban Ocon"], R["Nico Hulkenberg"], R["Isack Hadjar"],
+              R["Arvid Lindblad"], R["Gabriel Bortoleto"], R["Carlos Sainz Jr."], R["Franco Colapinto"],
+              R["Sergio Perez"], R["Fernando Alonso"], R["Valtteri Bottas"], R["Alex Albon"],
+              R["Lance Stroll"], R["Oliver Bearman"]],
+      props: { lapsLed: R["Kimi Antonelli"], fastestLap: R["Lando Norris"], driverOfDay: R["Oscar Piastri"],
+               fastestPitStop: "McLaren", overAchiever: R["Pierre Gasly"],
+               underAchiever: R["Max Verstappen"], wrecker: R["Alex Albon"] },
     },
   },
 
@@ -506,6 +547,17 @@ const PREDICTIONS: Record<RaceKey, Record<string, UserPrediction>> = {
                fastestPitStop: "Red Bull Racing", overAchiever: R["Lance Stroll"],
                underAchiever: R["Kimi Antonelli"], wrecker: R["Liam Lawson"] },
     },
+    [you.id]: {
+      order: [R["Lando Norris"], R["Kimi Antonelli"], R["Oscar Piastri"], R["George Russell"],
+              R["Max Verstappen"], R["Lewis Hamilton"], R["Charles Leclerc"], R["Franco Colapinto"],
+              R["Carlos Sainz Jr."], R["Alex Albon"], R["Oliver Bearman"], R["Gabriel Bortoleto"],
+              R["Arvid Lindblad"], R["Esteban Ocon"], R["Fernando Alonso"], R["Sergio Perez"],
+              R["Lance Stroll"], R["Valtteri Bottas"], R["Nico Hulkenberg"], R["Liam Lawson"],
+              R["Pierre Gasly"], R["Isack Hadjar"]],
+      props: { lapsLed: R["Kimi Antonelli"], fastestLap: R["Max Verstappen"], driverOfDay: R["Franco Colapinto"],
+               fastestPitStop: "McLaren", overAchiever: R["Franco Colapinto"],
+               underAchiever: R["Charles Leclerc"], wrecker: R["Liam Lawson"] },
+    },
   },
 };
 
@@ -571,32 +623,30 @@ function assignMedals(entries: { userId: string; gridPoints: number; propPoints:
   return sorted.map((entry, idx) => ({ ...entry, medal: medals[idx] as "gold" | "silver" | "bronze" | null }));
 }
 
-// ---- Wipe ----
-async function wipeStorage() {
-  console.log("Wiping blob storage...");
-  if (process.env.USE_LOCAL_BLOB === "true") {
-    await rm(join(APP_DIR, ".blob-store"), { recursive: true, force: true });
-  } else {
-    const { list, del } = await import("@vercel/blob");
-    let cursor: string | undefined;
-    do {
-      const result = await list({ cursor, limit: 1000 });
-      if (result.blobs.length > 0) await del(result.blobs.map(b => b.url));
-      cursor = result.cursor;
-    } while (cursor);
-  }
-  console.log("  Done");
-}
-
 // ============================================================
 // Main
 // ============================================================
 
-await wipeStorage();
+console.log("=".repeat(60));
+console.log(
+  `blob storage : ${process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).host : "(SUPABASE_URL not set)"}` +
+  ` bucket=${process.env.BUCKET_NAME ?? "(none)"}`
+);
+console.log(
+  `prisma       : ${process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).host : "(DATABASE_URL not set)"}` +
+  ` schema=${process.env.DATABASE_SCHEMA ?? "(none)"}`
+);
+console.log("=".repeat(60));
 
-// 1. Users (Prisma — upsert so re-runs are safe)
+console.log("Wiping blob storage...");
+await blob.wipe();
+console.log("  Done");
+
+// 1. Users (Prisma — upsert so re-runs are safe). Only the fictional cast is
+// created here; YOU_ID already exists as a real authenticated account and is
+// never upserted, so it's untouched even if it's already in the DB.
 console.log("Seeding users...");
-for (const user of users) {
+for (const user of fictionalUsers) {
   await prisma.user.upsert({
     where: { id: user.id },
     update: { name: user.name },
@@ -639,7 +689,13 @@ console.log(`  ✓ ${races.length} races (${Object.keys(titleToKey).length} grad
 console.log("Seeding league...");
 await blob.write("leagues.json", [{
   id: leagueId,
-  commissionerId: "SrmOfH7ttqY42T5k3g11rlKgLvh5PZ5J",
+  // Shrek (the league's namesake) is commissioner; YOU_ID is co-commissioner.
+  // The domain layer's promoteToCoCommissioner() explicitly forbids a user
+  // from being both, so these two must stay disjoint.
+  commissionerId: shrek.id,
+  coCommissionerIds: [YOU_ID],
+  memberIds: users.map(u => u.id),
+  pendingMemberIds: [],
   name: "Shrek's F1 2026",
   placementPoints: PLACEMENT_POINTS,
   mulliganCount: MULLIGAN_COUNT,

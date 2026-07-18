@@ -10,5 +10,6 @@ export type LeaguePlayersResult = {
 };
 
 export interface ILeaguePlayersQuery {
-  execute(leagueId: string): Promise<LeaguePlayersResult>;
+  /** Current members and pending join requests. Commissioner-only. */
+  execute(leagueId: string, actorUserId: string): Promise<LeaguePlayersResult>;
 }

@@ -1,4 +1,5 @@
 import type { PropKey, PropPointValues, PropName } from "@/lib/schemas";
+import type { GridPositionBreakdown } from "@/lib/scoring";
 
 export type RacerDTO = {
   id: string;
@@ -23,6 +24,8 @@ export type UserRacePicksResult = {
   totalParticipants: number;
   placementPoints: number[];
   propPointValues: PropPointValues | null;
+  scoringDepth?: number;
+  gridBreakdown: GridPositionBreakdown[] | null;
   racersById: Record<string, RacerDTO>;
 };
 

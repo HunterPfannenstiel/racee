@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Flag, BarChart2, Users, ShieldCheck, ChevronLeft, ChevronRight, CircleUser } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Flag, BarChart2, Users, ShieldCheck, ChevronLeft, ChevronRight, CircleUser, ListOrdered } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
+import { orpc } from "@/lib/orpc/client";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SidebarContent } from "@/app/components/SidebarContent";
@@ -18,6 +20,7 @@ const sidebarKey = (userId: string) => `racee_sidebar_collapsed:${userId}`;
 
 const BASE_NAV = [
   { href: "/predict",  label: "Predict",   Icon: Flag },
+  { href: "/results", label: "Results",   Icon: ListOrdered },
   { href: "/standings", label: "Standings",  Icon: BarChart2 },
   { href: "/teams",    label: "Teams",      Icon: Users },
 ] as const;
@@ -28,7 +31,8 @@ function initials(name: string) {
 
 function DesktopSidebar() {
   const { user, isAdmin } = useUser();
-  const { leagues, activeLeagueId, setActiveLeagueId } = useLeague();
+  const { activeLeagueId, setActiveLeagueId } = useLeague();
+  const { data: leagues = [] } = useQuery(orpc.leagues.list.queryOptions({ enabled: !!user }));
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -146,6 +150,19 @@ function DesktopSidebar() {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { user } = useUser();
+  const { activeLeagueId, setActiveLeagueId } = useLeague();
+  const { data: leagues = [] } = useQuery(orpc.leagues.list.queryOptions({ enabled: !!user }));
+
+  // Default the active league selection once leagues load, mirroring the
+  // previous LeagueContext behavior: keep the stored selection if it's still
+  // valid, otherwise fall back to the first league.
+  useEffect(() => {
+    if (leagues.length === 0) return;
+    if (leagues.some((l) => l.id === activeLeagueId)) return;
+    setActiveLeagueId(leagues[0].id);
+  }, [leagues, activeLeagueId, setActiveLeagueId]);
+
   return (
     <ToastProvider>
       <div className="flex h-dvh overflow-hidden lg:justify-center">

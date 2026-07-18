@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const RacerPropsSchema = z.object({
+export const RacerPropsSchema = z.object({
   racerId: z.string().uuid(),
   name: z.string().min(1),
   constructor: z.string().min(1),   // F1 constructor name (e.g. "Red Bull") — NOT the Team aggregate
@@ -8,7 +8,7 @@ const RacerPropsSchema = z.object({
   teamColor: z.string().optional(),
   motorsportId: z.string().uuid(),
 });
-type RacerProps = z.infer<typeof RacerPropsSchema>;
+export type RacerProps = z.infer<typeof RacerPropsSchema>;
 
 export class Racer {
   private props: RacerProps;

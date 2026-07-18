@@ -1,49 +1,41 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { type League } from "@/lib/schemas";
 import { useUser } from "@/app/context/UserContext";
 
 const storageKey = (userId: string) => `racee_active_league:${userId}`;
 
+/**
+ * Thin, selection-only context: which league is "active" in the UI, persisted
+ * to localStorage per-user. This does NOT fetch or hold the league list
+ * itself — components that need the list of leagues call
+ * `useQuery(orpc.leagues.list.queryOptions())` directly.
+ */
 type LeagueContextValue = {
-  leagues: League[];
   activeLeagueId: string | null;
   setActiveLeagueId: (id: string) => void;
-  isLoading: boolean;
 };
 
 const LeagueContext = createContext<LeagueContextValue>({
-  leagues: [],
   activeLeagueId: null,
   setActiveLeagueId: () => {},
-  isLoading: true,
 });
 
 export function LeagueContextProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
-  const [leagues, setLeagues] = useState<League[]>([]);
   const [activeLeagueId, setActiveLeagueIdState] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
+  // Re-sync from localStorage whenever the signed-in user changes (including
+  // signing out, which clears selection). Keyed on user.id rather than the
+  // `user` object itself, since useUser() returns a fresh object every render.
   useEffect(() => {
     if (!user) {
-      setLeagues([]);
       setActiveLeagueIdState(null);
-      setIsLoading(false);
       return;
     }
-    fetch("/api/leagues")
-      .then((r) => r.json())
-      .then((data: League[]) => {
-        setLeagues(data);
-        const stored = localStorage.getItem(storageKey(user.id));
-        const valid = data.find((l) => l.id === stored);
-        const selected = valid ?? data[0] ?? null;
-        setActiveLeagueIdState(selected?.id ?? null);
-      })
-      .finally(() => setIsLoading(false));
-  }, [user]);
+    setActiveLeagueIdState(localStorage.getItem(storageKey(user.id)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   function setActiveLeagueId(id: string) {
     setActiveLeagueIdState(id);
@@ -51,7 +43,7 @@ export function LeagueContextProvider({ children }: { children: React.ReactNode 
   }
 
   return (
-    <LeagueContext.Provider value={{ leagues, activeLeagueId, setActiveLeagueId, isLoading }}>
+    <LeagueContext.Provider value={{ activeLeagueId, setActiveLeagueId }}>
       {children}
     </LeagueContext.Provider>
   );

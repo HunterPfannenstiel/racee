@@ -1,36 +1,14 @@
-import type { PropName } from "@/lib/schemas";
+import type { RacerDTO, MyPickDTO, RacePredictionDTO } from "@/server/queries/shared/race-prediction-dto";
 
-export type RacerDTO = {
-  id: string;
-  name: string;
-  team: string;
-  image?: string;
-  teamColor?: string;
-};
+export type { RacerDTO, MyPickDTO };
 
-export type MyPickDTO = {
-  racerIds: string[];
-  propPicks: Partial<Record<PropName, string>>;
-  submittedAt: string | null;
-  submittedBy: string | null;
-  submittedByName: string | null;
-};
+// Alias kept so this query's own code/imports don't need to churn — same
+// shape as the shared RacePredictionDTO.
+export type OpenRaceDTO = RacePredictionDTO;
 
 export type TeammateDTO = {
   id: string;
   name: string;
-};
-
-export type OpenRaceDTO = {
-  id: string;
-  leagueId: string;
-  title: string;
-  label?: string;
-  date: string;
-  lockTime?: string;
-  startingGrid: string[];
-  keyIsSet: boolean;
-  myPick: MyPickDTO | null;
 };
 
 export type UserOpenRacesResult = {

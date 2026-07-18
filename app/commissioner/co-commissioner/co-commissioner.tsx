@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/drawer";
 import { MemberList } from "./MemberList";
 import { MemberActionContent } from "./MemberActionContent";
-import type { Member } from "./hooks/useCoCommissioner";
+export type Member = {
+  id: string;
+  name: string;
+};
 
 type CoCommissionerProps = {
   members: Member[];

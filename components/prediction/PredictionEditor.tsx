@@ -21,6 +21,7 @@ import { CheckIcon, LockIcon } from "lucide-react";
 import { PropPicker } from "@/app/predict/PropPicker";
 import { SortableRacerRow } from "@/components/SortableRacerRow";
 import { SubmissionAttribution } from "@/app/predict/teammate-lineup/SubmissionAttribution";
+import { ResetToGridButton } from "@/components/prediction/ResetToGridButton";
 
 type PredictionEditorRace = {
   id: string;
@@ -29,9 +30,13 @@ type PredictionEditorRace = {
   startingGrid: string[];
 };
 
+// Racers here are the client-facing DTO shape (no motorsportId) — see
+// app/predict/PredictionForm.tsx's PredictRacer for the same rationale.
+type PredictionEditorRacer = Pick<Racer, "id" | "name" | "team" | "image" | "teamColor">;
+
 type PredictionEditorProps = {
   race: PredictionEditorRace;
-  racersById: Record<string, Racer>;
+  racersById: Record<string, PredictionEditorRacer>;
   initialRacerIds: string[];
   initialPropPicks: Partial<Record<PropName, string>>;
   isLocked: boolean;
@@ -93,7 +98,7 @@ export function PredictionEditor({
     });
   }
 
-  const racers = race.startingGrid.map((id) => racersById[id]).filter((r): r is Racer => !!r);
+  const racers = race.startingGrid.map((id) => racersById[id]).filter((r): r is PredictionEditorRacer => !!r);
   const allPropsFilled = PROP_NAMES_ALL.every((p) => propPicks[p] != null);
 
   return (
@@ -132,6 +137,15 @@ export function PredictionEditor({
       </div>
 
       <Separator />
+
+      <div className="flex items-center justify-start">
+        <ResetToGridButton
+          orderedRacerIds={orderedRacerIds}
+          startingGrid={race.startingGrid}
+          onReset={setOrderedRacerIds}
+          disabled={isLocked}
+        />
+      </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} autoScroll={{ acceleration: 1, threshold: { x: 0.2, y: 0.2 } }}>
         <SortableContext items={orderedRacerIds} strategy={verticalListSortingStrategy}>

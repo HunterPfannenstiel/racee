@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { computeGridPoints, computeWeeklyTeamPoints, computePropPoints } from "@/lib/scoring";
+import {
+  computeGridPoints,
+  computeGridPointsBreakdown,
+  computeWeeklyTeamPoints,
+  computePropPoints,
+  computePropPointsBreakdown,
+  computeScoreStats,
+  computeBestPropBet,
+} from "@/lib/scoring";
 
 const makeOrder = (size: number) => Array.from({ length: size }, (_, i) => `driver-${i}`);
 
@@ -54,6 +62,82 @@ describe("computeGridPoints", () => {
   });
 });
 
+describe("computeGridPointsBreakdown", () => {
+  // Every row's points must sum to exactly what computeGridPoints returns for the same inputs —
+  // that's the whole point of deriving the total from the breakdown instead of computing it twice.
+  it("row points sum to the same total computeGridPoints returns (one spot off case)", () => {
+    const actualOrder = ["VER", "LEC", "HAM"];
+    const userOrder = ["VER", "HAM", "LEC"];
+    const breakdown = computeGridPointsBreakdown(userOrder, actualOrder, [10, 7, 3], 3);
+    const total = computeGridPoints(userOrder, actualOrder, [10, 7, 3], 3);
+    expect(breakdown.reduce((sum, row) => sum + row.points, 0)).toBe(total);
+    expect(total).toBe(24);
+  });
+
+  it("exact match row → correct: true, scored: true", () => {
+    const actualOrder = ["VER", "LEC"];
+    const userOrder = ["VER", "LEC"];
+    const breakdown = computeGridPointsBreakdown(userOrder, actualOrder, [10, 7, 3], 2);
+    expect(breakdown).toEqual([
+      { position: 0, racerId: "VER", predictedPosition: 0, scored: true, correct: true, points: 10 },
+      { position: 1, racerId: "LEC", predictedPosition: 1, scored: true, correct: true, points: 10 },
+    ]);
+  });
+
+  // Beyond the scoring depth: not scored (0pts) even though the guess happens to be exact.
+  it("prediction beyond depth cap → scored: false, points: 0, even if the slot is exact", () => {
+    const actualOrder = ["VER"];
+    const userOrder = [...makeOrder(18), "VER"]; // VER guessed 19th, depth cap 18
+    const breakdown = computeGridPointsBreakdown(userOrder, actualOrder, [10, 7, 3], 18);
+    expect(breakdown).toEqual([
+      { position: 0, racerId: "VER", predictedPosition: 18, scored: false, correct: false, points: 0 },
+    ]);
+  });
+
+  // A racer absent from the user's prediction entirely → null predicted position, nothing scored.
+  it("racer not in user predictions → predictedPosition: null, scored: false", () => {
+    const actualOrder = ["VER"];
+    const breakdown = computeGridPointsBreakdown([], actualOrder, [10, 7, 3], 18);
+    expect(breakdown).toEqual([
+      { position: 0, racerId: "VER", predictedPosition: null, scored: false, correct: false, points: 0 },
+    ]);
+  });
+});
+
+describe("computePropPointsBreakdown", () => {
+  const propKey = {
+    driverOfDay: ["HAM"], lapsLed: null, fastestPitStop: null,
+    fastestLap: ["VER", "LEC"], overAchiever: null, underAchiever: null, wrecker: null,
+  };
+  const propPointValues = {
+    driverOfDay: 5, lapsLed: 5, fastestPitStop: 5,
+    fastestLap: 5, overAchiever: 5, underAchiever: 5, wrecker: 5,
+  };
+
+  // Row points must sum to the same total computePropPoints returns for the same inputs.
+  it("row points sum to the same total computePropPoints returns", () => {
+    const picks = { driverOfDay: "HAM", fastestLap: "LEC" };
+    const breakdown = computePropPointsBreakdown(picks, propKey, propPointValues);
+    const total = computePropPoints(picks, propKey, propPointValues);
+    expect(breakdown.reduce((sum, row) => sum + row.points, 0)).toBe(total);
+    expect(total).toBe(10);
+  });
+
+  // A pick matching one of several tied winners still counts as correct.
+  it("pick matches one of multiple winners → correct, with winners array intact", () => {
+    const breakdown = computePropPointsBreakdown({ fastestLap: "VER" }, propKey, propPointValues);
+    const row = breakdown.find((r) => r.propName === "fastestLap")!;
+    expect(row).toEqual({ propName: "fastestLap", pickedValue: "VER", winners: ["VER", "LEC"], correct: true, points: 5 });
+  });
+
+  // A prop with no answer key set is never correct, regardless of what was picked.
+  it("prop with no winners set → never correct, 0pts", () => {
+    const breakdown = computePropPointsBreakdown({ lapsLed: "HAM" }, propKey, propPointValues);
+    const row = breakdown.find((r) => r.propName === "lapsLed")!;
+    expect(row).toEqual({ propName: "lapsLed", pickedValue: "HAM", winners: null, correct: false, points: 0 });
+  });
+});
+
 describe("computeWeeklyTeamPoints", () => {
   // All three teams scored differently — each gets their finishing position's points outright.
   it("no tie → Mercedes 22pts, Red Bull 17pts, Ferrari 14pts", () => {
@@ -92,5 +176,102 @@ describe("computeWeeklyTeamPoints", () => {
     expect(result.get("mercedes")).toBe(22);   // unaffected by the tie below
     expect(result.get("redbull")).toBe(15.5);  // (17+14)/2
     expect(result.get("ferrari")).toBe(15.5);  // (17+14)/2
+  });
+});
+
+const scoreEntry = (userId: string, gridPoints: number, propPoints: number) => ({
+  userId, gridPoints, propPoints, medal: null, weeklyTeamPoints: 0,
+});
+
+describe("computeScoreStats", () => {
+  // Three distinct totals — no ties, so highest/lowest each name one player.
+  it("no ties → average, single highest, single lowest", () => {
+    const entries = [scoreEntry("a", 20, 10), scoreEntry("b", 15, 5), scoreEntry("c", 5, 5)];
+    const result = computeScoreStats(entries);
+    expect(result.average).toBeCloseTo((30 + 20 + 10) / 3);
+    expect(result.highest).toEqual({ value: 30, userIds: ["a"] });
+    expect(result.lowest).toEqual({ value: 10, userIds: ["c"] });
+  });
+
+  // Two players tie for the top total — both userIds come back, not just one.
+  it("tie at the top → highest lists every tied userId", () => {
+    const entries = [scoreEntry("a", 20, 10), scoreEntry("b", 25, 5), scoreEntry("c", 5, 5)];
+    const result = computeScoreStats(entries);
+    expect(result.highest).toEqual({ value: 30, userIds: expect.arrayContaining(["a", "b"]) });
+    expect(result.highest.userIds).toHaveLength(2);
+  });
+
+  // A single entry collapses average/highest/lowest to the same value — never suppressed.
+  it("single entry → average, highest, and lowest all equal that entry's total", () => {
+    const entries = [scoreEntry("a", 12, 8)];
+    const result = computeScoreStats(entries);
+    expect(result.average).toBe(20);
+    expect(result.highest).toEqual({ value: 20, userIds: ["a"] });
+    expect(result.lowest).toEqual({ value: 20, userIds: ["a"] });
+  });
+
+  // No entries at all — degenerate but must not throw or return NaN.
+  it("no entries → zeroed stats, no userIds", () => {
+    const result = computeScoreStats([]);
+    expect(result.average).toBe(0);
+    expect(result.highest).toEqual({ value: 0, userIds: [] });
+    expect(result.lowest).toEqual({ value: 0, userIds: [] });
+  });
+});
+
+describe("computeBestPropBet", () => {
+  // fastestLap is picked by everyone and gets it right; driverOfDay is picked but nobody's correct.
+  it("one prop with a strictly higher hit-rate wins", () => {
+    const propKey = {
+      driverOfDay: ["HAM"], lapsLed: null, fastestPitStop: null,
+      fastestLap: ["VER"], overAchiever: null, underAchiever: null, wrecker: null,
+    };
+    const picks = [
+      { driverOfDay: "LEC", fastestLap: "VER" },
+      { driverOfDay: "NOR", fastestLap: "VER" },
+    ];
+    expect(computeBestPropBet(picks, propKey)).toEqual({ prop: "fastestLap", hitRate: 1 });
+  });
+
+  // driverOfDay and fastestLap both land at a 50% hit-rate — canonical PropName order
+  // (driverOfDay before fastestLap) breaks the tie.
+  it("tied hit-rates → earlier prop in PropName's declared order wins", () => {
+    const propKey = {
+      driverOfDay: ["HAM"], lapsLed: null, fastestPitStop: null,
+      fastestLap: ["VER"], overAchiever: null, underAchiever: null, wrecker: null,
+    };
+    const picks = [
+      { driverOfDay: "HAM", fastestLap: "LEC" },
+      { driverOfDay: "LEC", fastestLap: "VER" },
+    ];
+    expect(computeBestPropBet(picks, propKey)).toEqual({ prop: "driverOfDay", hitRate: 0.5 });
+  });
+
+  // A prop with no answer key set is not gradable, even if everyone picked it.
+  it("prop with no correct answer set is ineligible", () => {
+    const propKey = {
+      driverOfDay: null, lapsLed: null, fastestPitStop: null,
+      fastestLap: null, overAchiever: null, underAchiever: null, wrecker: null,
+    };
+    const picks = [{ driverOfDay: "HAM" }];
+    expect(computeBestPropBet(picks, propKey)).toBeNull();
+  });
+
+  // A prop has a correct answer but nobody picked it — also ineligible.
+  it("prop nobody picked is ineligible even with a correct answer set", () => {
+    const propKey = {
+      driverOfDay: ["HAM"], lapsLed: null, fastestPitStop: null,
+      fastestLap: null, overAchiever: null, underAchiever: null, wrecker: null,
+    };
+    expect(computeBestPropBet([{}], propKey)).toBeNull();
+  });
+
+  // Nothing gradable at all this race → null, not a thrown error.
+  it("no eligible props at all → null", () => {
+    const propKey = {
+      driverOfDay: null, lapsLed: null, fastestPitStop: null,
+      fastestLap: null, overAchiever: null, underAchiever: null, wrecker: null,
+    };
+    expect(computeBestPropBet([], propKey)).toBeNull();
   });
 });

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Flag, BarChart2, Users } from "lucide-react";
+import { Flag, BarChart2, Users, ListOrdered } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/predict",  label: "Predict",   Icon: Flag },
+  { href: "/results", label: "Results",   Icon: ListOrdered },
   { href: "/standings", label: "Standings",  Icon: BarChart2 },
   { href: "/teams",    label: "Teams",      Icon: Users },
 ];

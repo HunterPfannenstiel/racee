@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { type PropName, type Racer } from "@/lib/schemas";
-import { PROP_META, getPropOptions } from "@/lib/props";
+import { type PropName } from "@/lib/schemas";
+import { PROP_META, getPropOptions, type PropOptionRacer } from "@/lib/props";
 import {
   Drawer,
   DrawerContent,
@@ -13,7 +13,7 @@ import { CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  racers: Racer[];
+  racers: PropOptionRacer[];
   propPicks: Partial<Record<PropName, string>>;
   onChange: (picks: Partial<Record<PropName, string>>) => void;
   disabled: boolean;

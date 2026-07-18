@@ -1,24 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { orpc } from "@/lib/orpc/client";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { QueryLoading, QueryError } from "@/components/ui/query-state";
 import { UsersSection } from "./UsersSection";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 
-type User = { id: string; name: string; isAdmin: boolean };
-
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/users")
-      .then((r) => r.json())
-      .then(setUsers);
-  }, []);
+  const usersQuery = useQuery(orpc.users.list.queryOptions());
 
   return (
     <PageShell title="Users">
@@ -34,7 +29,13 @@ export default function AdminUsersPage() {
           </AlertDescription>
         </Alert>
       )}
-      <UsersSection users={users} onUsersChange={setUsers} onError={setError} />
+      {usersQuery.isPending ? (
+        <QueryLoading />
+      ) : usersQuery.isError ? (
+        <QueryError error={usersQuery.error} onRetry={() => usersQuery.refetch()} />
+      ) : (
+        <UsersSection users={usersQuery.data} onError={setError} />
+      )}
     </PageShell>
   );
 }

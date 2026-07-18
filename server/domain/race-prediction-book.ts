@@ -20,18 +20,21 @@ export const PropKeySchema = z.object({
 });
 export type PropKey = z.infer<typeof PropKeySchema>;
 
+export const PropPicksSchema = z.object({
+  driverOfDay: z.string().optional(),
+  lapsLed: z.string().optional(),
+  fastestPitStop: z.string().optional(),
+  fastestLap: z.string().optional(),
+  overAchiever: z.string().optional(),
+  underAchiever: z.string().optional(),
+  wrecker: z.string().optional(),
+});
+export type PropPicks = z.infer<typeof PropPicksSchema>;
+
 const UserPredictionPropsSchema = z.object({
   userId: z.string().min(1),
   racerIds: z.array(z.string().uuid()).min(1),
-  propPicks: z.object({
-    driverOfDay: z.string().optional(),
-    lapsLed: z.string().optional(),
-    fastestPitStop: z.string().optional(),
-    fastestLap: z.string().optional(),
-    overAchiever: z.string().optional(),
-    underAchiever: z.string().optional(),
-    wrecker: z.string().optional(),
-  }),
+  propPicks: PropPicksSchema,
   submittedAt: z.string().nullable(),
   submittedBy: z.string().nullable().default(null),
 });
@@ -60,18 +63,20 @@ export class ScoreEntry {
   get total() { return this.gridPoints + this.propPoints; }
 }
 
-const RaceScoresPropsSchema = z.object({
+export const ScoreEntryPropsSchema = z.object({
+  userId: z.string(),
+  gridPoints: z.number().int().min(0),
+  propPoints: z.number().int().min(0),
+  medal: z.enum(["gold", "silver", "bronze"]).nullable(),
+  weeklyTeamPoints: z.number().min(0).default(0),
+});
+
+export const RaceScoresPropsSchema = z.object({
   raceId: z.string().uuid(),
   leagueId: z.string().uuid(),
   raceTitle: z.string(),
   raceDate: z.string(),
-  entries: z.array(z.object({
-    userId: z.string(),
-    gridPoints: z.number().int().min(0),
-    propPoints: z.number().int().min(0),
-    medal: z.enum(["gold", "silver", "bronze"]).nullable(),
-    weeklyTeamPoints: z.number().min(0).default(0),
-  })),
+  entries: z.array(ScoreEntryPropsSchema),
 });
 
 export class RaceScores {

@@ -16,14 +16,16 @@ export class SupabaseBlobStore implements BlobStore {
   }
 
   async write(pathname: string, data: unknown): Promise<void> {
-    await supabase.storage.from(BUCKET).upload(pathname, JSON.stringify(data), {
+    const { error } = await supabase.storage.from(BUCKET).upload(pathname, JSON.stringify(data), {
       upsert: true,
       contentType: "application/json",
     });
+    if (error) throw error;
   }
 
   async delete(pathname: string): Promise<void> {
-    await supabase.storage.from(BUCKET).remove([pathname]);
+    const { error } = await supabase.storage.from(BUCKET).remove([pathname]);
+    if (error) throw error;
   }
 
   async wipe(): Promise<void> {

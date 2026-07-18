@@ -5,5 +5,6 @@ export type LeagueMemberDTO = {
 };
 
 export interface ILeagueMembersQuery {
-  execute(leagueId: string): Promise<LeagueMemberDTO[]>;
+  /** Members of a league (excluding the owning commissioner). Owning commissioner only. */
+  execute(leagueId: string, actorUserId: string): Promise<LeagueMemberDTO[]>;
 }

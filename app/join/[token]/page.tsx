@@ -1,10 +1,7 @@
 import { redirect } from "next/navigation";
+import { call, ORPCError } from "@orpc/server";
 import { getSession } from "@/server/auth/server";
-import { BlobLeagueRepository } from "@/server/repositories/blob/BlobLeagueRepository";
-import { BlobTeamRepository } from "@/server/repositories/blob/BlobTeamRepository";
-import { PrismaUserRepository } from "@/server/repositories/prisma/PrismaUserRepository";
-import { LeagueService } from "@/server/services/LeagueService";
-import { NotFoundError } from "@/server/domain/errors";
+import { leaguesRouter } from "@/server/rpc/routers/leagues";
 
 export default async function JoinPage({
   params,
@@ -18,16 +15,13 @@ export default async function JoinPage({
     redirect(`/signin?next=/join/${token}`);
   }
 
-  const svc = new LeagueService(
-    new BlobLeagueRepository(),
-    new BlobTeamRepository(),
-    new PrismaUserRepository(),
-  );
-
   try {
-    await svc.joinViaInvite(token, session.user.id);
-  } catch (e) {
-    if (!(e instanceof NotFoundError)) throw e;
+    // Invoke the `leagues.join` procedure's handler directly (no HTTP
+    // round trip) so this page and the oRPC route share exactly one call
+    // path for the join-via-invite business logic.
+    await call(leaguesRouter.join, { token });
+  } catch (err) {
+    if (!(err instanceof ORPCError) || err.code !== "NOT_FOUND") throw err;
   }
 
   redirect("/");
