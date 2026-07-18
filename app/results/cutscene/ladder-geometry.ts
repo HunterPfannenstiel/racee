@@ -39,6 +39,13 @@ function easeBackOut(p: number): number {
 // continuous at both knees, so there's no bump where ramp meets cruise.
 const SCROLL_RAMP_IN_END = 0.12;
 const SCROLL_RAMP_OUT_START = 0.88;
+
+// Placeholder: how long the scroll-pause's velocity ramp takes on each side
+// (deceleration into the pause, acceleration back out of it) -- smooths what
+// would otherwise be an instant freeze/resume in the camera's motion. See
+// the ease-in/ease-out block inside resolveScrollOffset for the closed-form
+// derivation of why this doesn't require adjusting the domain-shrink math.
+const PAUSE_EASE_MS = 180;
 function easeScrollTrapezoid(p: number): number {
   const rampIn = SCROLL_RAMP_IN_END;
   const rampOut = 1 - SCROLL_RAMP_OUT_START;
@@ -97,6 +104,31 @@ export function rowAbsY(rowIndex: number, totalRows: number): number {
  *
  * For a field that never overflows (`totalRows <= visibleRowCount`), the
  * camera never moves at all (stays at 0, i.e. the starting offset is 0).
+ *
+ * Pause window: whichever row carries a nonzero `postPaddingMs` (today: only
+ * the isYou row, see build-cutscene-script.ts's YOU_POST_PADDING_MS) reserves
+ * a hold in the camera motion spanning [row.countEnd, row.countEnd +
+ * row.postPaddingMs] -- located generically by scanning `rows` rather than
+ * importing/branching on `isYou`, preserving this module's no-identity-
+ * branching boundary. This is implemented as a time-remap, NOT a second eased
+ * segment: the eased motion before and after the pause is still one
+ * continuous, monotonic mapping with no restart -- structurally different
+ * from (and doesn't reintroduce) the per-row-segment discontinuity bug
+ * described above. If the pause window falls outside the overflow domain
+ * (e.g. the padded row settles during the filling phase, or is the last row
+ * itself, whose countEnd always lands after its own slideEnd/the domain's
+ * end), it's simply inert -- there's nothing to pause yet, or nothing left
+ * to pause.
+ *
+ * The freeze/resume itself is eased, not instant: effective time ramps its
+ * velocity 1 -> 0 over PAUSE_EASE_MS approaching the pause, holds flat
+ * through the remaining core, then ramps 0 -> 1 for PAUSE_EASE_MS leaving it
+ * -- a symmetric pair of smoothstep-velocity ramps whose closed-form
+ * integral each contribute exactly half of PAUSE_EASE_MS worth of forward
+ * advance, so the two ramps together land effective time back on exactly
+ * the same value (pauseStart) at the window's end that an instant freeze
+ * would -- no change to the domain-shrink compensation below is needed to
+ * account for the smoothing.
  */
 export function resolveScrollOffset(rows: CutsceneRowEvent[], t: number, visibleRowCount: number): number {
   const totalRows = rows.length;
@@ -105,11 +137,69 @@ export function resolveScrollOffset(rows: CutsceneRowEvent[], t: number, visible
   const startOffset = (totalRows - visibleRowCount) * ROW_HEIGHT_PX;
   const firstOverflowRow = rows[visibleRowCount];
   const lastRow = rows[totalRows - 1];
+  const domainStart = firstOverflowRow.arriveAt;
+  const domainEnd = lastRow.slideEnd;
 
-  if (t < firstOverflowRow.arriveAt) return startOffset;
-  if (t >= lastRow.slideEnd) return 0;
+  if (t < domainStart) return startOffset;
+  if (t >= domainEnd) return 0;
 
-  const progress = clamp01((t - firstOverflowRow.arriveAt) / (lastRow.slideEnd - firstOverflowRow.arriveAt));
+  const pauseRow = rows.find((row) => row.postPaddingMs > 0);
+  const pauseStart = pauseRow ? pauseRow.countEnd : null;
+  const pauseLen = pauseRow?.postPaddingMs ?? 0;
+  const pauseInDomain = pauseStart !== null && pauseLen > 0 && pauseStart > domainStart && pauseStart < domainEnd;
+
+  let effectiveT = t;
+  let effectiveDomainEnd = domainEnd;
+  if (pauseInDomain) {
+    // pauseStart + pauseLen is guaranteed < domainEnd whenever pauseRow
+    // isn't the last row (there's always at least HOLD_MS + next row's
+    // pop/slide between them), and pauseInDomain already excludes the
+    // last-row case (its countEnd lands after domainEnd) -- so this can't
+    // collapse effectiveDomainEnd onto or past domainStart.
+    effectiveDomainEnd = domainEnd - pauseLen;
+
+    const pauseEnd = pauseStart! + pauseLen;
+    // Clamp the ease duration to at most half of pauseLen (so the two ramps
+    // never cross) and to however much room actually exists before
+    // pauseStart within this domain (so the ramp-down can't reach back past
+    // the start of the overflow phase).
+    const easeMs = Math.max(0, Math.min(PAUSE_EASE_MS, pauseLen / 2, pauseStart! - domainStart));
+    const rampDownStart = pauseStart! - easeMs;
+    const coreEnd = pauseEnd - easeMs;
+
+    if (easeMs <= 0) {
+      // No room to ease (pause sits right at the domain's edge) -- fall
+      // back to the original instant freeze rather than a degenerate ramp.
+      if (t <= pauseStart!) effectiveT = t;
+      else if (t < pauseEnd) effectiveT = pauseStart!;
+      else effectiveT = t - pauseLen;
+    } else if (t <= rampDownStart) {
+      effectiveT = t;
+    } else if (t <= pauseStart!) {
+      // Ramp down: velocity v(x) = 1 - smoothstep(x) eases 1 -> 0. Its
+      // closed-form integral F(x) = x - x^3 + 0.5x^4 gives F(1) = 0.5, i.e.
+      // this ramp advances effective time by exactly half of easeMs.
+      const x = (t - rampDownStart) / easeMs;
+      const advance = x - x ** 3 + 0.5 * x ** 4;
+      effectiveT = rampDownStart + easeMs * advance;
+    } else if (t <= coreEnd) {
+      // Fully paused core, held at the value the ramp-down settles into.
+      effectiveT = pauseStart! - 0.5 * easeMs;
+    } else if (t <= pauseEnd) {
+      // Ramp up: velocity v(x) = smoothstep(x) eases 0 -> 1, mirroring the
+      // ramp down. Integral G(x) = x^3 - 0.5x^4 gives G(1) = 0.5, so this
+      // ramp's other half-easeMs advance lands effectiveT exactly back on
+      // pauseStart at t = pauseEnd -- matching the instant-freeze version's
+      // boundary value with no drift.
+      const x = (t - coreEnd) / easeMs;
+      const advance = x ** 3 - 0.5 * x ** 4;
+      effectiveT = pauseStart! - 0.5 * easeMs + easeMs * advance;
+    } else {
+      effectiveT = t - pauseLen;
+    }
+  }
+
+  const progress = clamp01((effectiveT - domainStart) / (effectiveDomainEnd - domainStart));
   const eased = easeScrollTrapezoid(progress);
   return startOffset + (0 - startOffset) * eased;
 }

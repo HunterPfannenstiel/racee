@@ -26,14 +26,14 @@ export type CutsceneRowMember = {
   color: string;
   /** True for exactly one member across the whole non-podium script (the
    *  viewer's own row), tagged in place by `tagYouMember`. Absent (not just
-   *  false) on every other member. Not yet consumed by LadderStage's
-   *  rendering -- that's WP6 -- but carried here so it's available. */
+   *  false) on every other member. Drives both this row's prePaddingMs/
+   *  postPaddingMs below and LadderStage's fill/shimmer treatment (WP6). */
   isYou?: true;
   /** True for members who share the viewer's fantasy-team color (i.e. are on
    *  the viewer's team) but aren't the viewer themself, tagged in place by
    *  `tagTeammateMembers`. Absent (not just false) on every other member,
-   *  including the viewer's own row. Not yet consumed by LadderStage's
-   *  rendering -- that's WP5. */
+   *  including the viewer's own row. Drives LadderStage's outline + settle-
+   *  pulse treatment (WP5). */
   isTeammate?: true;
 };
 
@@ -56,11 +56,13 @@ export type CutsceneRowEvent = {
   slideEnd: number;
   /** Count-up ends here -- the row is fully settled from here on. */
   countEnd: number;
-  /** Reserved for WP6 (the viewer's own "breathing pace" row): extra pause
-   *  before this row's arriveAt / after its countEnd. Always 0 today --
-   *  exposed on the contract but not yet wired into the cursor math below,
-   *  so setting these currently has no effect. WP6 will both populate them
-   *  (for the isYou row) and fold them into buildCutsceneScript's cursor. */
+  /** The viewer's own "breathing pace" row: extra pause before this row's
+   *  arriveAt / after its countEnd, folded into buildCutsceneScript's cursor
+   *  below so every later row's timing genuinely shifts to accommodate it.
+   *  Nonzero only for the isYou row (see YOU_PRE_PADDING_MS/
+   *  YOU_POST_PADDING_MS); 0 for every other row, which makes this a no-op
+   *  for them -- the cursor math below reduces exactly to the pre-WP6
+   *  formula when both are 0. */
   prePaddingMs: number;
   postPaddingMs: number;
 };
@@ -86,6 +88,24 @@ export const HOLD_MS = 500;
 /** Pause after the last row finishes counting up, before this beat ends and
  *  hands off to the podium beat. */
 export const TRAILING_GAP_MS = 1000;
+
+// --- Viewer "breathing pace" padding (WP6) ------------------------------
+// Placeholder values, same tuning caveat as the constants above. Applied
+// only to the isYou row's prePaddingMs/postPaddingMs (every other row gets
+// 0 for both, see buildCutsceneScript's cursor) -- an extra pause before the
+// viewer's own row pops in, and a longer hold after it settles, so that row
+// reads as a deliberate beat rather than just another row in the cascade.
+// This is a single shared knob for two consumers: LadderStage.tsx ties its
+// "you" row's fill/shimmer hold directly to this postPaddingMs window, and
+// ladder-geometry.ts's resolveScrollOffset pauses the auto-scroll for this
+// same window (found generically by scanning for whichever row has nonzero
+// postPaddingMs, not by branching on isYou) -- so retuning this one value
+// moves the visual hold and the scroll freeze together, by design.
+/** Extra pause before the viewer's row starts popping in. */
+export const YOU_PRE_PADDING_MS = 200;
+/** Extra hold after the viewer's row finishes counting up, before the next
+ *  row begins -- also the scroll-pause duration (see resolveScrollOffset). */
+export const YOU_POST_PADDING_MS = 1000;
 
 /**
  * Stable worst-to-best comparator for same-rank ties: ascending by the
@@ -113,7 +133,10 @@ function compareUserIdAscending(a: string, b: string): number {
  * each row its own chained arrive/pop/slide/count/hold timestamps in
  * canonical (1x) ms -- a row's arriveAt is always the previous row's
  * countEnd plus HOLD_MS, so a row never starts popping in until the
- * previous one has fully settled and held.
+ * previous one has fully settled and held. The viewer's own row additionally
+ * folds YOU_PRE_PADDING_MS/YOU_POST_PADDING_MS into that same cursor (see
+ * prePaddingMs/postPaddingMs on CutsceneRowEvent), which is a no-op for
+ * every other row since theirs are always 0.
  */
 export function buildCutsceneScript(
   entries: ResultsRowData[],
@@ -144,11 +167,14 @@ export function buildCutsceneScript(
 
   let cursor = 0;
   return members.map((member, rowIndex) => {
-    const arriveAt = cursor;
+    const prePaddingMs = member.isYou ? YOU_PRE_PADDING_MS : 0;
+    const postPaddingMs = member.isYou ? YOU_POST_PADDING_MS : 0;
+
+    const arriveAt = cursor + prePaddingMs;
     const popEnd = arriveAt + POP_MS;
     const slideEnd = popEnd + SLIDE_MS;
     const countEnd = slideEnd + COUNT_UP_MS;
-    cursor = countEnd + HOLD_MS;
+    cursor = countEnd + HOLD_MS + postPaddingMs;
 
     return {
       rowIndex,
@@ -158,8 +184,8 @@ export function buildCutsceneScript(
       popEnd,
       slideEnd,
       countEnd,
-      prePaddingMs: 0,
-      postPaddingMs: 0,
+      prePaddingMs,
+      postPaddingMs,
     };
   });
 }
