@@ -24,12 +24,12 @@ export function RevealGate({ onPlayCutscene, onShowResults, disabled, raceName }
         <EmptyHeader>
           <EmptyTitle>Results are ready</EmptyTitle>
           {raceName && <p>{raceName}</p>}
-          <EmptyDescription>Play the reveal, or skip straight to the standings.</EmptyDescription>
+          <EmptyDescription>Play the reveal, or skip straight to the results.</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <div className="flex w-full gap-2">
             <Button className="flex-1 gap-2" onClick={onPlayCutscene} disabled={disabled}>
-              Play Cutscene
+              Play Reveal
               <Play />
             </Button>
             <Button className="flex-1" variant="outline" onClick={onShowResults}>
