@@ -146,21 +146,31 @@ export class RacePredictionBook {
 
     const propKey = race.propKey ?? emptyPropKey();
 
-    const rawEntries = Array.from(this._predictions.values()).map(pred => ({
-      userId: pred.userId,
-      gridPoints: computeGridPoints(
-        pred.racerIds as string[],
-        race.keyOrder as string[],
-        league.placementPoints as number[],
-        league.scoringDepth,
-      ),
-      propPoints: computePropPoints(
-        pred.propPicks as Record<string, string>,
-        propKey,
-        league.propPointValues,
-      ),
-      weeklyTeamPoints: 0,
-    }));
+    // Every league member gets an entry, not just those who submitted a prediction —
+    // a member who didn't submit scores 0/0 for the race, same as any other bad
+    // result, so they stay eligible for mulligan consideration instead of the race
+    // silently vanishing from their standings.
+    const rawEntries = league.memberIds.map(userId => {
+      const pred = this._predictions.get(userId);
+      if (!pred) {
+        return { userId, gridPoints: 0, propPoints: 0, weeklyTeamPoints: 0 };
+      }
+      return {
+        userId,
+        gridPoints: computeGridPoints(
+          pred.racerIds as string[],
+          race.keyOrder as string[],
+          league.placementPoints as number[],
+          league.scoringDepth,
+        ),
+        propPoints: computePropPoints(
+          pred.propPicks as Record<string, string>,
+          propKey,
+          league.propPointValues,
+        ),
+        weeklyTeamPoints: 0,
+      };
+    });
 
     const graded = assignMedals(rawEntries);
     this._scores = new RaceScores({
