@@ -24,6 +24,7 @@ function makeLeague(overrides: Partial<ConstructorParameters<typeof League>[0]> 
     name: "Test League",
     placementPoints: [10, 7, 3],
     mulliganCount: 0,
+    memberIds: ["alice", "bob"],
     motorsportId: MOTORSPORT_ID,
     propPointValues: {
       driverOfDay: 5,
@@ -162,6 +163,48 @@ describe("gradeLeagueRace", () => {
     const teamScores = standings.teams.find((t) => t.teamId === TEAM_ID)!;
     expect(teamScores.raceScores).toHaveLength(1);
     expect(teamScores.raceScores[0]).toMatchObject({ raceId: RACE_ID, weeklyTeamPoints: 22 });
+  });
+
+  it("scores a league member who never submitted a prediction as 0/0 rather than omitting them", () => {
+    const league = makeLeague({ memberIds: ["alice", "bob", "carol"] });
+    const race = makeRace();
+    const book = RacePredictionBook.empty(LEAGUE_ID, RACE_ID);
+    book.submitPrediction("alice", [VER, LEC, NOR], {}, "2026-04-30T00:00:00.000Z");
+    book.submitPrediction("bob", [OTHER], {}, "2026-04-30T00:00:00.000Z");
+    // carol never submits a prediction for this race
+    const standings = LeagueStandings.empty(LEAGUE_ID);
+
+    gradeLeagueRace(league, race, book, standings, []);
+
+    const carolEntry = book.scores!.entryFor("carol")!;
+    expect(carolEntry.gridPoints).toBe(0);
+    expect(carolEntry.propPoints).toBe(0);
+
+    const carolScores = standings.individual.find((u) => u.userId === "carol")!;
+    expect(carolScores.raceScores).toHaveLength(1);
+    expect(carolScores.raceScores[0]).toMatchObject({ raceId: RACE_ID, gridPoints: 0, propPoints: 0 });
+  });
+
+  it("makes a non-submitted race eligible for mulligan consideration same as any low score", () => {
+    const RACE_ID_2 = "99999999-9999-4999-8999-999999999999";
+    const league = makeLeague({ memberIds: ["alice"], mulliganCount: 1 });
+    const race1 = makeRace();
+    const race2 = makeRace({ raceId: RACE_ID_2 });
+    const standings = LeagueStandings.empty(LEAGUE_ID);
+
+    // Race 1: alice submits and scores well.
+    const book1 = RacePredictionBook.empty(LEAGUE_ID, RACE_ID);
+    book1.submitPrediction("alice", [VER, LEC, NOR], {}, "2026-04-30T00:00:00.000Z");
+    gradeLeagueRace(league, race1, book1, standings, []);
+
+    // Race 2: alice never submits — should count as 0 and be the mulliganed race.
+    const book2 = RacePredictionBook.empty(LEAGUE_ID, RACE_ID_2);
+    gradeLeagueRace(league, race2, book2, standings, []);
+
+    const ranked = standings.rankIndividual(league.mulliganCount);
+    const aliceRank = ranked.find((r) => r.userId === "alice")!;
+    expect(aliceRank.total).toBe(30); // race 1's 30 counts; race 2's 0 is the dropped mulligan
+    expect(aliceRank.mulliganed).toBe(1);
   });
 
   it("re-grading the same race replaces rather than double-counts standings", () => {
