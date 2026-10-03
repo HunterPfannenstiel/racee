@@ -147,6 +147,21 @@ export function RacesSection({ motorsportId, races, racers, onError }: Props) {
             lockTime: editor.lockTime ? new Date(editor.lockTime).toISOString() : undefined,
           },
         });
+        // races.update only patches details — racer selection changes must go
+        // through setGrid, otherwise they're silently dropped and a race with an
+        // empty grid never shows up as open on /predict.
+        const existing = races.find((r) => r.id === editor.raceId);
+        const gridChanged =
+          !existing ||
+          existing.startingGrid.length !== editor.startingGrid.length ||
+          existing.startingGrid.some((id, i) => id !== editor.startingGrid[i]);
+        if (gridChanged && editor.startingGrid.length > 0) {
+          await setGridMutation.mutateAsync({
+            motorsportId,
+            raceId: editor.raceId,
+            startingGrid: editor.startingGrid,
+          });
+        }
       }
       setEditorOpen(false);
     } catch {
@@ -300,7 +315,7 @@ export function RacesSection({ motorsportId, races, racers, onError }: Props) {
           </div>
           <DialogFooter>
             <Button onClick={commitRace} disabled={busy || !editor.title.trim() || !editor.date}>
-              {(createMutation.isPending || updateMutation.isPending) && <Spinner className="w-3 h-3 mr-1" />}
+              {(createMutation.isPending || updateMutation.isPending || (editorOpen && setGridMutation.isPending)) && <Spinner className="w-3 h-3 mr-1" />}
               Save
             </Button>
             <Button variant="outline" onClick={() => setEditorOpen(false)} disabled={busy}>Cancel</Button>
