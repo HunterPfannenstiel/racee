@@ -6,7 +6,7 @@ import type { Member } from "./types";
 type MembersSectionProps = {
   leagueId: string;
   members: Member[];
-  onRemove: (id: string) => void;
+  onRemove: (id: string, clearScores: boolean, newCommissionerId?: string) => void;
   actionPending: Set<string>;
 };
 
@@ -22,7 +22,8 @@ export function MembersSection({ leagueId, members, onRemove, actionPending }: M
           key={member.id}
           leagueId={leagueId}
           member={member}
-          onRemove={() => onRemove(member.id)}
+          otherMembers={members.filter((m) => m.id !== member.id)}
+          onRemove={(clearScores, newCommissionerId) => onRemove(member.id, clearScores, newCommissionerId)}
           isRemovePending={actionPending.has(member.id)}
         />
       ))}

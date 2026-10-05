@@ -6,6 +6,8 @@ export const UserRaceScoreSchema = z.object({
   gridPoints: z.number().int().min(0),
   propPoints: z.number().int().min(0),
   weeklyTeamPoints: z.number().min(0).default(0),
+  /** On team scores only: which member this contribution came from (absent on data graded before this was added). */
+  userId: z.string().optional(),
 });
 export type UserRaceScore = z.infer<typeof UserRaceScoreSchema>;
 
@@ -57,7 +59,10 @@ export class LeagueStandings {
     const raceId = raceScores.raceId;
 
     this._gradedRaceIds = this._gradedRaceIds.filter(id => id !== raceId);
+    const regradedUserIds = new Set(raceScores.entries.map(e => e.userId));
     for (const [userId, scores] of this._individual) {
+      // Ex-members removed with "keep scores" aren't re-scored, so leave their result for this race alone.
+      if (!regradedUserIds.has(userId)) continue;
       this._individual.set(userId, new UserLeagueScores(userId, scores.raceScores.filter(s => s.raceId !== raceId) as UserRaceScore[]));
     }
     for (const [teamId, scores] of this._teams) {
@@ -78,12 +83,20 @@ export class LeagueStandings {
         const teamScores = this._teams.get(teamId);
         this._teams.set(
           teamId,
-          new TeamLeagueScores(teamId, [...(teamScores?.raceScores ?? []), newScore] as UserRaceScore[]),
+          new TeamLeagueScores(teamId, [...(teamScores?.raceScores ?? []), { ...newScore, userId: entry.userId }] as UserRaceScore[]),
         );
       }
     }
 
     this._gradedRaceIds.push(raceId);
+  }
+
+  /** Drops a user's race scores from the standings, including their contributions to team totals. */
+  removeUser(userId: string): void {
+    this._individual.delete(userId);
+    for (const [teamId, scores] of this._teams) {
+      this._teams.set(teamId, new TeamLeagueScores(teamId, scores.raceScores.filter(s => s.userId !== userId) as UserRaceScore[]));
+    }
   }
 
   rankIndividual(mulliganCount: number): Array<{ userId: string; total: number; mulliganed: number }> {

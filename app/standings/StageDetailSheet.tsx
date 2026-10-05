@@ -6,6 +6,7 @@ import { type Race } from "@/lib/schemas";
 import { assignRanks } from "@/lib/scoring";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { type StandingsRowData } from "./StandingsGrid";
+import { formatPoints } from "@/lib/utils";
 
 type Props = {
   open: boolean;
@@ -95,7 +96,7 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
                     mulliganed ? "text-muted-foreground line-through" : "text-foreground"
                   }`}
                 >
-                  {points !== null ? points.toLocaleString() : "—"}
+                  {points !== null ? formatPoints(points) : "—"}
                 </p>
                 {href && <ChevronRight className="size-4 text-muted-foreground shrink-0" />}
               </div>
@@ -118,7 +119,7 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
               Stage total
             </p>
             <p className="font-mono font-bold text-lg tabular-nums tracking-[-0.02em] text-foreground">
-              {stageTotal.toLocaleString()}
+              {formatPoints(stageTotal)}
             </p>
           </div>
           <div className="flex justify-between items-baseline mt-2">

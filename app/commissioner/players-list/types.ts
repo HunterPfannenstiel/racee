@@ -3,11 +3,11 @@
 export type PendingPlayer = {
   id: string;
   name: string;
-  role: "co-commissioner" | "member";
+  role: "commissioner" | "co-commissioner" | "member";
 };
 
 export type Member = {
   id: string;
   name: string;
-  role: "co-commissioner" | "member";
+  role: "commissioner" | "co-commissioner" | "member";
 };

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { type StandingsRowData } from "./StandingsGrid";
+import { formatPoints } from "@/lib/utils";
 
 type Props = {
   rows: StandingsRowData[];
@@ -61,10 +62,10 @@ export function SeasonStandingsSection({ rows, currentRowId }: Props) {
 
               <div className="text-right shrink-0">
                 <p className="font-mono font-bold text-base tabular-nums tracking-[-0.02em] text-foreground">
-                  {row.total.toLocaleString()}
+                  {formatPoints(row.total)}
                 </p>
                 <p className="font-mono text-[11px] tabular-nums text-muted-foreground leading-none mt-0.5">
-                  {gap === 0 ? "—" : `-${gap.toLocaleString()}`}
+                  {gap === 0 ? "—" : `-${formatPoints(gap)}`}
                 </p>
               </div>
 
@@ -117,7 +118,7 @@ export function SeasonStandingsSection({ rows, currentRowId }: Props) {
                         </div>
 
                         <p className="font-mono text-sm tabular-nums text-muted-foreground shrink-0">
-                          {member.total.toLocaleString()}
+                          {formatPoints(member.total)}
                         </p>
                       </div>
                     );

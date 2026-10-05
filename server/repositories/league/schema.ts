@@ -21,6 +21,7 @@ export const LeaguePersistenceSchema = z.object({
   coCommissionerIds: z.array(z.string()).default([]),
   memberIds: z.array(z.string()).default([]),
   pendingMemberIds: z.array(z.string()).default([]),
+  keptScoreUserIds: z.array(z.string()).default([]),
   name: z.string().min(1),
   placementPoints: z.array(z.number().int().min(0)),
   mulliganCount: z.number().int().min(0),
