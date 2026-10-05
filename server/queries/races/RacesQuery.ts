@@ -19,6 +19,8 @@ function toRaceDTO(race: RaceEntity): RaceDTO {
     keyOrder: race.keyOrder ? [...race.keyOrder] : null,
     propKey: race.propKey,
     keySetAt: race.keySetAt,
+    cancelled: race.cancelled,
+    replacesRaceId: race.replacesRaceId,
   };
 }
 

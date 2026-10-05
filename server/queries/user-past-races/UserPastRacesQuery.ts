@@ -68,6 +68,7 @@ export class UserPastRacesQuery implements IUserPastRacesQuery {
     // Filter to past races
     const pastRacesList = races.filter(
       (race) =>
+        !race.cancelled &&
         race.startingGrid.length > 0 &&
         (race.isLocked(now) || race.keySetAt !== null),
     );

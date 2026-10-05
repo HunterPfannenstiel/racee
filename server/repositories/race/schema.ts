@@ -37,5 +37,7 @@ export const RacePersistenceSchema = z.object({
   keyOrder: z.array(z.string().uuid()).nullable().default(null),
   propKey: PropKeyPersistenceSchema.nullable().default(null),
   keySetAt: z.string().nullable().default(null),
+  cancelled: z.boolean().default(false),
+  replacesRaceId: z.string().uuid().nullable().default(null),
 });
 export type RacePersistence = z.infer<typeof RacePersistenceSchema>;

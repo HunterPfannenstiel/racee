@@ -97,7 +97,7 @@ export function StandingsTable({ rows, races, nameHeader, stages, showSummary = 
               const stageIdx = stageData.findIndex((s) => s.lastRaceId === race.id);
               return (
                 <Fragment key={race.id}>
-                  <RaceHeaderCell label={race.label ?? race.title} />
+                  <RaceHeaderCell label={race.label ?? race.title} cancelled={race.cancelled} />
                   {stageLastRaceIds.has(race.id) && (
                     <>
                       <StageHeaderCell label={`S${stageIdx + 1}`} tooltip={`Stage ${stageIdx + 1} total points`} />

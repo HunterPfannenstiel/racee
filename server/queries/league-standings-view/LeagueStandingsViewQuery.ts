@@ -10,6 +10,7 @@ import type {
   ILeagueStandingsViewQuery,
   LeagueStandingsViewResult,
 } from "./ILeagueStandingsViewQuery";
+import { computeSeasonStages } from "@/lib/race-order";
 
 /**
  * The standings page's computed read model: ranked driver/constructor rows,
@@ -46,17 +47,9 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
 
     const sortedRaces = [...races].sort((a, b) => a.date.localeCompare(b.date));
 
-    // Partition races into stages evenly; fall back to one stage with all races
-    const stages: string[][] = stageCount > 0
-      ? Array.from({ length: stageCount }, () => [] as string[])
-      : [[]];
-    if (stageCount > 0) {
-      sortedRaces.forEach((race, i) => {
-        stages[Math.floor((i * stageCount) / sortedRaces.length)].push(race.raceId);
-      });
-    } else {
-      sortedRaces.forEach(race => stages[0].push(race.raceId));
-    }
+    // Partition the season into stages by calendar slot; a replacement race joins the
+    // stage of the cancelled race it replaces instead of shifting every boundary.
+    const stages = computeSeasonStages(races, r => r.raceId, stageCount);
 
     // Load users referenced by standings
     const userIds = standingsData?.individual.map(u => u.userId) ?? [];
