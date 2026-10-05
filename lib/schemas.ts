@@ -105,6 +105,8 @@ export const RaceSchema = RacePropsSchema.pick({
   keyOrder: z.array(z.string().uuid()).nullable().optional(),
   propKey: PropKeySchema.nullable().optional(),
   keySetAt: z.string().nullable().optional(),
+  cancelled: z.boolean().optional(),
+  replacesRaceId: z.string().uuid().nullable().optional(),
 });
 
 // Derived from MotorsportPropsSchema. id is a rename of the domain's motorsportId.

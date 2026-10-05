@@ -1,4 +1,4 @@
-import { Race } from "@/server/domain/race";
+import { Race, assertValidReplacements } from "@/server/domain/race";
 import type { IRaceRepository } from "@/server/repositories";
 import type { Race as RaceDTO } from "@/lib/schemas";
 import type { ICreateRaceCommand, CreateRacePayload } from "./ICreateRaceCommand";
@@ -15,6 +15,8 @@ function toRaceDTO(race: Race): RaceDTO {
     keyOrder: race.keyOrder ? [...race.keyOrder] : null,
     propKey: race.propKey,
     keySetAt: race.keySetAt,
+    cancelled: race.cancelled,
+    replacesRaceId: race.replacesRaceId,
   };
 }
 
@@ -35,7 +37,11 @@ export class BlobCreateRaceCommand implements ICreateRaceCommand {
       date: payload.date,
       lockTime: payload.lockTime,
       startingGrid: payload.startingGrid,
+      cancelled: payload.cancelled ?? false,
+      replacesRaceId: payload.replacesRaceId ?? null,
     });
+    const season = await this.races.findAllForMotorsport(payload.motorsportId);
+    assertValidReplacements([...season, race]);
     await this.races.save(race);
 
     return toRaceDTO(race);

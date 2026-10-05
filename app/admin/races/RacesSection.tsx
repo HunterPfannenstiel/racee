@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon } from "lucide-react";
+import { orderSeasonRaces } from "@/lib/race-order";
 
 type Editor = {
   raceId: string;
@@ -43,9 +44,11 @@ type Editor = {
   date: string;
   lockTime: string;
   startingGrid: string[];
+  cancelled: boolean;
+  replacesRaceId: string;
 };
 
-const EMPTY_EDITOR: Editor = { raceId: "", title: "", label: "", date: "", lockTime: "", startingGrid: [] };
+const EMPTY_EDITOR: Editor = { raceId: "", title: "", label: "", date: "", lockTime: "", startingGrid: [], cancelled: false, replacesRaceId: "" };
 
 function isoToDatetimeLocal(iso: string): string {
   const d = new Date(iso);
@@ -104,7 +107,7 @@ export function RacesSection({ motorsportId, races, racers, onError }: Props) {
 
   function openEditor(race?: Race) {
     setEditor(race
-      ? { raceId: race.id, title: race.title, label: race.label ?? "", date: race.date, lockTime: race.lockTime ? isoToDatetimeLocal(race.lockTime) : "", startingGrid: race.startingGrid }
+      ? { raceId: race.id, title: race.title, label: race.label ?? "", date: race.date, lockTime: race.lockTime ? isoToDatetimeLocal(race.lockTime) : "", startingGrid: race.startingGrid, cancelled: race.cancelled ?? false, replacesRaceId: race.replacesRaceId ?? "" }
       : { ...EMPTY_EDITOR, raceId: crypto.randomUUID() }
     );
     setEditorOpen(true);
@@ -135,6 +138,8 @@ export function RacesSection({ motorsportId, races, racers, onError }: Props) {
           date: editor.date,
           lockTime: editor.lockTime ? new Date(editor.lockTime).toISOString() : undefined,
           startingGrid: editor.startingGrid,
+          cancelled: editor.cancelled,
+          replacesRaceId: editor.replacesRaceId || null,
         });
       } else {
         await updateMutation.mutateAsync({
@@ -145,12 +150,30 @@ export function RacesSection({ motorsportId, races, racers, onError }: Props) {
             label: editor.label.trim() || undefined,
             date: editor.date,
             lockTime: editor.lockTime ? new Date(editor.lockTime).toISOString() : undefined,
+            cancelled: editor.cancelled,
+            replacesRaceId: editor.replacesRaceId || null,
           },
         });
+        // races.update only patches details — racer selection changes must go
+        // through setGrid, otherwise they're silently dropped and a race with an
+        // empty grid never shows up as open on /predict.
+        const existing = races.find((r) => r.id === editor.raceId);
+        const gridChanged =
+          !existing ||
+          existing.startingGrid.length !== editor.startingGrid.length ||
+          existing.startingGrid.some((id, i) => id !== editor.startingGrid[i]);
+        if (gridChanged && editor.startingGrid.length > 0) {
+          await setGridMutation.mutateAsync({
+            motorsportId,
+            raceId: editor.raceId,
+            startingGrid: editor.startingGrid,
+          });
+        }
       }
       setEditorOpen(false);
-    } catch {
-      onError("Failed to save race.");
+    } catch (e) {
+      // Replacement rule violations come back with a readable reason — show it.
+      onError(e instanceof Error && e.message ? `Failed to save race: ${e.message}` : "Failed to save race.");
     }
   }
 
@@ -177,7 +200,16 @@ export function RacesSection({ motorsportId, races, racers, onError }: Props) {
     }
   }
 
-  const sorted = [...races].sort((a, b) => a.date.localeCompare(b.date));
+  const sorted = orderSeasonRaces(races, (r) => r.id);
+  const racesById = Object.fromEntries(races.map((r) => [r.id, r]));
+  // Cancelled races that nothing else replaces yet (plus the one this race already replaces).
+  const replaceableRaces = sorted.filter(
+    (r) =>
+      r.id !== editor.raceId &&
+      r.cancelled &&
+      !r.replacesRaceId &&
+      (!races.some((o) => o.replacesRaceId === r.id) || r.id === editor.replacesRaceId),
+  );
   const gridRace = races.find((r) => r.id === gridEditor.raceId);
   const isNew = !races.some((r) => r.id === editor.raceId);
 
@@ -192,7 +224,17 @@ export function RacesSection({ motorsportId, races, racers, onError }: Props) {
             {sorted.map((race) => (
               <li key={race.id} className="flex items-center justify-between py-1.5">
                 <div>
-                  <p className="text-sm font-medium">{race.title}</p>
+                  <p className="text-sm font-medium">
+                    {race.title}
+                    {race.cancelled && (
+                      <span className="ml-2 text-xs font-normal text-destructive">Cancelled</span>
+                    )}
+                    {race.replacesRaceId && racesById[race.replacesRaceId] && (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        replaces {racesById[race.replacesRaceId].title}
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {race.date}
                     {race.lockTime && (
@@ -267,6 +309,37 @@ export function RacesSection({ motorsportId, races, racers, onError }: Props) {
                 autoComplete="off"
               />
             </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="race-cancelled"
+                checked={editor.cancelled}
+                onChange={(e) =>
+                  setEditor({ ...editor, cancelled: e.target.checked, replacesRaceId: e.target.checked ? "" : editor.replacesRaceId })
+                }
+              />
+              <label htmlFor="race-cancelled" className="text-sm cursor-pointer">
+                Cancelled <span className="text-muted-foreground">— stays on the board in its stage, never predicted or scored</span>
+              </label>
+            </div>
+            {!editor.cancelled && (
+              <div className="space-y-1">
+                <label htmlFor="race-replaces" className="text-xs text-muted-foreground">
+                  Replaces a cancelled race (optional — takes that race&apos;s spot in the stages)
+                </label>
+                <select
+                  id="race-replaces"
+                  value={editor.replacesRaceId}
+                  onChange={(e) => setEditor({ ...editor, replacesRaceId: e.target.value })}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Doesn&apos;t replace anything</option>
+                  {replaceableRaces.map((r) => (
+                    <option key={r.id} value={r.id}>{r.title} ({r.date})</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Drivers</label>
@@ -300,7 +373,7 @@ export function RacesSection({ motorsportId, races, racers, onError }: Props) {
           </div>
           <DialogFooter>
             <Button onClick={commitRace} disabled={busy || !editor.title.trim() || !editor.date}>
-              {(createMutation.isPending || updateMutation.isPending) && <Spinner className="w-3 h-3 mr-1" />}
+              {(createMutation.isPending || updateMutation.isPending || (editorOpen && setGridMutation.isPending)) && <Spinner className="w-3 h-3 mr-1" />}
               Save
             </Button>
             <Button variant="outline" onClick={() => setEditorOpen(false)} disabled={busy}>Cancel</Button>

@@ -16,6 +16,14 @@ export class BlobDeleteRaceCommand implements IDeleteRaceCommand {
     if (!race) {
       throw new NotFoundError("Race", payload.raceId);
     }
+    // A replacement for this race would point at nothing — turn it back into a normal race.
+    const season = await this.races.findAllForMotorsport(payload.motorsportId);
+    for (const other of season) {
+      if (other.replacesRaceId === payload.raceId) {
+        other.updateDetails({ replacesRaceId: null });
+        await this.races.save(other);
+      }
+    }
     await this.races.remove(payload.motorsportId, payload.raceId);
   }
 }

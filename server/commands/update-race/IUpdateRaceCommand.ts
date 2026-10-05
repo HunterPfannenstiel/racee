@@ -5,6 +5,8 @@ export type UpdateRacePatch = Partial<{
   label: string;
   date: string;
   lockTime: string;
+  cancelled: boolean;
+  replacesRaceId: string | null;
 }>;
 
 export type UpdateRacePayload = {

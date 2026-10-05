@@ -1,6 +1,6 @@
 import { NotFoundError } from "@/server/domain/errors";
 import type { IRaceRepository } from "@/server/repositories";
-import type { Race } from "@/server/domain/race";
+import { assertValidReplacements, type Race } from "@/server/domain/race";
 import type { Race as RaceDTO } from "@/lib/schemas";
 import type { IUpdateRaceCommand, UpdateRacePayload } from "./IUpdateRaceCommand";
 
@@ -16,6 +16,8 @@ function toRaceDTO(race: Race): RaceDTO {
     keyOrder: race.keyOrder ? [...race.keyOrder] : null,
     propKey: race.propKey,
     keySetAt: race.keySetAt,
+    cancelled: race.cancelled,
+    replacesRaceId: race.replacesRaceId,
   };
 }
 
@@ -37,6 +39,8 @@ export class BlobUpdateRaceCommand implements IUpdateRaceCommand {
     }
 
     race.updateDetails(payload.patch);
+    const season = await this.races.findAllForMotorsport(payload.motorsportId);
+    assertValidReplacements(season.map(r => (r.raceId === race.raceId ? race : r)));
     await this.races.save(race);
 
     return toRaceDTO(race);

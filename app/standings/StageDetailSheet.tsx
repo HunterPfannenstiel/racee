@@ -85,6 +85,11 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
               <div className="flex items-center gap-3 px-4 py-3 min-h-[52px] border-b border-border last:border-b-0">
                 <div className="flex-1 min-w-0 flex items-center gap-2">
                   <p className="font-mono text-sm text-foreground truncate">{label}</p>
+                  {race.cancelled && (
+                    <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-destructive bg-subtle px-1.5 py-0.5 rounded-sm shrink-0">
+                      Cancelled
+                    </span>
+                  )}
                   {mulliganed && (
                     <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground bg-subtle px-1.5 py-0.5 rounded-sm shrink-0">
                       MUL
