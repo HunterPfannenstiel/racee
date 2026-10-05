@@ -17,6 +17,8 @@ export const LeaguePropsSchema = z.object({
   coCommissionerIds: z.array(z.string()).optional().default([]),
   memberIds: z.array(z.string()).optional().default([]),
   pendingMemberIds: z.array(z.string()).optional().default([]),
+  /** Ex-members removed with "keep scores" — they stay visible in the standings. */
+  keptScoreUserIds: z.array(z.string()).optional().default([]),
   name: z.string().min(1),
   placementPoints: z.array(z.number().int().min(0)),
   mulliganCount: z.number().int().min(0),
@@ -51,6 +53,7 @@ export class League {
   get motorsportId() { return this.props.motorsportId; }
   get memberIds(): readonly string[] { return this.props.memberIds; }
   get pendingMemberIds(): readonly string[] { return this.props.pendingMemberIds; }
+  get keptScoreUserIds(): readonly string[] { return this.props.keptScoreUserIds; }
   get teamPositionPoints(): readonly number[] | undefined { return this.props.teamPositionPoints; }
   get inviteToken(): string | null { return this.props.inviteToken; }
 
@@ -98,14 +101,34 @@ export class League {
     };
   }
 
-  removeMember(userId: string): void {
+  removeMember(userId: string, keepScores = false): void {
     if (userId === this.props.commissionerId) {
-      throw new Error("Cannot remove the commissioner from the league");
+      throw new Error("Cannot remove the commissioner from the league — transfer the role first");
     }
+    const kept = this.props.keptScoreUserIds.filter(id => id !== userId);
     this.props = {
       ...this.props,
       memberIds: this.props.memberIds.filter(id => id !== userId),
       coCommissionerIds: this.props.coCommissionerIds.filter(id => id !== userId),
+      keptScoreUserIds: keepScores ? [...kept, userId] : kept,
+    };
+  }
+
+  /** True if this user's scores should appear in the standings (current member, or removed with "keep scores"). */
+  showsInStandings(userId: string): boolean {
+    return this.props.memberIds.includes(userId) || this.props.keptScoreUserIds.includes(userId);
+  }
+
+  /** Hands the owning-commissioner role to another current member. The old commissioner stays a regular member. */
+  transferCommissioner(newCommissionerId: string): void {
+    if (newCommissionerId === this.props.commissionerId) return;
+    if (!this.props.memberIds.includes(newCommissionerId)) {
+      throw new Error("The new commissioner must be a current member of the league");
+    }
+    this.props = {
+      ...this.props,
+      commissionerId: newCommissionerId,
+      coCommissionerIds: this.props.coCommissionerIds.filter(id => id !== newCommissionerId),
     };
   }
 

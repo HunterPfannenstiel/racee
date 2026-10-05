@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, formatPoints } from "@/lib/utils";
 
 type RaceCellProps = {
   points: number | null;
@@ -8,7 +8,7 @@ type RaceCellProps = {
 };
 
 export function RaceCell({ points, mulliganed, href }: RaceCellProps) {
-  const content = points === null ? "—" : points;
+  const content = points === null ? "—" : formatPoints(points);
   return (
     <td
       className={cn(

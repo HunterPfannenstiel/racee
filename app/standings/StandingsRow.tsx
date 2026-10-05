@@ -5,6 +5,7 @@ import { type Race } from "@/lib/schemas";
 import { medalColor } from "@/lib/colors";
 import { StickyCell } from "./StickyCell";
 import { RaceCell } from "./RaceCell";
+import { formatPoints } from "@/lib/utils";
 
 export type StandingsRowData = {
   id: string;
@@ -45,7 +46,7 @@ function StageCell({ value, rank }: { value: number; rank: boolean }) {
   const color = rank ? (medalColor[value] ?? "text-muted-foreground") : "";
   return (
     <td className={`px-3 py-2 text-right font-mono text-xs whitespace-nowrap border-l border-border/50 bg-muted/30 ${rank ? "font-semibold" : ""} ${color}`}>
-      {value}
+      {rank ? value : formatPoints(value)}
     </td>
   );
 }
@@ -70,7 +71,7 @@ export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, 
       </StickyCell>
 
       <StickyCell col="total">
-        <span className="font-semibold tabular-nums">{row.total}</span>
+        <span className="font-semibold tabular-nums">{formatPoints(row.total)}</span>
       </StickyCell>
 
       {races.map((race) => {
@@ -91,12 +92,12 @@ export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, 
 
       {showSummary && (
         <>
-          <SummaryCell value={row.rawTotal} />
-          <SummaryCell value={row.total - row.propTotal} />
-          <SummaryCell value={row.propTotal} />
-          <SummaryCell value={row.rawTotal + row.propTotal} />
+          <SummaryCell value={formatPoints(row.rawTotal)} />
+          <SummaryCell value={formatPoints(row.total - row.propTotal)} />
+          <SummaryCell value={formatPoints(row.propTotal)} />
+          <SummaryCell value={formatPoints(row.rawTotal + row.propTotal)} />
           <SummaryCell value={<span className={medalColor[seasonRank] ?? "text-muted-foreground"}>{seasonRank}</span>} />
-          <SummaryCell value={gap === 0 ? "—" : `-${gap}`} muted={gap > 0} />
+          <SummaryCell value={gap === 0 ? "—" : `-${formatPoints(gap)}`} muted={gap > 0} />
         </>
       )}
     </tr>

@@ -48,7 +48,7 @@ const generateInviteLinkCommand = new BlobGenerateInviteLinkCommand(leagueRepo);
 const deactivateInviteLinkCommand = new BlobDeactivateInviteLinkCommand(leagueRepo);
 const acceptPendingPlayerCommand = new BlobAcceptPendingPlayerCommand(leagueRepo);
 const denyPendingPlayerCommand = new BlobDenyPendingPlayerCommand(leagueRepo);
-const removePlayerCommand = new RemovePlayerCommand(leagueRepo, teamRepo);
+const removePlayerCommand = new RemovePlayerCommand(leagueRepo, teamRepo, standingsRepo);
 const assignPlayerToTeamCommand = new AssignPlayerToTeamCommand(leagueRepo, teamRepo);
 const submitPlayerPredictionCommand = new SubmitPlayerPredictionCommand(
   leagueRepo,
@@ -62,6 +62,7 @@ const LeagueIdInput = z.object({ leagueId: z.string().uuid() });
 const LeagueUserInput = LeagueIdInput.extend({ userId: z.string().min(1) });
 
 const RoleSchema = z.enum(["co-commissioner", "member"]);
+const PlayerRoleSchema = z.enum(["commissioner", "co-commissioner", "member"]);
 
 // Mirrors server/queries/league-members/ILeagueMembersQuery.ts's LeagueMemberDTO
 // (and league-players' LeaguePlayerDTO — identical shape).
@@ -132,7 +133,10 @@ export const playersRouter = {
   /** Current members and pending join requests. Commissioner-only. */
   list: authed
     .input(LeagueIdInput)
-    .output(z.object({ members: z.array(LeagueMemberSchema), pending: z.array(LeagueMemberSchema) }))
+    .output(z.object({
+      members: z.array(LeagueMemberSchema.extend({ role: PlayerRoleSchema })),
+      pending: z.array(LeagueMemberSchema.extend({ role: PlayerRoleSchema })),
+    }))
     .handler(async ({ context, input }) =>
       playersQuery.execute(input.leagueId, context.session.user.id),
     ),
@@ -165,13 +169,18 @@ export const playersRouter = {
 
   /** Removes a member from the league (and any team they were on). Commissioner-only. */
   remove: authed
-    .input(LeagueUserInput)
+    .input(LeagueUserInput.extend({
+      clearScores: z.boolean().optional().default(false),
+      newCommissionerId: z.string().min(1).optional(),
+    }))
     .output(z.object({ ok: z.literal(true) }))
     .handler(async ({ context, input }) => {
       await removePlayerCommand.execute({
         leagueId: input.leagueId,
         userId: input.userId,
         actorUserId: context.session.user.id,
+        clearScores: input.clearScores,
+        newCommissionerId: input.newCommissionerId,
       });
       return { ok: true as const };
     }),

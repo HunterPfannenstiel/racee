@@ -63,7 +63,10 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
     const userList = await this.users.findByIds(userIds);
 
     const driverRows = standingsData
-      ? standingsData.rankIndividual(mulliganCount).map(({ userId, total, mulliganed }) => {
+      ? standingsData.rankIndividual(mulliganCount)
+          // Removed players drop out of the standings unless they were removed with "keep scores".
+          .filter(({ userId }) => league.showsInStandings(userId))
+          .map(({ userId, total, mulliganed }) => {
           const scores = [...(standingsData.individual.find(u => u.userId === userId)?.raceScores ?? [])];
           return {
             userId,
