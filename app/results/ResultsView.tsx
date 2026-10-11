@@ -91,18 +91,13 @@ export function ResultsView({
             />
           )}
           {stats && <StatsFooter stats={stats} />}
-          <div className="flex items-center gap-2">
-            <Button
-              size="icon"
-              onClick={onPlayCutscene}
-              disabled={playCutsceneDisabled}
-              aria-label="Play cutscene"
-              title="Replay the drivers reveal"
-            >
-              <Play />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" className="gap-1.5" onClick={onPlayCutscene} disabled={playCutsceneDisabled}>
+              <Play className="size-3.5" />
+              Drivers reveal
             </Button>
             {onPlayConstructors && (
-              <Button variant="secondary" size="sm" className="gap-1.5" onClick={onPlayConstructors} disabled={playConstructorsDisabled}>
+              <Button size="sm" className="gap-1.5" onClick={onPlayConstructors} disabled={playConstructorsDisabled}>
                 <Play className="size-3.5" />
                 Constructors reveal
               </Button>

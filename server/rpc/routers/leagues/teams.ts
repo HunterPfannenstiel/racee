@@ -96,6 +96,7 @@ const TeamDashboardSchema = z.object({
     propAccuracy: z.number(),
   }),
   viewerTeamId: z.string().nullable(),
+  canEditLogo: z.boolean(),
 });
 const createTeamCommand = new CreateTeamCommand(leagueRepo, teamRepo);
 const updateTeamCommand = new UpdateTeamCommand(leagueRepo, teamRepo);
@@ -181,7 +182,7 @@ export const teamsRouter = {
       });
     }),
 
-  /** Uploads a team logo (a small image data URL), or removes it with null. Commissioner-only. */
+  /** Uploads a team logo (a small image data URL), or removes it with null. Team members or commissioners. */
   setLogo: authed
     .input(
       z.object({

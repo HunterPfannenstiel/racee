@@ -10,11 +10,24 @@
  */
 
 export const AVATAR_PRESET_IDS = [
-  "flag", "trophy", "car", "gauge", "bolt",
-  "flame", "crown", "rocket", "medal", "timer",
-  "wrench", "fuel", "star", "shield", "skull",
-  "ghost", "mountain", "wind", "target", "swords",
+  "car", "flag", "helmet", "steering", "tyre", "lights",
+  "roadcar", "safetycar", "cone", "racingline", "wind", "gauge",
+  "timer", "bolt", "flame", "trophy", "medal", "crown",
+  "wrench", "hammer", "gearbox", "fuel", "ers", "key",
+  "p1", "drs", "boxbox", "pit", "vroom", "sendit",
 ] as const;
+
+/** Retired icons (non-racing) map to their closest racing replacement, so nobody's picture disappears. */
+const RETIRED_PRESETS: Record<string, AvatarPresetId> = {
+  skull: "helmet",
+  ghost: "steering",
+  mountain: "tyre",
+  swords: "wrench",
+  shield: "helmet",
+  target: "racingline",
+  star: "trophy",
+  rocket: "vroom",
+};
 export type AvatarPresetId = (typeof AVATAR_PRESET_IDS)[number];
 
 export type ParsedAvatar =
@@ -31,7 +44,8 @@ export function isAvatarPresetId(id: string): id is AvatarPresetId {
 export function parseAvatar(image: string | null | undefined, userId: string): ParsedAvatar {
   if (!image) return { kind: "none" };
   if (image.startsWith("preset:")) {
-    const id = image.slice("preset:".length);
+    const raw = image.slice("preset:".length);
+    const id = RETIRED_PRESETS[raw] ?? raw;
     return isAvatarPresetId(id) ? { kind: "preset", id } : { kind: "none" };
   }
   if (image.startsWith("upload:")) {

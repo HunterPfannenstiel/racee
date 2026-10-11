@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { PlayerAvatar } from "@/components/avatar/PlayerAvatar";
-import { AVATAR_PRESETS } from "@/components/avatar/presets";
+import { AVATAR_PRESETS, PresetGlyph } from "@/components/avatar/presets";
 import { resizeImageToDataUrl } from "@/components/avatar/resizeImage";
 
 type Props = {
@@ -39,7 +39,8 @@ export function AvatarPicker({ userId, name, image }: Props) {
   const presetMutation = useMutation(orpc.me.setAvatarPreset.mutationOptions({ onSuccess: onSaved, onError: onFailed }));
   const uploadMutation = useMutation(orpc.me.uploadAvatar.mutationOptions({ onSuccess: onSaved, onError: onFailed }));
   const busy = processing || presetMutation.isPending || uploadMutation.isPending;
-  const currentPreset = image?.startsWith("preset:") ? image.slice("preset:".length) : null;
+  const parsedCurrent = parseAvatar(image, userId);
+  const currentPreset = parsedCurrent.kind === "preset" ? parsedCurrent.id : null;
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
@@ -110,7 +111,7 @@ export function AvatarPicker({ userId, name, image }: Props) {
                   )}
                   style={{ backgroundColor: preset.bg }}
                 >
-                  <preset.Icon className="size-1/2 text-white" aria-hidden />
+                  <PresetGlyph preset={preset} px={26} />
                   {selected && (
                     <span className="absolute -right-0.5 -bottom-0.5 rounded-full bg-primary p-0.5">
                       <Check className="size-2.5 text-primary-foreground" />

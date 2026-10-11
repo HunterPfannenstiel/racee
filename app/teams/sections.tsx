@@ -7,6 +7,8 @@ import { medalColor } from "@/lib/colors";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { TeamLogo } from "@/components/avatar/TeamLogo";
 import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
+import { TeamLogoUpload } from "@/components/avatar/TeamLogoUpload";
+import { useState } from "react";
 import type {
   PropAccuracyStat,
   TeamDashboardResult,
@@ -82,7 +84,11 @@ export function TeamHeader({ leagueId, data }: { leagueId: string; data: TeamDas
     : data.leagueTeams.findIndex((t) => t.id === team.id) + 1;
   return (
     <div className="flex items-center gap-4">
-      <TeamLogo leagueId={leagueId} teamId={team.id} name={team.name} color={team.color} logo={team.logo} size="2xl" />
+      {data.canEditLogo ? (
+        <TeamLogoUpload leagueId={leagueId} team={team} size="2xl" />
+      ) : (
+        <TeamLogo leagueId={leagueId} teamId={team.id} name={team.name} color={team.color} logo={team.logo} size="2xl" />
+      )}
       <div className="min-w-0">
         <p className="font-heading text-3xl font-bold leading-tight text-foreground truncate">{team.name}</p>
         {rank ? (
@@ -128,16 +134,16 @@ export function TeamStatGrid({ data }: { data: TeamDashboardResult }) {
     <div className="grid grid-cols-2 gap-2">
       {data.teamScoringEnabled && (
         <>
-          <CompareChip label="Team points" value={team.teamPoints} leagueAvg={avgs.teamPoints} format={formatPoints} />
-          <CompareChip label="Per race" value={team.avgTeamPointsPerRace} leagueAvg={avgs.avgTeamPointsPerRace} format={formatPoints} />
+          <CompareChip label="Constructor points" value={team.teamPoints} leagueAvg={avgs.teamPoints} format={formatPoints} />
+          <CompareChip label="Constructor pts / race" value={team.avgTeamPointsPerRace} leagueAvg={avgs.avgTeamPointsPerRace} format={formatPoints} />
         </>
       )}
       <CompareChip label="Driver points" value={team.combinedDriverPoints} leagueAvg={avgs.combinedDriverPoints} format={formatPoints} />
-      <CompareChip label="Per player" value={team.avgDriverPointsPerMember} leagueAvg={avgs.avgDriverPointsPerMember} format={formatPoints} />
+      <CompareChip label="Driver pts / player" value={team.avgDriverPointsPerMember} leagueAvg={avgs.avgDriverPointsPerMember} format={formatPoints} />
       <CompareChip label="Prop accuracy" value={team.propAccuracy} leagueAvg={avgs.propAccuracy} format={pct} />
       {data.teamScoringEnabled && best && best.teamPoints > 0 && (
         <div className="rounded-lg border border-border bg-surface p-3">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Best race</p>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Best constructor race</p>
           <p className="mt-0.5 font-heading text-xl font-bold leading-tight text-foreground">{formatPoints(best.teamPoints)}</p>
           <p className="mt-0.5 text-[10px] font-mono text-muted-foreground truncate">{best.title}</p>
         </div>
@@ -155,7 +161,7 @@ export function ContributionSection({ leagueId, data }: { leagueId: string; data
   return (
     <Card>
       <CardHeader>
-        <SectionTitle>Who&apos;s carrying the team</SectionTitle>
+        <SectionTitle>{useTeamPoints ? "Constructor points per teammate" : "Driver points per teammate"}</SectionTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {data.members.length === 0 && <p className="text-sm text-muted-foreground">No players on this team yet.</p>}
@@ -184,7 +190,7 @@ export function ContributionSection({ leagueId, data }: { leagueId: string; data
         })}
         <p className="text-[10px] font-mono text-muted-foreground">
           {useTeamPoints
-            ? "Team points each player has earned for the team, and their share of the team total."
+            ? "Constructor points each player has earned for this team, and their share of the team's total."
             : "Each player's season total in the driver standings."}
         </p>
       </CardContent>
@@ -236,19 +242,19 @@ function MemberCard({ leagueId, m, teamScoring }: { leagueId: string; m: TeamMem
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{m.name}</p>
           <p className="font-mono text-xs text-muted-foreground">
-            {formatPoints(m.driverTotal)} pts{m.driverRank ? ` · ${ordinal(m.driverRank)} in league` : ""}
+            {formatPoints(m.driverTotal)} driver pts{m.driverRank ? ` · ${ordinal(m.driverRank)} in league` : ""}
           </p>
         </div>
         <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">▾</span>
       </summary>
       <div className="space-y-4 border-t border-border p-3">
         <div className="grid grid-cols-3 gap-3">
-          <MiniStat label="Per race" value={formatPoints(m.avgPerRace)} />
-          <MiniStat label="Grid pts" value={formatPoints(m.gridPoints)} />
-          <MiniStat label="Prop pts" value={formatPoints(m.propPoints)} />
-          {teamScoring && <MiniStat label="For team" value={formatPoints(m.teamContribution)} sub={pct(m.contributionShare)} />}
-          <MiniStat label="Best race" value={m.bestRace ? formatPoints(m.bestRace.points) : "—"} sub={m.bestRace?.title} />
-          <MiniStat label="Prop acc." value={pct(m.propAccuracy)} />
+          <MiniStat label="Driver pts / race" value={formatPoints(m.avgPerRace)} />
+          <MiniStat label="Grid points" value={formatPoints(m.gridPoints)} />
+          <MiniStat label="Prop points" value={formatPoints(m.propPoints)} />
+          {teamScoring && <MiniStat label="Constructor points" value={formatPoints(m.teamContribution)} sub={`${pct(m.contributionShare)} of team`} />}
+          <MiniStat label="Best race (driver)" value={m.bestRace ? formatPoints(m.bestRace.points) : "—"} sub={m.bestRace?.title} />
+          <MiniStat label="Prop accuracy" value={pct(m.propAccuracy)} />
           <MiniStat label="Races" value={String(m.racesPredicted)} />
           <MiniStat label="Props called" value={String(m.propsCalled)} />
           <MiniStat label="Sharpest" value={sharpest ? pct(sharpest.accuracy) : "—"} sub={sharpest ? PROP_LABELS[sharpest.propType] : undefined} />
@@ -288,6 +294,32 @@ export function TeamPropsSection({ data }: { data: TeamDashboardResult }) {
 
 // ---------------------------------------------------------------------------
 
+function SortHead({
+  k,
+  label,
+  className,
+  sort,
+  onSort,
+}: {
+  k: CompareKey;
+  label: string;
+  className?: string;
+  sort: { key: CompareKey; dir: "asc" | "desc" };
+  onSort: (k: CompareKey) => void;
+}) {
+  const active = sort.key === k;
+  return (
+    <th className={cn("py-2", className)} aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : undefined}>
+      <button type="button" onClick={() => onSort(k)} className={cn("uppercase tracking-widest hover:text-foreground", active && "text-foreground")}>
+        {label}
+        {active && <span className="ml-0.5 text-[9px]">{sort.dir === "desc" ? "▼" : "▲"}</span>}
+      </button>
+    </th>
+  );
+}
+
+type CompareKey = "place" | "name" | "teamPoints" | "avgTeamPointsPerRace" | "combinedDriverPoints" | "avgDriverPointsPerMember" | "propAccuracy";
+
 export function LeagueComparison({
   leagueId,
   data,
@@ -298,6 +330,17 @@ export function LeagueComparison({
   onSelect: (id: string) => void;
 }) {
   const scoring = data.teamScoringEnabled;
+  const [sort, setSort] = useState<{ key: CompareKey; dir: "asc" | "desc" }>({ key: "place", dir: "asc" });
+  const placeOf = new Map(data.leagueTeams.map((t, i) => [t.id, i + 1]));
+  const rows = [...data.leagueTeams].sort((a, b) => {
+    const k = sort.key;
+    const cmp =
+      k === "place" ? placeOf.get(a.id)! - placeOf.get(b.id)! : k === "name" ? a.name.localeCompare(b.name) : (a[k] as number) - (b[k] as number);
+    return (sort.dir === "asc" ? cmp : -cmp) || placeOf.get(a.id)! - placeOf.get(b.id)!;
+  });
+  // First tap: best first (A→Z for names, 1st place first); tap again to flip.
+  const toggle = (key: CompareKey) =>
+    setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: key === "place" || key === "name" ? "asc" : "desc" }));
   return (
     <Card>
       <CardHeader>
@@ -306,37 +349,43 @@ export function LeagueComparison({
       <CardContent className="overflow-x-auto p-0">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-              <th className="px-3 py-2 text-left">#</th>
-              <th className="px-1 py-2 text-left">Team</th>
-              {scoring && <th className="px-2 py-2 text-right">Team</th>}
-              {scoring && <th className="px-2 py-2 text-right">/race</th>}
-              <th className="px-2 py-2 text-right">Drivers</th>
-              <th className="px-3 py-2 text-right">Props</th>
+            <tr className="text-[10px] font-mono text-muted-foreground">
+              <SortHead k="place" label="#" className="px-3 text-left" sort={sort} onSort={toggle} />
+              <SortHead k="name" label="Team" className="px-1 text-left" sort={sort} onSort={toggle} />
+              {scoring && <SortHead k="teamPoints" label="Constructor pts" className="px-2 text-right" sort={sort} onSort={toggle} />}
+              {scoring && <SortHead k="avgTeamPointsPerRace" label="Con. / race" className="px-2 text-right" sort={sort} onSort={toggle} />}
+              <SortHead k="combinedDriverPoints" label="Driver pts" className="px-2 text-right" sort={sort} onSort={toggle} />
+              <SortHead k="avgDriverPointsPerMember" label="Driver / player" className="px-2 text-right" sort={sort} onSort={toggle} />
+              <SortHead k="propAccuracy" label="Prop acc." className="px-3 text-right" sort={sort} onSort={toggle} />
             </tr>
           </thead>
           <tbody>
-            {data.leagueTeams.map((t, i) => (
-              <tr
-                key={t.id}
-                onClick={() => onSelect(t.id)}
-                className={cn("cursor-pointer border-t border-border/50 hover:bg-subtle", t.id === data.team?.id && "bg-primary-subtle")}
-              >
-                <td className={cn("px-3 py-2 font-mono font-semibold", medalColor[i + 1] ?? "text-muted-foreground")}>{i + 1}</td>
-                <td className="px-1 py-2">
-                  <span className="flex min-w-0 items-center gap-2">
-                    <TeamLogo leagueId={leagueId} teamId={t.id} name={t.name} color={t.color} logo={t.logo} size="xs" />
-                    <span className="max-w-28 truncate">{t.name}</span>
-                  </span>
-                </td>
-                {scoring && <td className="px-2 py-2 text-right font-mono tabular-nums">{formatPoints(t.teamPoints)}</td>}
-                {scoring && <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">{formatPoints(t.avgTeamPointsPerRace)}</td>}
-                <td className="px-2 py-2 text-right font-mono tabular-nums">{formatPoints(t.combinedDriverPoints)}</td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">{pct(t.propAccuracy)}</td>
-              </tr>
-            ))}
+            {rows.map((t) => {
+              const place = placeOf.get(t.id)!;
+              return (
+                <tr
+                  key={t.id}
+                  onClick={() => onSelect(t.id)}
+                  className={cn("cursor-pointer border-t border-border/50 hover:bg-subtle", t.id === data.team?.id && "bg-primary-subtle")}
+                >
+                  <td className={cn("px-3 py-2 font-mono font-semibold", medalColor[place] ?? "text-muted-foreground")}>{place}</td>
+                  <td className="px-1 py-2">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <TeamLogo leagueId={leagueId} teamId={t.id} name={t.name} color={t.color} logo={t.logo} size="xs" />
+                      <span className="max-w-28 truncate">{t.name}</span>
+                    </span>
+                  </td>
+                  {scoring && <td className="px-2 py-2 text-right font-mono tabular-nums">{formatPoints(t.teamPoints)}</td>}
+                  {scoring && <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">{formatPoints(t.avgTeamPointsPerRace)}</td>}
+                  <td className="px-2 py-2 text-right font-mono tabular-nums">{formatPoints(t.combinedDriverPoints)}</td>
+                  <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">{formatPoints(t.avgDriverPointsPerMember)}</td>
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">{pct(t.propAccuracy)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+        <p className="px-3 pb-3 text-[10px] font-mono text-muted-foreground">Tap a column to sort · tap a team to view it</p>
       </CardContent>
     </Card>
   );

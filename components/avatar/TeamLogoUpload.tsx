@@ -7,17 +7,19 @@ import { orpc } from "@/lib/orpc/client";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { TeamLogo } from "@/components/avatar/TeamLogo";
+import type { AvatarSize } from "@/components/avatar/PlayerAvatar";
 import { resizeImageToDataUrl } from "@/components/avatar/resizeImage";
-import type { Team } from "@/lib/schemas";
+
 
 type Props = {
   leagueId: string;
-  team: Team;
+  team: { id: string; name: string; color?: string | null; logo?: string | null };
   disabled?: boolean;
+  size?: AvatarSize;
 };
 
-/** Commissioner control: tap the logo to upload a new one, or remove it. */
-export function TeamLogoUpload({ leagueId, team, disabled }: Props) {
+/** Tap the logo to upload a new one, or remove it. For a team's members and the league's commissioners. */
+export function TeamLogoUpload({ leagueId, team, disabled, size = "lg" }: Props) {
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [processing, setProcessing] = useState(false);
@@ -72,7 +74,7 @@ export function TeamLogoUpload({ leagueId, team, disabled }: Props) {
         aria-label={team.logo ? `Change ${team.name} logo` : `Upload ${team.name} logo`}
         title={team.logo ? "Change logo" : "Upload logo"}
       >
-        <TeamLogo leagueId={leagueId} teamId={team.id} name={team.name} color={team.color} logo={team.logo} size="lg" />
+        <TeamLogo leagueId={leagueId} teamId={team.id} name={team.name} color={team.color} logo={team.logo} size={size} />
         <span className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-background border border-border">
           {processing || mutation.isPending ? <Spinner className="size-2.5" /> : <Camera className="size-2.5 text-muted-foreground" />}
         </span>

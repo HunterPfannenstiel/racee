@@ -170,6 +170,13 @@ export default function ResultsPage() {
   // commit on its own before ResultsView mounts underneath it.
   const handlePlayCutscene = () => startReveal(playerRef);
   const handlePlayConstructors = () => startReveal(constructorPlayerRef);
+  // First reveal of a race (from the "Results are ready" screen): the constructors
+  // reveal follows the drivers reveal automatically. Replays play one at a time.
+  const chainConstructorsRef = useRef(false);
+  const handlePlayFirstReveal = () => {
+    chainConstructorsRef.current = !!constructorCutsceneData;
+    startReveal(playerRef);
+  };
 
   function startReveal(ref: React.RefObject<CutscenePlayerHandle | null>) {
     markRevealed(selectedRaceId);
@@ -191,6 +198,7 @@ export default function ResultsPage() {
   useEffect(() => {
     setIsPlaying(false);
     setIsConstructorPlaying(false);
+    chainConstructorsRef.current = false;
     return () => {
       if (revealTimeoutRef.current !== null) {
         clearTimeout(revealTimeoutRef.current);
@@ -204,6 +212,10 @@ export default function ResultsPage() {
   // the disabled-button treatment.
   const handleCutsceneProgress = (state: CutscenePlayerProgress) => {
     setIsPlaying(state.isPlaying);
+    if (state.isComplete && chainConstructorsRef.current) {
+      chainConstructorsRef.current = false;
+      constructorPlayerRef.current?.play();
+    }
   };
 
   // First load only: a blank, centered spinner -- no header content, race
@@ -246,8 +258,8 @@ export default function ResultsPage() {
             />
           ) : (
             <RevealGate
-              onPlayCutscene={handlePlayCutscene}
-              onPlayConstructors={constructorCutsceneData ? handlePlayConstructors : undefined}
+              onPlayCutscene={handlePlayFirstReveal}
+              includesConstructors={!!constructorCutsceneData}
               onShowResults={handleShowResults}
               disabled={playCutsceneDisabled}
               raceName={raceName}

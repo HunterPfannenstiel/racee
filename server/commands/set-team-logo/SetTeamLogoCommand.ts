@@ -5,7 +5,7 @@ import type { ILeagueRepository, ITeamLogoRepository, ITeamRepository } from "@/
 import type { ISetTeamLogoCommand, SetTeamLogoPayload } from "./ISetTeamLogoCommand";
 
 /**
- * Uploads (or removes) a team's logo. Commissioner-only. Unprefixed — spans the
+ * Uploads (or removes) a team's logo. The team's members or the league's commissioners. Unprefixed — spans the
  * league, team and team-logo repositories.
  */
 export class SetTeamLogoCommand implements ISetTeamLogoCommand {
@@ -18,10 +18,10 @@ export class SetTeamLogoCommand implements ISetTeamLogoCommand {
   async execute(payload: SetTeamLogoPayload): Promise<{ logo: string | null }> {
     const league = await this.leagues.findById(payload.leagueId);
     if (!league) throw new NotFoundError("League", payload.leagueId);
-    assertLeagueCommissioner(payload.actorUserId, league);
-
     const team = await this.teams.findById(payload.leagueId, payload.teamId);
     if (!team) throw new NotFoundError("Team", payload.teamId);
+    // A team's own members can change its logo; otherwise commissioners only.
+    if (!team.memberIds.includes(payload.actorUserId)) assertLeagueCommissioner(payload.actorUserId, league);
 
     if (payload.dataUrl === null) {
       // The old file is left in storage; nothing points at it any more and the next upload overwrites it.
