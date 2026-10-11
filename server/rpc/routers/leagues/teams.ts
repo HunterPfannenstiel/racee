@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { authed } from "@/server/rpc/procedures";
-import { TeamSchema, UserSchema } from "@/lib/schemas";
+import { TeamSchema, UserSchema, PropNameSchema } from "@/lib/schemas";
+import { TeamDashboardQuery } from "@/server/queries/team-dashboard/TeamDashboardQuery";
+import { BlobLeagueStandingsRepository } from "@/server/repositories/league-standings/BlobLeagueStandingsRepository";
+import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepository";
+import { BlobRacePredictionBookRepository } from "@/server/repositories/race-prediction-book/BlobRacePredictionBookRepository";
 import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
 import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
 import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
@@ -19,6 +23,80 @@ const userRepo = new PrismaUserRepository();
 
 const leagueTeamsQuery = new BlobLeagueTeamsQuery(teamRepo);
 const commissionerTeamsQuery = new CommissionerTeamsQuery(teamRepo, userRepo, leagueRepo);
+const teamDashboardQuery = new TeamDashboardQuery(
+  leagueRepo,
+  teamRepo,
+  new BlobLeagueStandingsRepository(),
+  new BlobRaceRepository(),
+  new BlobRacePredictionBookRepository(),
+  userRepo,
+);
+
+// Mirrors server/queries/team-dashboard/ITeamDashboardQuery.ts.
+const PropAccuracyStatSchema = z.object({
+  propType: PropNameSchema,
+  correct: z.number(),
+  total: z.number(),
+  accuracy: z.number(),
+});
+const TeamSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.string().nullable(),
+  logo: z.string().nullable(),
+  memberCount: z.number(),
+  teamPoints: z.number(),
+  teamRank: z.number().nullable(),
+  avgTeamPointsPerRace: z.number(),
+  combinedDriverPoints: z.number(),
+  avgDriverPointsPerMember: z.number(),
+  propAccuracy: z.number(),
+});
+const TeamDashboardSchema = z.object({
+  teamScoringEnabled: z.boolean(),
+  teamCount: z.number(),
+  team: TeamSummarySchema.nullable(),
+  pointsBehindLeader: z.number(),
+  members: z.array(
+    z.object({
+      userId: z.string(),
+      name: z.string(),
+      driverTotal: z.number(),
+      driverRank: z.number().nullable(),
+      gridPoints: z.number(),
+      propPoints: z.number(),
+      racesScored: z.number(),
+      avgPerRace: z.number(),
+      bestRace: z.object({ raceId: z.string(), title: z.string(), points: z.number() }).nullable(),
+      teamContribution: z.number(),
+      contributionShare: z.number(),
+      racesPredicted: z.number(),
+      propsCalled: z.number(),
+      propAccuracy: z.number(),
+      propAccuracyByType: z.array(PropAccuracyStatSchema),
+    }),
+  ),
+  teamPropAccuracyByType: z.array(PropAccuracyStatSchema),
+  races: z.array(
+    z.object({
+      raceId: z.string(),
+      title: z.string(),
+      label: z.string().nullable(),
+      teamPoints: z.number(),
+      rankThatRace: z.number().nullable(),
+      topMember: z.object({ userId: z.string(), name: z.string(), points: z.number() }).nullable(),
+    }),
+  ),
+  leagueTeams: z.array(TeamSummarySchema),
+  leagueAverages: z.object({
+    teamPoints: z.number(),
+    avgTeamPointsPerRace: z.number(),
+    combinedDriverPoints: z.number(),
+    avgDriverPointsPerMember: z.number(),
+    propAccuracy: z.number(),
+  }),
+  viewerTeamId: z.string().nullable(),
+});
 const createTeamCommand = new CreateTeamCommand(leagueRepo, teamRepo);
 const updateTeamCommand = new UpdateTeamCommand(leagueRepo, teamRepo);
 const setTeamLogoCommand = new SetTeamLogoCommand(leagueRepo, teamRepo, new BlobTeamLogoRepository());
@@ -35,6 +113,14 @@ const RosterSchema = z.object({
 });
 
 export const teamsRouter = {
+  /** Team dashboard: a team's stats, members' contributions, and every team compared. Members only. */
+  dashboard: authed
+    .input(z.object({ leagueId: z.string().uuid(), teamId: z.string().uuid().nullable() }))
+    .output(TeamDashboardSchema)
+    .handler(async ({ context, input }) =>
+      teamDashboardQuery.execute(input.leagueId, input.teamId, context.session.user.id),
+    ),
+
   /** All teams in a league. */
   list: authed
     .input(LeagueIdInput)

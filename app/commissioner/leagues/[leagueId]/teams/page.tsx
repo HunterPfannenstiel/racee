@@ -46,6 +46,7 @@ export default function CommissionerTeamsPage() {
     queryClient.invalidateQueries({ queryKey: orpc.leagues.teams.list.key({ input }) });
     // Team membership and team colors drive avatar ring colors.
     queryClient.invalidateQueries({ queryKey: orpc.leagues.avatars.list.key({ input }) });
+    queryClient.invalidateQueries({ queryKey: orpc.leagues.teams.dashboard.key() });
   };
   const createMutation = useMutation(
     orpc.leagues.teams.create.mutationOptions({

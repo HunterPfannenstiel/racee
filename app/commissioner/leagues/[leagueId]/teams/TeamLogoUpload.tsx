@@ -30,6 +30,7 @@ export function TeamLogoUpload({ leagueId, team, disabled }: Props) {
         setError(null);
         queryClient.invalidateQueries({ queryKey: orpc.leagues.teams.roster.key({ input }) });
         queryClient.invalidateQueries({ queryKey: orpc.leagues.teams.list.key({ input }) });
+        queryClient.invalidateQueries({ queryKey: orpc.leagues.teams.dashboard.key() });
       },
       onError: (e) => setError(e instanceof Error && e.message ? e.message : "Couldn't save the logo."),
     }),
