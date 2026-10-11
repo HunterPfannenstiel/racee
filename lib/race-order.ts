@@ -54,3 +54,24 @@ export function computeSeasonStages<T extends OrderableRace>(
   }
   return stages;
 }
+
+/**
+ * Standings columns: a cancelled race that has a replacement shares one column
+ * with that replacement (the replacement's scores, labelled "replacement for
+ * <cancelled race>"); a cancelled race with no replacement keeps its own column.
+ * Expects races already in season order (see orderSeasonRaces).
+ */
+export function mergeReplacedRaceColumns<T extends { id: string; title: string; label?: string; cancelled?: boolean; replacesRaceId?: string | null }>(
+  races: readonly T[],
+): (T & { replacesLabel?: string })[] {
+  const byId = new Map(races.map((r) => [r.id, r]));
+  const replacedIds = new Set(
+    races.map((r) => r.replacesRaceId).filter((id): id is string => !!id && byId.has(id)),
+  );
+  return races
+    .filter((r) => !(r.cancelled && replacedIds.has(r.id)))
+    .map((r) => {
+      const replaced = r.replacesRaceId ? byId.get(r.replacesRaceId) : undefined;
+      return replaced ? { ...r, replacesLabel: replaced.label ?? replaced.title } : r;
+    });
+}

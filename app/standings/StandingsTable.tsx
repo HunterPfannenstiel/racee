@@ -165,6 +165,7 @@ export function StandingsTable({ rows, races, nameHeader, stages, showSummary = 
                   <RaceHeaderCell
                     label={race.label ?? race.title}
                     cancelled={race.cancelled}
+                    replacesLabel={(race as { replacesLabel?: string }).replacesLabel}
                     sortDir={sortDirFor(`race:${race.id}`)}
                     onSort={race.cancelled ? undefined : () => toggleSort(`race:${race.id}`)}
                   />

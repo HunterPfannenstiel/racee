@@ -79,8 +79,8 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
             </p>
           )}
           <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground mt-2">
-            Stage {stageIdx !== null ? stageIdx + 1 : "—"} · {stageRaceIds.length}{" "}
-            {stageRaceIds.length === 1 ? "race" : "races"}
+            Stage {stageIdx !== null ? stageIdx + 1 : "—"} · {stageRaces.length}{" "}
+            {stageRaces.length === 1 ? "race" : "races"}
           </p>
         </div>
 
@@ -96,6 +96,11 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
               <div className="flex items-center gap-3 px-4 py-3 min-h-[52px] border-b border-border last:border-b-0">
                 <div className="flex-1 min-w-0 flex items-center gap-2">
                   <p className="font-mono text-sm text-foreground truncate">{label}</p>
+                  {(race as { replacesLabel?: string }).replacesLabel && (
+                    <span className="font-mono text-[10px] text-muted-foreground shrink-0">
+                      (replacement for {(race as { replacesLabel?: string }).replacesLabel})
+                    </span>
+                  )}
                   {race.cancelled && (
                     <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-destructive bg-subtle px-1.5 py-0.5 rounded-sm shrink-0">
                       Cancelled
