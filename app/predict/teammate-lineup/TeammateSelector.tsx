@@ -2,8 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
 
 type TeammateSelectorProps = {
+  /** Whose lineup is shown — drives the avatar. Omit to hide it. */
+  userId?: string | null;
   displayName: string;
   isProxy: boolean;
   teamColor?: string;
@@ -12,6 +15,7 @@ type TeammateSelectorProps = {
 };
 
 export function TeammateSelector({
+  userId,
   displayName,
   isProxy,
   teamColor,
@@ -29,6 +33,8 @@ export function TeammateSelector({
         <ChevronLeft className="size-5" />
       </Button>
 
+      <span className="flex min-w-0 items-center gap-2">
+      {userId && <LeaguePlayerAvatar userId={userId} name={displayName} size="sm" />}
       <span
         className="font-mono text-sm font-semibold"
         style={
@@ -43,6 +49,7 @@ export function TeammateSelector({
         }
       >
         {displayName}
+      </span>
       </span>
 
       <Button

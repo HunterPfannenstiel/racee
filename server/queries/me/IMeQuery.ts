@@ -16,6 +16,8 @@ export type MeResult = {
   id: string;
   name: string;
   isAdmin: boolean;
+  /** Avatar value — see lib/avatar.ts. */
+  image: string | null;
   leagues: MeLeagueDTO[];
 };
 

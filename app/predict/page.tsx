@@ -141,6 +141,7 @@ export default function PredictPage() {
 
             {data.teammates.length > 0 && (
               <TeammateSelector
+                userId={selectedPlayerId ?? user?.id}
                 displayName={displayName}
                 isProxy={isProxy}
                 teamColor={data.teamColor}

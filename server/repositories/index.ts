@@ -6,3 +6,5 @@ export type { IRacePredictionBookRepository } from "./race-prediction-book/IRace
 export type { ILeagueStandingsRepository } from "./league-standings/ILeagueStandingsRepository";
 export type { IUserRepository } from "./user/IUserRepository";
 export type { IMotorsportRepository } from "./motorsport/IMotorsportRepository";
+export type { IAvatarImageRepository } from "./avatar-image/IAvatarImageRepository";
+export type { ITeamLogoRepository } from "./team-logo/ITeamLogoRepository";

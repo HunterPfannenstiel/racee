@@ -1,29 +1,18 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
 
 type PlayerIdentityCardProps = {
+  userId: string;
   name: string;
-  avatarUrl?: string;
 };
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
-
-export function PlayerIdentityCard({ name, avatarUrl }: PlayerIdentityCardProps) {
+export function PlayerIdentityCard({ userId, name }: PlayerIdentityCardProps) {
   return (
     <Card>
       <CardContent className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
-          <Avatar size="lg">
-            {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
-            <AvatarFallback>{getInitials(name)}</AvatarFallback>
-          </Avatar>
+          <LeaguePlayerAvatar userId={userId} name={name} size="lg" />
           <div className="flex items-center gap-2">
             <span className="font-heading text-lg font-bold text-foreground">{name}</span>
             <Badge className="bg-amber-400 text-amber-950">Commissioner Mode</Badge>

@@ -7,6 +7,7 @@ import { BEATS_BY_ID, RESOLVE_HOLD_MS, type BeatId, type CutsceneData } from "./
 import { useCutscenePlayer, type CutsceneBeatMark } from "./useCutscenePlayer";
 import { PersistentOverlay } from "./PersistentOverlay";
 import { RACE_BUG_REST_TOP_PCT } from "./RaceBug";
+import { CutsceneIdentityProvider } from "./CutsceneIdentity";
 
 export type CutscenePlayerHandle = {
   play: () => void;
@@ -157,12 +158,14 @@ export const CutscenePlayer = forwardRef<CutscenePlayerHandle, CutscenePlayerPro
             Skip
           </button>
         )}
-        {activeBeat && <activeBeat.Stage state={player.beatState} playbackRate={player.playbackRate} />}
-        <PersistentOverlay
-          liveBeats={player.livePersistentBeats}
-          playbackRate={player.playbackRate}
-          handoffNodes={player.persistentNodes}
-        />
+        <CutsceneIdentityProvider data={data}>
+          {activeBeat && <activeBeat.Stage state={player.beatState} playbackRate={player.playbackRate} />}
+          <PersistentOverlay
+            liveBeats={player.livePersistentBeats}
+            playbackRate={player.playbackRate}
+            handoffNodes={player.persistentNodes}
+          />
+        </CutsceneIdentityProvider>
       </motion.div>
     );
   },

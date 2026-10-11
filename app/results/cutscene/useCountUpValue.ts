@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { animate, useMotionValue, useTransform, type AnimationPlaybackControls } from "motion/react";
+import { formatCountUp } from "./formatCountUp";
 
 // Hard-decelerating, never-overshoots easing -- duplicated from GroupStage
 // (not exported there) to keep every count-up's motion feel identical. A
@@ -46,7 +47,7 @@ export function useCountUpValue({
   playbackRate: number;
 }) {
   const value = useMotionValue(phase === "settled" ? target : 0);
-  const rounded = useTransform(value, (v) => Math.round(v).toLocaleString());
+  const rounded = useTransform(value, (v) => formatCountUp(v, target));
   const controlsRef = useRef<AnimationPlaybackControls[]>([]);
 
   useEffect(() => {

@@ -10,6 +10,8 @@ import { StageSectionsBlock } from "./StageSectionsBlock";
 import { StageDetailSheet } from "./StageDetailSheet";
 import { StandingsTable } from "./StandingsTable";
 import { type StandingsRowData } from "./StandingsRow";
+import { useLeagueAvatars } from "@/components/avatar/useLeagueAvatars";
+import { computeStandingsMovement } from "@/lib/standings-movement";
 
 export type { StandingsRowData };
 
@@ -43,12 +45,20 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
   const userTeamName = Object.fromEntries(
     teams.flatMap((t) => t.memberIds.map((uid) => [uid, t.name]))
   );
+  const teamRef = (t: (typeof teams)[number] | undefined) =>
+    t ? { leagueId: league.id, id: t.id, name: t.name, color: t.color, logo: t.logo } : undefined;
+  const userTeam = Object.fromEntries(teams.flatMap((t) => t.memberIds.map((uid) => [uid, t])));
+
+  // Ring colors: team color, or the player's own league color when they aren't on a team.
+  const { byUserId: avatars } = useLeagueAvatars(league.id);
 
   const mappedDriverRows: StandingsRowData[] = driverRows.map(({ userId, total, rawTotal, propTotal, raceScores }) => ({
     id: userId,
+    userId,
     label: usersById[userId]?.name ?? "Unknown User",
-    color: userTeamColor[userId] ?? "#6b7280",
+    color: avatars[userId]?.color ?? userTeamColor[userId] ?? "#6b7280",
     teamName: userTeamName[userId],
+    team: teamRef(userTeam[userId]),
     total,
     rawTotal,
     propTotal,
@@ -69,20 +79,28 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     label: teamsById[teamId]?.name ?? teamId,
     color: teamsById[teamId]?.color ?? "#6b7280",
     teamName: teamsById[teamId]?.name,
+    team: teamRef(teamsById[teamId]),
     total,
     rawTotal,
     propTotal,
     raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.weeklyTeamPoints])),
     mulliganedRaceIds: new Set(),
     memberScores: (teamsById[teamId]?.memberIds ?? [])
-      .map((uid) => ({ name: usersById[uid]?.name ?? "Unknown", total: driverTeamContributionByUserId[uid] ?? 0 }))
+      .map((uid) => ({ userId: uid, name: usersById[uid]?.name ?? "Unknown", total: driverTeamContributionByUserId[uid] ?? 0 }))
       .sort((a, b) => b.total - a.total),
   }));
 
   const teamScoringEnabled = (league.teamPositionPoints?.length ?? 0) > 0;
   const currentUserTeamId = teams.find((t) => t.memberIds.includes(user?.id ?? ""))?.id ?? null;
   const currentRowId = tab === "drivers" ? (user?.id ?? null) : currentUserTeamId;
-  const rows = tab === "drivers" ? mappedDriverRows : mappedConstructorRows;
+  // Places moved since the last graded race (drivers use the league's mulligans; team totals have none).
+  const raceOrder = races.map((r) => r.id);
+  const withMovement = (list: StandingsRowData[], mulligans: number) => {
+    const movement = computeStandingsMovement(list, raceOrder, mulligans);
+    return list.map((row) => ({ ...row, movement: movement[row.id] }));
+  };
+  const rows =
+    tab === "drivers" ? withMovement(mappedDriverRows, mulliganCount) : withMovement(mappedConstructorRows, 0);
 
   return (
     <div className="space-y-4">

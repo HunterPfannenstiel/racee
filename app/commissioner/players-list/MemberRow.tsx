@@ -22,6 +22,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Member } from "./types";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
+import { PlayerColorDialog } from "./PlayerColorDialog";
+import { useLeagueAvatars } from "@/components/avatar/useLeagueAvatars";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { orpc } from "@/lib/orpc/client";
 
 type MemberRowProps = {
   leagueId: string;
@@ -38,12 +43,22 @@ export function MemberRow({ leagueId, member, otherMembers, onRemove, isRemovePe
   const isCommissioner = member.role === "commissioner";
   const needsSuccessor = isCommissioner && !newCommissionerId;
   const remove = (clearScores: boolean) => onRemove(clearScores, isCommissioner ? newCommissionerId : undefined);
+  const [colorOpen, setColorOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { byUserId } = useLeagueAvatars(leagueId);
+  const avatar = byUserId[member.id];
+  const hideMutation = useMutation(
+    orpc.leagues.players.setAvatarHidden.mutationOptions({
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: orpc.leagues.avatars.list.key({ input: { leagueId } }) }),
+    }),
+  );
 
   return (
     <>
       <div className="flex items-center justify-between px-4 py-3">
-        <span className="text-sm">
-          {member.name}
+        <span className="flex min-w-0 items-center gap-2 text-sm">
+          <LeaguePlayerAvatar leagueId={leagueId} userId={member.id} name={member.name} size="md" />
+          <span className="truncate">{member.name}</span>
           {isCommissioner && <span className="ml-2 text-xs text-muted-foreground">Commissioner</span>}
           {member.role === "co-commissioner" && <span className="ml-2 text-xs text-muted-foreground">Co-commissioner</span>}
         </span>
@@ -60,6 +75,15 @@ export function MemberRow({ leagueId, member, otherMembers, onRemove, isRemovePe
                   Edit Lineup
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setColorOpen(true)}>
+                Change color
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={hideMutation.isPending || !avatar}
+                onSelect={() => hideMutation.mutate({ leagueId, userId: member.id, hidden: !avatar?.hidden })}
+              >
+                {avatar?.hidden ? "Show picture" : "Hide picture"}
+              </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
                 onSelect={() => setConfirmOpen(true)}
@@ -71,12 +95,22 @@ export function MemberRow({ leagueId, member, otherMembers, onRemove, isRemovePe
         </DropdownMenu>
       </div>
 
+      {colorOpen && (
+        <PlayerColorDialog
+          leagueId={leagueId}
+          member={member}
+          currentColor={avatar?.playerColor}
+          onTeamColor={!!avatar && avatar.color !== avatar.playerColor}
+          onClose={() => setColorOpen(false)}
+        />
+      )}
+
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove {member.name} from the league?</AlertDialogTitle>
             <AlertDialogDescription>
-              They'll lose access immediately. Do you want to keep their past scores in the
+              They&apos;ll lose access immediately. Do you want to keep their past scores in the
               standings, or clear them out completely?
             </AlertDialogDescription>
           </AlertDialogHeader>

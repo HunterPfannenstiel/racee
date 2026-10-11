@@ -6,6 +6,8 @@ import { Play } from "lucide-react";
 
 type RevealGateProps = {
   onPlayCutscene: () => void;
+  /** Present only when the league uses teams: plays the constructors reveal. */
+  onPlayConstructors?: () => void;
   onShowResults: () => void;
   disabled?: boolean;
   raceName?: string;
@@ -17,7 +19,7 @@ type RevealGateProps = {
  * which screen shows (this vs. ResultsView) is driven by local state owned
  * by the page, not by anything in here. See app/results/page.tsx.
  */
-export function RevealGate({ onPlayCutscene, onShowResults, disabled, raceName }: RevealGateProps) {
+export function RevealGate({ onPlayCutscene, onPlayConstructors, onShowResults, disabled, raceName }: RevealGateProps) {
   return (
     <div className="mx-4">
       <Empty>
@@ -36,6 +38,12 @@ export function RevealGate({ onPlayCutscene, onShowResults, disabled, raceName }
               Show Results
             </Button>
           </div>
+          {onPlayConstructors && (
+            <Button className="w-full gap-2" variant="secondary" onClick={onPlayConstructors} disabled={disabled}>
+              Play Constructors Reveal
+              <Play />
+            </Button>
+          )}
         </EmptyContent>
       </Empty>
     </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { ResultsRowData } from "./types";
 import { buildPvpHref } from "./player-vs-player/href";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
 
 type ResultsListProps = {
   entries: ResultsRowData[];
@@ -33,6 +34,7 @@ export function ResultsList({ entries, currentUserId, leagueId, raceId }: Result
             <span className="w-6 shrink-0 text-center font-mono text-sm font-semibold text-muted-foreground">
               {entry.rank}
             </span>
+            <LeaguePlayerAvatar userId={entry.userId} name={entry.name} leagueId={leagueId} size="md" />
             <p className="min-w-0 flex-1 truncate font-heading text-lg font-bold leading-tight text-foreground">
               {entry.name}
             </p>

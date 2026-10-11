@@ -8,7 +8,7 @@ import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
 import { orpc } from "@/lib/orpc/client";
 import { StandingsGrid } from "./StandingsGrid";
-import { orderSeasonRaces } from "@/lib/race-order";
+import { mergeReplacedRaceColumns, orderSeasonRaces } from "@/lib/race-order";
 
 export default function ViewPage() {
   const { user, isLoading: userLoading } = useUser();
@@ -29,7 +29,7 @@ export default function ViewPage() {
   // so season order is re-established here: by date, with each replacement race
   // placed right after the cancelled race it replaces (same as the server's stages).
   const sortedRaces = useMemo(
-    () => (racesQuery.data ? orderSeasonRaces(racesQuery.data, (r) => r.id) : []),
+    () => (racesQuery.data ? mergeReplacedRaceColumns(orderSeasonRaces(racesQuery.data, (r) => r.id)) : []),
     [racesQuery.data],
   );
 

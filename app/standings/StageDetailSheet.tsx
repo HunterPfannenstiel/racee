@@ -7,6 +7,8 @@ import { assignRanks } from "@/lib/scoring";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { type StandingsRowData } from "./StandingsGrid";
 import { formatPoints } from "@/lib/utils";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
+import { TeamLogo } from "@/components/avatar/TeamLogo";
 
 type Props = {
   open: boolean;
@@ -47,7 +49,13 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
         <div className="px-4 pt-1 pb-4 border-b border-border">
           {selectedRow && (
             <div className="flex items-center gap-2">
-              <div className="w-1 h-6 rounded-full shrink-0" style={{ backgroundColor: selectedRow.color }} />
+              {selectedRow.userId ? (
+                <LeaguePlayerAvatar userId={selectedRow.userId} name={selectedRow.label} size="lg" />
+              ) : selectedRow.team ? (
+                <TeamLogo leagueId={selectedRow.team.leagueId} teamId={selectedRow.team.id} name={selectedRow.team.name} color={selectedRow.team.color} logo={selectedRow.team.logo} size="lg" />
+              ) : (
+                <div className="w-1 h-6 rounded-full shrink-0" style={{ backgroundColor: selectedRow.color }} />
+              )}
               {selectedRow.linkTo ? (
                 <Link href={selectedRow.linkTo} className="flex items-center gap-1 min-w-0" onClick={onClose}>
                   <p className="font-heading text-[28px] font-bold leading-none text-foreground truncate">
@@ -63,13 +71,16 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
             </div>
           )}
           {selectedRow?.teamName && selectedRow.teamName !== selectedRow.label && (
-            <p className="font-mono text-[11px] text-muted-foreground mt-1 ml-3">
+            <p className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground mt-1 ml-3">
+              {selectedRow.team && (
+                <TeamLogo leagueId={selectedRow.team.leagueId} teamId={selectedRow.team.id} name={selectedRow.team.name} color={selectedRow.team.color} logo={selectedRow.team.logo} size="xs" />
+              )}
               {selectedRow.teamName}
             </p>
           )}
           <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground mt-2">
-            Stage {stageIdx !== null ? stageIdx + 1 : "—"} · {stageRaceIds.length}{" "}
-            {stageRaceIds.length === 1 ? "race" : "races"}
+            Stage {stageIdx !== null ? stageIdx + 1 : "—"} · {stageRaces.length}{" "}
+            {stageRaces.length === 1 ? "race" : "races"}
           </p>
         </div>
 
@@ -85,6 +96,11 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
               <div className="flex items-center gap-3 px-4 py-3 min-h-[52px] border-b border-border last:border-b-0">
                 <div className="flex-1 min-w-0 flex items-center gap-2">
                   <p className="font-mono text-sm text-foreground truncate">{label}</p>
+                  {(race as { replacesLabel?: string }).replacesLabel && (
+                    <span className="font-mono text-[10px] text-muted-foreground shrink-0">
+                      (replacement for {(race as { replacesLabel?: string }).replacesLabel})
+                    </span>
+                  )}
                   {race.cancelled && (
                     <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-destructive bg-subtle px-1.5 py-0.5 rounded-sm shrink-0">
                       Cancelled

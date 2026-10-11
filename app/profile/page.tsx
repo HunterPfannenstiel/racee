@@ -14,6 +14,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { RequireUser } from "@/components/RequireUser";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
+import { PlayerAvatar } from "@/components/avatar/PlayerAvatar";
+import { AvatarPicker } from "./AvatarPicker";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -49,8 +51,6 @@ export default function ProfilePage() {
     updateNameMutation.mutate({ name });
   }
 
-  const initial = user?.name?.[0]?.toUpperCase() ?? "?";
-
   return (
     <PageShell title="Profile">
       <OverhaulNotice />
@@ -74,9 +74,7 @@ export default function ProfilePage() {
               ) : (
                 <>
                   <div className="flex items-center gap-3">
-                    <div className="size-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground shrink-0 select-none">
-                      {initial}
-                    </div>
+                    {user && <PlayerAvatar userId={user.id} name={user.name} image={user.image} size="md" />}
                     {editing ? (
                       <div className="flex items-center gap-1.5 min-w-0 flex-1">
                         <Input
@@ -112,6 +110,8 @@ export default function ProfilePage() {
               )}
             </CardContent>
           </Card>
+
+          {user && <AvatarPicker userId={user.id} name={user.name} image={user.image} />}
 
           {user && user.leagues.length > 0 && (
             <Card>
