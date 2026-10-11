@@ -4,7 +4,7 @@ import { useState } from "react";
 import { User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DEFAULT_RING_COLOR, parseAvatar } from "@/lib/avatar";
-import { AVATAR_PRESETS } from "./presets";
+import { AVATAR_PRESETS, PresetGlyph } from "./presets";
 
 export const AVATAR_SIZES = {
   xs: { px: 20, ring: 2, text: "text-[9px]" },
@@ -60,7 +60,7 @@ export function PlayerAvatar({ userId, name, image, color, hidden, size = "sm", 
   } else if (parsed.kind === "preset") {
     const preset = AVATAR_PRESETS[parsed.id];
     bg = preset.bg;
-    content = <preset.Icon style={{ width: iconPx, height: iconPx }} className="text-white" aria-hidden />;
+    content = <PresetGlyph preset={preset} px={iconPx} />;
   } else {
     content = <span className={cn("font-semibold text-muted-foreground leading-none", s.text)}>{initial}</span>;
   }

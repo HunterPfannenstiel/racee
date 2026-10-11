@@ -76,6 +76,8 @@ export type TeamDashboardResult = {
   };
   /** The viewer's own team in this league, if any. */
   viewerTeamId: string | null;
+  /** Whether the viewer may change this team's logo (its members and the league's commissioners). */
+  canEditLogo: boolean;
 };
 
 export interface ITeamDashboardQuery {

@@ -6,8 +6,8 @@ import { Play } from "lucide-react";
 
 type RevealGateProps = {
   onPlayCutscene: () => void;
-  /** Present only when the league uses teams: plays the constructors reveal. */
-  onPlayConstructors?: () => void;
+  /** True when the league uses teams: Play Reveal runs the drivers then the constructors reveal. */
+  includesConstructors?: boolean;
   onShowResults: () => void;
   disabled?: boolean;
   raceName?: string;
@@ -19,14 +19,18 @@ type RevealGateProps = {
  * which screen shows (this vs. ResultsView) is driven by local state owned
  * by the page, not by anything in here. See app/results/page.tsx.
  */
-export function RevealGate({ onPlayCutscene, onPlayConstructors, onShowResults, disabled, raceName }: RevealGateProps) {
+export function RevealGate({ onPlayCutscene, includesConstructors, onShowResults, disabled, raceName }: RevealGateProps) {
   return (
     <div className="mx-4">
       <Empty>
         <EmptyHeader>
           <EmptyTitle>Results are ready</EmptyTitle>
           {raceName && <p>{raceName}</p>}
-          <EmptyDescription>Play the reveal, or skip straight to the results.</EmptyDescription>
+          <EmptyDescription>
+            {includesConstructors
+              ? "Play the drivers and constructors reveal, or skip straight to the results."
+              : "Play the reveal, or skip straight to the results."}
+          </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <div className="flex w-full gap-2">
@@ -38,12 +42,7 @@ export function RevealGate({ onPlayCutscene, onPlayConstructors, onShowResults, 
               Show Results
             </Button>
           </div>
-          {onPlayConstructors && (
-            <Button className="w-full gap-2" variant="secondary" onClick={onPlayConstructors} disabled={disabled}>
-              Play Constructors Reveal
-              <Play />
-            </Button>
-          )}
+
         </EmptyContent>
       </Empty>
     </div>

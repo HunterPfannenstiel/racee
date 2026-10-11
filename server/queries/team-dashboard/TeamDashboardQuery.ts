@@ -85,7 +85,7 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
     if (teams.length === 0) {
       return {
         teamScoringEnabled, teamCount: 0, team: null, pointsBehindLeader: 0, members: [],
-        teamPropAccuracyByType: [], races: [], leagueTeams: [], leagueAverages: emptyAverages, viewerTeamId,
+        teamPropAccuracyByType: [], races: [], leagueTeams: [], leagueAverages: emptyAverages, viewerTeamId, canEditLogo: false,
       };
     }
     const target = (teamId && teams.find((t) => t.teamId === teamId)) || teams.find((t) => t.teamId === viewerTeamId) || teams[0];
@@ -107,10 +107,16 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
 
     // ---- Team scoring: weekly team points per team per race ----
     const teamRacePoints = new Map<string, Map<string, number>>();
+    const teamRaceEntries = new Map<string, Map<string, { userId?: string; points: number }[]>>();
     for (const t of standings?.teams ?? []) {
       const byRace = new Map<string, number>();
-      for (const s of t.raceScores) byRace.set(s.raceId, (byRace.get(s.raceId) ?? 0) + s.weeklyTeamPoints);
+      const entries = new Map<string, { userId?: string; points: number }[]>();
+      for (const s of t.raceScores) {
+        byRace.set(s.raceId, (byRace.get(s.raceId) ?? 0) + s.weeklyTeamPoints);
+        entries.set(s.raceId, [...(entries.get(s.raceId) ?? []), { userId: s.userId, points: s.weeklyTeamPoints }]);
+      }
       teamRacePoints.set(t.teamId, byRace);
+      teamRaceEntries.set(t.teamId, entries);
     }
     const teamTotal = (id: string) => [...(teamRacePoints.get(id)?.values() ?? [])].reduce((a, b) => a + b, 0);
 
@@ -180,6 +186,30 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
     const leaderPoints = teamScoringEnabled ? (leagueTeams[0]?.teamPoints ?? 0) : (leagueTeams[0]?.combinedDriverPoints ?? 0);
     const myPoints = teamScoringEnabled ? team.teamPoints : team.combinedDriverPoints;
 
+    // ---- Contribution to THIS team ----
+    // A player's weekly team points are recorded for every race, including races
+    // before they joined this team, but the team total only counts races they
+    // scored for it. Newer results record which player each team point came from;
+    // for older ones, a member's points only count in races the team scored, and
+    // are scaled down if they'd add up to more than the team actually got.
+    const contributionOf = new Map<string, number>();
+    for (const race of graded) {
+      const entries = teamRaceEntries.get(target.teamId)?.get(race.raceId);
+      if (!entries) continue;
+      const teamPts = entries.reduce((a, e) => a + e.points, 0);
+      if (entries.some((e) => e.userId)) {
+        for (const e of entries) if (e.userId) contributionOf.set(e.userId, (contributionOf.get(e.userId) ?? 0) + e.points);
+        continue;
+      }
+      const raw = target.memberIds.map((id) => ({
+        id,
+        pts: individual.get(id)?.find((s) => s.raceId === race.raceId)?.weeklyTeamPoints ?? 0,
+      }));
+      const rawSum = raw.reduce((a, r) => a + r.pts, 0);
+      const scale = rawSum > teamPts && rawSum > 0 ? teamPts / rawSum : 1;
+      for (const r of raw) contributionOf.set(r.id, (contributionOf.get(r.id) ?? 0) + r.pts * scale);
+    }
+
     // ---- Members ----
     const members: TeamMemberStatsDTO[] = target.memberIds.map((userId) => {
       const scores = (individual.get(userId) ?? []).filter((s) => gradedIds.has(s.raceId));
@@ -188,7 +218,7 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
         (b, s) => (!b || s.gridPoints + s.propPoints > b.gridPoints + b.propPoints ? s : b),
         null,
       );
-      const contribution = scores.reduce((a, s) => a + (s.weeklyTeamPoints ?? 0), 0);
+      const contribution = contributionOf.get(userId) ?? 0;
       const props = tallyToStats(propTally.get(userId) ?? new Map());
       return {
         userId,
@@ -203,7 +233,7 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
           ? { raceId: best.raceId, title: raceById.get(best.raceId)?.title ?? "", points: best.gridPoints + best.propPoints }
           : null,
         teamContribution: contribution,
-        contributionShare: team.teamPoints > 0 ? contribution / team.teamPoints : 0,
+        contributionShare: team.teamPoints > 0 ? Math.min(1, contribution / team.teamPoints) : 0,
         racesPredicted: racesPredicted.get(userId) ?? 0,
         propsCalled: propsCalled.get(userId) ?? 0,
         propAccuracy: props.overall,
@@ -254,6 +284,7 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
         propAccuracy: avg(summaries.map((s) => s.propAccuracy)),
       },
       viewerTeamId,
+      canEditLogo: league.canManage(actorUserId) || target.memberIds.includes(actorUserId),
     };
   }
 }

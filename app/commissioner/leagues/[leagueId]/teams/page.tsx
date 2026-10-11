@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { orpc } from "@/lib/orpc/client";
 import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
-import { TeamLogoUpload } from "./TeamLogoUpload";
+import { TeamLogoUpload } from "@/components/avatar/TeamLogoUpload";
 
 const UNASSIGNED = "__unassigned__";
 
