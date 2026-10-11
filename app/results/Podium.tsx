@@ -4,6 +4,8 @@ import { medalBorderColor, medalColor } from "@/lib/colors";
 import type { ResultsRowData } from "./types";
 import { groupEntriesByRank } from "./rank-utils";
 import { buildPvpHref } from "./player-vs-player/href";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
+import { UserTeamLogo } from "@/components/avatar/UserTeamLogo";
 
 type PodiumProps = {
   entries: ResultsRowData[];
@@ -69,6 +71,7 @@ function PodiumPlatform({
 
             return (
               <div key={entry.userId} className="flex min-w-0 max-w-full flex-col items-center">
+                <LeaguePlayerAvatar userId={entry.userId} name={entry.name} leagueId={leagueId} size="lg" className="mb-1" />
                 {href ? (
                   <Link href={href} className={cn(nameClassName, "hover:text-primary transition-colors")}>
                     {entry.name}
@@ -76,8 +79,9 @@ function PodiumPlatform({
                 ) : (
                   <p className={nameClassName}>{entry.name}</p>
                 )}
-                <p className="max-w-full truncate text-xs font-medium" style={{ color: entry.color }}>
-                  {entry.teamName}
+                <p className="flex max-w-full items-center gap-1 text-xs font-medium" style={{ color: entry.color }}>
+                  {entry.teamName && <UserTeamLogo userId={entry.userId} leagueId={leagueId} />}
+                  <span className="truncate">{entry.teamName}</span>
                 </p>
               </div>
             );

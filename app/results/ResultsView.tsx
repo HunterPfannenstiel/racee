@@ -29,6 +29,9 @@ type ResultsViewProps = {
   leagueId: string | null;
   onPlayCutscene: () => void;
   playCutsceneDisabled?: boolean;
+  /** Present only when the league uses teams: plays the constructors reveal. */
+  onPlayConstructors?: () => void;
+  playConstructorsDisabled?: boolean;
 };
 
 export function ResultsView({
@@ -43,6 +46,8 @@ export function ResultsView({
   leagueId,
   onPlayCutscene,
   playCutsceneDisabled,
+  onPlayConstructors,
+  playConstructorsDisabled,
 }: ResultsViewProps) {
   const podiumEntries = entries.filter((entry) => entry.rank <= 3);
   const listEntries = entries.filter((entry) => entry.rank > 3);
@@ -86,14 +91,23 @@ export function ResultsView({
             />
           )}
           {stats && <StatsFooter stats={stats} />}
-          <Button
-            size="icon"
-            onClick={onPlayCutscene}
-            disabled={playCutsceneDisabled}
-            aria-label="Play cutscene"
-          >
-            <Play />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="icon"
+              onClick={onPlayCutscene}
+              disabled={playCutsceneDisabled}
+              aria-label="Play cutscene"
+              title="Replay the drivers reveal"
+            >
+              <Play />
+            </Button>
+            {onPlayConstructors && (
+              <Button variant="secondary" size="sm" className="gap-1.5" onClick={onPlayConstructors} disabled={playConstructorsDisabled}>
+                <Play className="size-3.5" />
+                Constructors reveal
+              </Button>
+            )}
+          </div>
         </>
       )}
     </div>

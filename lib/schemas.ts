@@ -29,6 +29,7 @@ export const TeamSchema = TeamPropsSchema.pick({
   color: true,
 }).extend({
   id: z.string().uuid(),
+  logo: z.string().nullable().optional(),
 });
 
 export const ParticipantsSchema = z.object({

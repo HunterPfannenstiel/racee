@@ -20,6 +20,9 @@ import { BlobDeactivateInviteLinkCommand } from "@/server/commands/deactivate-in
 import { BlobAcceptPendingPlayerCommand } from "@/server/commands/accept-pending-player/BlobAcceptPendingPlayerCommand";
 import { BlobDenyPendingPlayerCommand } from "@/server/commands/deny-pending-player/BlobDenyPendingPlayerCommand";
 import { RemovePlayerCommand } from "@/server/commands/remove-player/RemovePlayerCommand";
+import { SetPlayerColorCommand } from "@/server/commands/set-player-color/SetPlayerColorCommand";
+import { BlobSetPlayerAvatarHiddenCommand } from "@/server/commands/set-player-avatar-hidden/BlobSetPlayerAvatarHiddenCommand";
+import { LeagueAvatarsQuery } from "@/server/queries/league-avatars/LeagueAvatarsQuery";
 import { AssignPlayerToTeamCommand } from "@/server/commands/assign-player-to-team/AssignPlayerToTeamCommand";
 import { SubmitPlayerPredictionCommand } from "@/server/commands/submit-player-prediction/SubmitPlayerPredictionCommand";
 
@@ -49,6 +52,9 @@ const deactivateInviteLinkCommand = new BlobDeactivateInviteLinkCommand(leagueRe
 const acceptPendingPlayerCommand = new BlobAcceptPendingPlayerCommand(leagueRepo);
 const denyPendingPlayerCommand = new BlobDenyPendingPlayerCommand(leagueRepo);
 const removePlayerCommand = new RemovePlayerCommand(leagueRepo, teamRepo, standingsRepo);
+const setPlayerColorCommand = new SetPlayerColorCommand(leagueRepo, teamRepo);
+const setPlayerAvatarHiddenCommand = new BlobSetPlayerAvatarHiddenCommand(leagueRepo);
+const leagueAvatarsQuery = new LeagueAvatarsQuery(leagueRepo, teamRepo, userRepo);
 const assignPlayerToTeamCommand = new AssignPlayerToTeamCommand(leagueRepo, teamRepo);
 const submitPlayerPredictionCommand = new SubmitPlayerPredictionCommand(
   leagueRepo,
@@ -184,6 +190,53 @@ export const playersRouter = {
       });
       return { ok: true as const };
     }),
+
+  /** Changes a player's ring color in this league. Commissioner-only. */
+  setColor: authed
+    .input(LeagueUserInput.extend({ color: z.string().regex(/^#[0-9a-fA-F]{6}$/) }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(async ({ context, input }) => {
+      await setPlayerColorCommand.execute({
+        leagueId: input.leagueId,
+        userId: input.userId,
+        color: input.color,
+        actorUserId: context.session.user.id,
+      });
+      return { ok: true as const };
+    }),
+
+  /** Hides a player's picture in this league (shown as a generic icon), or shows it again. Commissioner-only. */
+  setAvatarHidden: authed
+    .input(LeagueUserInput.extend({ hidden: z.boolean() }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(async ({ context, input }) => {
+      await setPlayerAvatarHiddenCommand.execute({
+        leagueId: input.leagueId,
+        userId: input.userId,
+        hidden: input.hidden,
+        actorUserId: context.session.user.id,
+      });
+      return { ok: true as const };
+    }),
+};
+
+export const avatarsRouter = {
+  /** Every visible player's avatar and ring color in a league. Members only. */
+  list: authed
+    .input(LeagueIdInput)
+    .output(
+      z.array(
+        z.object({
+          userId: z.string(),
+          name: z.string(),
+          image: z.string().nullable(),
+          color: z.string(),
+          playerColor: z.string(),
+          hidden: z.boolean(),
+        }),
+      ),
+    )
+    .handler(async ({ context, input }) => leagueAvatarsQuery.execute(input.leagueId, context.session.user.id)),
 };
 
 export const assignmentsRouter = {

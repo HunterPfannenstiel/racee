@@ -19,6 +19,10 @@ export const LeaguePropsSchema = z.object({
   pendingMemberIds: z.array(z.string()).optional().default([]),
   /** Ex-members removed with "keep scores" — they stay visible in the standings. */
   keptScoreUserIds: z.array(z.string()).optional().default([]),
+  /** Ring color per player, used for players who aren't on a team. Missing entries are auto-assigned. */
+  playerColors: z.record(z.string(), z.string().regex(/^#[0-9a-fA-F]{6}$/)).optional().default({}),
+  /** Players whose picture the commissioner has hidden in this league (shown as a generic icon). */
+  hiddenAvatarUserIds: z.array(z.string()).optional().default([]),
   name: z.string().min(1),
   placementPoints: z.array(z.number().int().min(0)),
   mulliganCount: z.number().int().min(0),
@@ -54,6 +58,8 @@ export class League {
   get memberIds(): readonly string[] { return this.props.memberIds; }
   get pendingMemberIds(): readonly string[] { return this.props.pendingMemberIds; }
   get keptScoreUserIds(): readonly string[] { return this.props.keptScoreUserIds; }
+  get playerColors(): Readonly<Record<string, string>> { return this.props.playerColors; }
+  get hiddenAvatarUserIds(): readonly string[] { return this.props.hiddenAvatarUserIds; }
   get teamPositionPoints(): readonly number[] | undefined { return this.props.teamPositionPoints; }
   get inviteToken(): string | null { return this.props.inviteToken; }
 
@@ -138,6 +144,25 @@ export class League {
 
   updateScoringConfig(patch: Partial<Omit<LeagueProps, "leagueId" | "name">>): void {
     this.props = LeaguePropsSchema.parse({ ...this.props, ...patch });
+  }
+
+  /** Everyone who can appear in this league's standings and lists: members plus kept-score ex-members. */
+  get visibleUserIds(): string[] {
+    return [...new Set([this.props.commissionerId, ...this.props.memberIds, ...this.props.keptScoreUserIds])];
+  }
+
+  /** Stores ring colors for players. Pass the fully-resolved map to lock in auto-assigned colors. */
+  setPlayerColors(colors: Record<string, string>): void {
+    this.props = LeaguePropsSchema.parse({ ...this.props, playerColors: { ...this.props.playerColors, ...colors } });
+  }
+
+  isAvatarHidden(userId: string): boolean {
+    return this.props.hiddenAvatarUserIds.includes(userId);
+  }
+
+  setAvatarHidden(userId: string, hidden: boolean): void {
+    const rest = this.props.hiddenAvatarUserIds.filter(id => id !== userId);
+    this.props = { ...this.props, hiddenAvatarUserIds: hidden ? [...rest, userId] : rest };
   }
 
   canManage(userId: string): boolean {

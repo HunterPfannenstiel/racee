@@ -30,6 +30,7 @@ export function MemberList({
           {members.map((member) => (
             <MemberRow
               key={member.id}
+              userId={member.id}
               name={member.name}
               onClick={() => onSelect(member)}
             />

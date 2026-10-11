@@ -5,4 +5,5 @@ export interface IUserRepository {
   findAll(): Promise<User[]>;
   update(userId: string, name: string): Promise<User>;
   updateIsAdmin(userId: string, isAdmin: boolean): Promise<User>;
+  updateImage(userId: string, image: string | null): Promise<User>;
 }

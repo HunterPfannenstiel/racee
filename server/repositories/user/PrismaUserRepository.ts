@@ -2,10 +2,10 @@ import { prisma } from "@/server/db";
 import type { User } from "@/server/domain/user";
 import type { IUserRepository } from "./IUserRepository";
 
-const SELECT = { id: true, name: true, isAdmin: true } as const;
+const SELECT = { id: true, name: true, isAdmin: true, image: true } as const;
 
-function toDomain(raw: { id: string; name: string; isAdmin: boolean }): User {
-  return { userId: raw.id, name: raw.name, isAdmin: raw.isAdmin };
+function toDomain(raw: { id: string; name: string; isAdmin: boolean; image: string | null }): User {
+  return { userId: raw.id, name: raw.name, isAdmin: raw.isAdmin, image: raw.image };
 }
 
 export class PrismaUserRepository implements IUserRepository {
@@ -28,6 +28,15 @@ export class PrismaUserRepository implements IUserRepository {
     const row = await prisma.user.update({
       where: { id: userId },
       data: { name },
+      select: SELECT,
+    });
+    return toDomain(row);
+  }
+
+  async updateImage(userId: string, image: string | null): Promise<User> {
+    const row = await prisma.user.update({
+      where: { id: userId },
+      data: { image },
       select: SELECT,
     });
     return toDomain(row);

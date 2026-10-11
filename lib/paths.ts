@@ -25,3 +25,11 @@ export function scoresPath(leagueId: string, raceId: string) {
 export function standingsPath(leagueId: string) {
   return `leagues/${leagueId}/standings.json`;
 }
+
+export function avatarImagePath(userId: string) {
+  return `avatars/${userId}.img`;
+}
+
+export function teamLogoPath(leagueId: string, teamId: string) {
+  return `team-logos/${leagueId}/${teamId}.img`;
+}

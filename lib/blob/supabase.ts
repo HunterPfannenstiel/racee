@@ -23,6 +23,17 @@ export class SupabaseBlobStore implements BlobStore {
     if (error) throw error;
   }
 
+  async writeBinary(pathname: string, data: Uint8Array, contentType: string): Promise<void> {
+    const { error } = await supabase.storage.from(BUCKET).upload(pathname, data, { upsert: true, contentType });
+    if (error) throw error;
+  }
+
+  async readBinary(pathname: string): Promise<{ data: Uint8Array; contentType: string } | null> {
+    const { data, error } = await supabase.storage.from(BUCKET).download(pathname);
+    if (error || !data) return null;
+    return { data: new Uint8Array(await data.arrayBuffer()), contentType: data.type || "application/octet-stream" };
+  }
+
   async delete(pathname: string): Promise<void> {
     const { error } = await supabase.storage.from(BUCKET).remove([pathname]);
     if (error) throw error;

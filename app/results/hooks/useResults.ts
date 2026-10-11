@@ -9,6 +9,7 @@ import type { Race } from "@/lib/schemas";
 import type { ResultsEntryDTO } from "@/server/queries/results/IResultsQuery";
 import { formatStats } from "../formatStats";
 import type { ResultsRowData, StatsData } from "../types";
+import { useLeagueAvatars } from "@/components/avatar/useLeagueAvatars";
 
 export type UseResultsResult = {
   // Graded (keySetAt != null) races only, newest first -- ungraded races have
@@ -38,13 +39,14 @@ export type UseResultsResult = {
   onRetry: () => void;
 };
 
-function toRowData(entry: ResultsEntryDTO): ResultsRowData {
+function toRowData(entry: ResultsEntryDTO, ringColors: Record<string, { color: string }>): ResultsRowData {
   return {
     userId: entry.userId,
     name: entry.name,
     total: entry.total,
     rank: entry.rank,
-    color: entry.color,
+    // Team color, or the player's own league color when they aren't on a team.
+    color: ringColors[entry.userId]?.color ?? entry.color,
     teamName: entry.teamName,
   };
 }
@@ -62,6 +64,7 @@ function autoSelectScoredRace(races: Race[]): string | null {
 export function useResults(): UseResultsResult {
   const { user, isLoading: userLoading } = useUser();
   const { activeLeagueId } = useLeague();
+  const { byUserId: ringColors } = useLeagueAvatars(activeLeagueId);
   const enabled = !!user && !!activeLeagueId;
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
 
@@ -102,7 +105,7 @@ export function useResults(): UseResultsResult {
     races: scoredRaces,
     selectedRaceId: effectiveRaceId,
     onSelectRace: setSelectedRaceId,
-    entries: rawEntries.map(toRowData),
+    entries: rawEntries.map((e) => toRowData(e, ringColors)),
     stats: rawStats ? formatStats(rawStats, rawEntries) : null,
     isLoading,
     isRacesLoading,

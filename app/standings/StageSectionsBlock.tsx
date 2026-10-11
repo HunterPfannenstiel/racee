@@ -1,6 +1,8 @@
 import { ChevronRight } from "lucide-react";
 import { type StandingsRowData } from "./StandingsGrid";
 import { formatPoints } from "@/lib/utils";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
+import { TeamLogo } from "@/components/avatar/TeamLogo";
 
 type Props = {
   rows: StandingsRowData[];
@@ -60,14 +62,23 @@ export function StageSectionsBlock({ rows, stages, currentRowId, showStageLabel,
                       {rank}
                     </span>
 
+                    {row.userId ? (
+                      <LeaguePlayerAvatar userId={row.userId} name={row.label} size="md" />
+                    ) : row.team ? (
+                      <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="md" />
+                    ) : null}
+
                     {/* name + team */}
                     <div className="flex-1 min-w-0">
                       <p className="font-heading text-lg font-bold leading-tight truncate text-foreground">
                         {row.label}
                       </p>
                       {row.teamName && row.teamName !== row.label && (
-                        <p className="font-mono text-[11px] text-muted-foreground leading-none mt-0.5 truncate">
-                          {row.teamName}
+                        <p className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground leading-none mt-0.5 min-w-0">
+                          {row.team && (
+                            <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="xs" />
+                          )}
+                          <span className="truncate">{row.teamName}</span>
                         </p>
                       )}
                     </div>

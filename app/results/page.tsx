@@ -17,6 +17,7 @@ import {
   type CutscenePlayerProgress,
 } from "./cutscene/CutscenePlayer";
 import type { CutsceneData } from "./cutscene/beats";
+import { useConstructorCutsceneData } from "./hooks/useConstructorCutsceneData";
 
 const revealedRacesKey = (userId: string) => `racee_revealed_races:${userId}`;
 
@@ -80,8 +81,19 @@ export default function ResultsPage() {
   );
   const playerRef = useRef<CutscenePlayerHandle>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  // Second reveal: the same animation for team (constructor) scores, only when the league uses teams.
+  const constructorCutsceneData = useConstructorCutsceneData({
+    leagueId: activeLeagueId,
+    raceId: selectedRaceId,
+    raceName,
+    leagueName,
+    viewerId: currentUserId,
+  });
+  const constructorPlayerRef = useRef<CutscenePlayerHandle>(null);
+  const [isConstructorPlaying, setIsConstructorPlaying] = useState(false);
   const canPlayReveal = !isLoading && entries.length > 0;
-  const playCutsceneDisabled = !canPlayReveal || isPlaying;
+  const playCutsceneDisabled = !canPlayReveal || isPlaying || isConstructorPlaying;
+  const playConstructorsDisabled = !constructorCutsceneData || isPlaying || isConstructorPlaying;
 
   // `races` (from useResults) is already filtered to graded (keySetAt !=
   // null) races and sorted newest-first, so the first entry is the league's
@@ -156,15 +168,18 @@ export default function ResultsPage() {
   // tick/commit as the overlay's own fade-in starting competed for the same
   // frame and read as a flicker. A fresh-tick timeout lets that first frame
   // commit on its own before ResultsView mounts underneath it.
-  const handlePlayCutscene = () => {
+  const handlePlayCutscene = () => startReveal(playerRef);
+  const handlePlayConstructors = () => startReveal(constructorPlayerRef);
+
+  function startReveal(ref: React.RefObject<CutscenePlayerHandle | null>) {
     markRevealed(selectedRaceId);
-    playerRef.current?.play();
+    ref.current?.play();
     if (revealTimeoutRef.current !== null) clearTimeout(revealTimeoutRef.current);
     revealTimeoutRef.current = setTimeout(() => {
       revealTimeoutRef.current = null;
       setRevealed(true);
     }, 1000);
-  };
+  }
 
   // CutscenePlayer is remounted (via `key`) on every race switch so its
   // internal rAF clock/progress can't bleed across races, but that remount
@@ -175,6 +190,7 @@ export default function ResultsPage() {
   // switched away from the race that timeout was meant for.
   useEffect(() => {
     setIsPlaying(false);
+    setIsConstructorPlaying(false);
     return () => {
       if (revealTimeoutRef.current !== null) {
         clearTimeout(revealTimeoutRef.current);
@@ -225,10 +241,13 @@ export default function ResultsPage() {
               leagueId={activeLeagueId}
               onPlayCutscene={handlePlayCutscene}
               playCutsceneDisabled={playCutsceneDisabled}
+              onPlayConstructors={constructorCutsceneData ? handlePlayConstructors : undefined}
+              playConstructorsDisabled={playConstructorsDisabled}
             />
           ) : (
             <RevealGate
               onPlayCutscene={handlePlayCutscene}
+              onPlayConstructors={constructorCutsceneData ? handlePlayConstructors : undefined}
               onShowResults={handleShowResults}
               disabled={playCutsceneDisabled}
               raceName={raceName}
@@ -240,6 +259,14 @@ export default function ResultsPage() {
             data={cutsceneData}
             onProgress={handleCutsceneProgress}
           />
+          {constructorCutsceneData && (
+            <CutscenePlayer
+              key={`${selectedRaceId}-constructors`}
+              ref={constructorPlayerRef}
+              data={constructorCutsceneData}
+              onProgress={(state) => setIsConstructorPlaying(state.isPlaying)}
+            />
+          )}
         </>
       )}
     </PageShell>

@@ -10,6 +10,8 @@ import { CreateTeamCommand } from "@/server/commands/create-team/CreateTeamComma
 import { UpdateTeamCommand } from "@/server/commands/update-team/UpdateTeamCommand";
 import { DeleteTeamCommand } from "@/server/commands/delete-team/DeleteTeamCommand";
 import { JoinTeamCommand } from "@/server/commands/join-team/JoinTeamCommand";
+import { SetTeamLogoCommand } from "@/server/commands/set-team-logo/SetTeamLogoCommand";
+import { BlobTeamLogoRepository } from "@/server/repositories/team-logo/BlobTeamLogoRepository";
 
 const leagueRepo = new BlobLeagueRepository();
 const teamRepo = new BlobTeamRepository();
@@ -19,6 +21,7 @@ const leagueTeamsQuery = new BlobLeagueTeamsQuery(teamRepo);
 const commissionerTeamsQuery = new CommissionerTeamsQuery(teamRepo, userRepo, leagueRepo);
 const createTeamCommand = new CreateTeamCommand(leagueRepo, teamRepo);
 const updateTeamCommand = new UpdateTeamCommand(leagueRepo, teamRepo);
+const setTeamLogoCommand = new SetTeamLogoCommand(leagueRepo, teamRepo, new BlobTeamLogoRepository());
 const deleteTeamCommand = new DeleteTeamCommand(leagueRepo, teamRepo);
 const joinTeamCommand = new JoinTeamCommand(leagueRepo, teamRepo);
 
@@ -57,7 +60,7 @@ export const teamsRouter = {
    * without it.
    */
   create: authed
-    .input(TeamSchema.omit({ memberIds: true }).extend({ leagueId: z.string().uuid() }))
+    .input(TeamSchema.omit({ memberIds: true, logo: true }).extend({ leagueId: z.string().uuid() }))
     .output(TeamSchema)
     .handler(async ({ context, input }) => {
       return await createTeamCommand.execute({
@@ -91,6 +94,25 @@ export const teamsRouter = {
         actorUserId: context.session.user.id,
       });
     }),
+
+  /** Uploads a team logo (a small image data URL), or removes it with null. Commissioner-only. */
+  setLogo: authed
+    .input(
+      z.object({
+        leagueId: z.string().uuid(),
+        teamId: z.string().uuid(),
+        dataUrl: z.string().max(500_000).nullable(),
+      }),
+    )
+    .output(z.object({ logo: z.string().nullable() }))
+    .handler(async ({ context, input }) =>
+      setTeamLogoCommand.execute({
+        leagueId: input.leagueId,
+        teamId: input.teamId,
+        dataUrl: input.dataUrl,
+        actorUserId: context.session.user.id,
+      }),
+    ),
 
   /** Deletes a team. Same `leagueId` deviation as `create`/`update`. */
   delete: authed

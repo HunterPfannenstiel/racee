@@ -5,12 +5,20 @@ import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRep
 import { MeQuery } from "@/server/queries/me/MeQuery";
 import { PrismaUpdateUserNameCommand } from "@/server/commands/update-user-name/PrismaUpdateUserNameCommand";
 import { PropPointValuesSchema } from "@/lib/schemas";
+import { AVATAR_PRESET_IDS } from "@/lib/avatar";
+import { BlobAvatarImageRepository } from "@/server/repositories/avatar-image/BlobAvatarImageRepository";
+import { PrismaSetUserAvatarCommand } from "@/server/commands/set-user-avatar/PrismaSetUserAvatarCommand";
+import { UploadUserAvatarCommand } from "@/server/commands/upload-user-avatar/UploadUserAvatarCommand";
 
 const userRepo = new PrismaUserRepository();
 const leagueRepo = new BlobLeagueRepository();
 
 const meQuery = new MeQuery(userRepo, leagueRepo);
 const updateUserNameCommand = new PrismaUpdateUserNameCommand(userRepo);
+const setUserAvatarCommand = new PrismaSetUserAvatarCommand(userRepo);
+const uploadUserAvatarCommand = new UploadUserAvatarCommand(userRepo, new BlobAvatarImageRepository());
+
+const AvatarResultSchema = z.object({ image: z.string().nullable() });
 
 // Mirrors the JSON shape `GET /api/leagues` (app/api/leagues/route.ts) returned,
 // so the profile page gets the same league data it always has.
@@ -30,6 +38,7 @@ const MeSchema = z.object({
   id: z.string(),
   name: z.string(),
   isAdmin: z.boolean(),
+  image: z.string().nullable(),
   leagues: z.array(LeagueMembershipSchema),
 });
 
@@ -60,4 +69,20 @@ export const meRouter = {
         name: input.name,
       });
     }),
+
+  /** Sets the current user's avatar to a built-in icon, or clears it with null. */
+  setAvatarPreset: authed
+    .input(z.object({ presetId: z.enum(AVATAR_PRESET_IDS).nullable() }))
+    .output(AvatarResultSchema)
+    .handler(async ({ context, input }) =>
+      setUserAvatarCommand.execute({ userId: context.session.user.id, presetId: input.presetId }),
+    ),
+
+  /** Uploads a profile photo (a small image data URL — the client shrinks it first). */
+  uploadAvatar: authed
+    .input(z.object({ dataUrl: z.string().max(500_000) }))
+    .output(AvatarResultSchema)
+    .handler(async ({ context, input }) =>
+      uploadUserAvatarCommand.execute({ userId: context.session.user.id, dataUrl: input.dataUrl }),
+    ),
 };

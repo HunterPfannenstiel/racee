@@ -103,7 +103,7 @@ export function LineupEditor({ leagueId, userId }: LineupEditorProps) {
         </Link>
       </Button>
 
-      <PlayerIdentityCard name={player.name} />
+      <PlayerIdentityCard userId={userId} name={player.name} />
 
       <Alert>
         <InfoIcon />

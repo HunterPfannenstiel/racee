@@ -11,6 +11,7 @@ function toTeamDTO(team: Team): TeamDTO {
     name: team.name,
     memberIds: [...team.memberIds],
     color: team.color,
+    logo: team.logo,
   };
 }
 

@@ -311,7 +311,7 @@ export function resolveRowVisualState(
       x: 0,
       scale: 1,
       opacity: 1,
-      displayedValue: Math.round(target * eased),
+      displayedValue: Number.isInteger(target) ? Math.round(target * eased) : Math.round(target * eased * 100) / 100,
       y,
     };
   }

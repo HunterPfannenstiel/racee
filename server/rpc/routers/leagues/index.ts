@@ -16,7 +16,7 @@ import { teamsRouter } from "./teams";
 import {
   membersRouter,
   inviteRouter,
-  playersRouter,
+  playersRouter, avatarsRouter,
   assignmentsRouter,
   playerStatusRouter,
   playerPredictionsRouter,
@@ -120,6 +120,7 @@ export const leaguesRouter = {
   members: membersRouter,
   invite: inviteRouter,
   players: playersRouter,
+  avatars: avatarsRouter,
   assignments: assignmentsRouter,
   playerStatus: playerStatusRouter,
   playerPredictions: playerPredictionsRouter,

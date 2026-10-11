@@ -5,6 +5,9 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { type StandingsRowData } from "./StandingsGrid";
 import { formatPoints } from "@/lib/utils";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
+import { TeamLogo } from "@/components/avatar/TeamLogo";
+import { MovementBadge } from "./MovementBadge";
 
 type Props = {
   rows: StandingsRowData[];
@@ -41,21 +44,33 @@ export function SeasonStandingsSection({ rows, currentRowId }: Props) {
                 style={{ backgroundColor: row.color }}
               />
 
-              <span
-                className={`font-mono font-semibold text-sm w-5 text-center shrink-0 ${
-                  rank === 1 ? "text-racee-accent" : "text-muted-foreground"
-                }`}
-              >
-                {rank}
+              <span className="flex w-6 shrink-0 flex-col items-center gap-0.5">
+                <span
+                  className={`font-mono font-semibold text-sm text-center ${
+                    rank === 1 ? "text-racee-accent" : "text-muted-foreground"
+                  }`}
+                >
+                  {rank}
+                </span>
+                <MovementBadge movement={row.movement} />
               </span>
+
+              {row.userId ? (
+                <LeaguePlayerAvatar userId={row.userId} name={row.label} size="lg" />
+              ) : row.team ? (
+                <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="lg" />
+              ) : null}
 
               <div className="flex-1 min-w-0">
                 <p className="font-heading text-lg font-bold leading-tight truncate text-foreground">
                   {row.label}
                 </p>
                 {row.teamName && row.teamName !== row.label && (
-                  <p className="font-mono text-[11px] text-muted-foreground leading-none mt-0.5 truncate">
-                    {row.teamName}
+                  <p className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground leading-none mt-0.5 min-w-0">
+                    {row.team && (
+                      <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="xs" />
+                    )}
+                    <span className="truncate">{row.teamName}</span>
                   </p>
                 )}
               </div>
@@ -106,6 +121,7 @@ export function SeasonStandingsSection({ rows, currentRowId }: Props) {
                           style={{ backgroundColor: row.color }}
                         />
                         <div className="w-5 shrink-0" />
+                        <LeaguePlayerAvatar userId={member.userId} name={member.name} size="sm" />
 
                         <div className="flex-1 min-w-0">
                           <p className="font-mono text-sm text-foreground truncate">{member.name}</p>

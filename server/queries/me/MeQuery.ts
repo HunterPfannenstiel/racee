@@ -39,6 +39,7 @@ export class MeQuery implements IMeQuery {
       id: user.userId,
       name: user.name,
       isAdmin: user.isAdmin,
+      image: user.image,
       leagues: leagues.map(serializeLeague),
     };
   }

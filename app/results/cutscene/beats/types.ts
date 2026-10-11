@@ -20,6 +20,11 @@ export type CutsceneData = {
    *  identity, needed by the "you" solo break inside countdown and the
    *  podium beat's "YOU" marker. Null when unknown (no personalization). */
   currentUserId: string | null;
+  /** "constructors" = each entry is a team (userId holds the teamId, currentUserId the viewer's team). */
+  mode?: "drivers" | "constructors";
+  /** Constructors mode: the league and its teams, for team logos. */
+  leagueId?: string | null;
+  teams?: { id: string; name: string; color?: string | null; logo?: string | null }[];
 };
 
 /**

@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { orpc } from "@/lib/orpc/client";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
+import { TeamLogoUpload } from "./TeamLogoUpload";
 
 const UNASSIGNED = "__unassigned__";
 
@@ -42,6 +44,8 @@ export default function CommissionerTeamsPage() {
   const invalidateTeams = () => {
     queryClient.invalidateQueries({ queryKey: orpc.leagues.teams.roster.key({ input }) });
     queryClient.invalidateQueries({ queryKey: orpc.leagues.teams.list.key({ input }) });
+    // Team membership and team colors drive avatar ring colors.
+    queryClient.invalidateQueries({ queryKey: orpc.leagues.avatars.list.key({ input }) });
   };
   const createMutation = useMutation(
     orpc.leagues.teams.create.mutationOptions({
@@ -212,10 +216,7 @@ export default function CommissionerTeamsPage() {
                     ) : (
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className="w-1 self-stretch rounded-full shrink-0"
-                            style={{ backgroundColor: team.color ?? "#6b7280" }}
-                          />
+                          <TeamLogoUpload leagueId={leagueId} team={team} disabled={busy} />
                           <div className="min-w-0">
                             <p className="text-sm font-medium">{team.name}</p>
                             <p className="text-xs text-muted-foreground truncate">
@@ -300,7 +301,10 @@ export default function CommissionerTeamsPage() {
               ) : (
                 users.map((user) => (
                   <div key={user.id} className="flex items-center justify-between gap-4 py-1">
-                    <span className="text-sm">{user.name}</span>
+                    <span className="flex min-w-0 items-center gap-2 text-sm">
+                      <LeaguePlayerAvatar userId={user.id} name={user.name} size="md" />
+                      <span className="truncate">{user.name}</span>
+                    </span>
                     <div className="flex items-center gap-2 shrink-0">
                       {savingUserId === user.id && <Spinner className="w-3 h-3" />}
                       <Select

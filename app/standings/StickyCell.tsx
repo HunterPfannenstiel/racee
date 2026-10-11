@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 export const COL_WIDTHS = {
-  pos:   40,
+  pos:   60,
   name:  144,
   total: 64,
 } as const;

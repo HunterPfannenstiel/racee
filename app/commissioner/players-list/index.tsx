@@ -21,6 +21,7 @@ export function PlayersList({ leagueId }: PlayersListProps) {
 
   const invalidatePlayers = () => {
     queryClient.invalidateQueries({ queryKey: orpc.leagues.players.list.key({ input }) });
+    queryClient.invalidateQueries({ queryKey: orpc.leagues.avatars.list.key({ input }) });
   };
   const acceptMutation = useMutation(
     orpc.leagues.players.accept.mutationOptions({ onSuccess: invalidatePlayers }),
