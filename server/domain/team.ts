@@ -33,7 +33,8 @@ export class Team {
 
   /** Ties this team to earlier franchises (replaces the list). A team can't continue itself. */
   setPreviousTeams(teamIds: readonly string[]): void {
-    this.props = { ...this.props, previousTeamIds: [...new Set(teamIds.filter(id => id !== this.props.teamId))] };
+    // A team carries on at most one earlier franchise.
+    this.props = { ...this.props, previousTeamIds: teamIds.filter(id => id !== this.props.teamId).slice(0, 1) };
   }
 
   rename(name: string): void {

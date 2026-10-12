@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, InfoIcon, PlusIcon, RotateCcwIcon, Trash2Icon, TriangleAlertIcon, XIcon } from "lucide-react";
+import { ChevronLeft, InfoIcon, PlusIcon, RotateCcwIcon, Trash2Icon, TriangleAlertIcon, UnlinkIcon, XIcon } from "lucide-react";
 import { orpc } from "@/lib/orpc/client";
 import type { PlacementPoints, PropPointValues } from "@/lib/schemas";
 import { PageShell } from "@/components/ui/page-shell";
@@ -149,6 +149,7 @@ function Draft({ leagueId, setup }: { leagueId: string; setup: Setup }) {
   const [teams, setTeams] = useState<DraftTeam[]>(initialTeams);
   const [assign, setAssign] = useState<Record<string, string>>(initialAssign);
   const [undoReset, setUndoReset] = useState<{ teams: DraftTeam[]; assign: Record<string, string> } | null>(null);
+  const [undoDecouple, setUndoDecouple] = useState<DraftTeam[] | null>(null);
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("#6b7280");
   const pastTeamName = new Map(setup.pastTeams.map((t) => [t.teamId, `${t.name} (${t.lastSeason})`]));
@@ -167,10 +168,18 @@ function Draft({ leagueId, setup }: { leagueId: string; setup: Setup }) {
     setNewColor("#6b7280");
   };
   const resetAll = () => {
+    setUndoDecouple(null);
     setUndoReset({ teams, assign });
     setTeams([]);
     setAssign({});
   };
+  // Uncoupling a kept team makes it a brand-new franchise (same name, colour and players); the old one stays in the history book.
+  const uncouple = (key: string) => updateTeam(key, { teamId: null, previousTeamIds: [] });
+  const decoupleAll = () => {
+    setUndoDecouple(teams);
+    setTeams((prev) => prev.map((t) => ({ ...t, teamId: null, previousTeamIds: [] })));
+  };
+  const hasFranchise = teams.some((t) => t.teamId || t.previousTeamIds.length > 0);
 
   // ---- settings ----
   const [changeSettings, setChangeSettings] = useState(false);
@@ -389,33 +398,55 @@ function Draft({ leagueId, setup }: { leagueId: string; setup: Setup }) {
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Teams ({teams.length})</h2>
-            {undoReset ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setTeams(undoReset.teams);
-                  setAssign(undoReset.assign);
-                  setUndoReset(null);
-                }}
-              >
-                <RotateCcwIcon className="size-3.5 mr-1" />
-                Undo reset
-              </Button>
-            ) : (
-              teams.length > 0 && (
-                <Button variant="ghost" size="sm" className="text-destructive" onClick={resetAll}>
-                  <Trash2Icon className="size-3.5 mr-1" />
-                  Reset all teams
+            <div className="flex flex-wrap items-center justify-end gap-1">
+              {undoDecouple && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setTeams(undoDecouple);
+                    setUndoDecouple(null);
+                  }}
+                >
+                  <RotateCcwIcon className="size-3.5 mr-1" />
+                  Undo decouple
                 </Button>
-              )
-            )}
+              )}
+              {!undoDecouple && !undoReset && hasFranchise && (
+                <Button variant="ghost" size="sm" onClick={decoupleAll}>
+                  <UnlinkIcon className="size-3.5 mr-1" />
+                  Decouple all franchises
+                </Button>
+              )}
+              {undoReset ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setTeams(undoReset.teams);
+                    setAssign(undoReset.assign);
+                    setUndoReset(null);
+                  }}
+                >
+                  <RotateCcwIcon className="size-3.5 mr-1" />
+                  Undo reset
+                </Button>
+              ) : (
+                teams.length > 0 && (
+                  <Button variant="ghost" size="sm" className="text-destructive" onClick={resetAll}>
+                    <Trash2Icon className="size-3.5 mr-1" />
+                    Reset all teams
+                  </Button>
+                )
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-xs text-muted-foreground">
-            Kept teams carry on as the same franchise, even if you rename them. A new team can carry on an old franchise
-            too, so its history continues. Deleted teams stay in the history book.
+            Kept teams carry on as the same franchise, even if you rename them. Click the × to uncouple one and it starts
+            fresh. A new team can carry on one old franchise (even a deleted one) so its history continues. Deleted teams
+            stay in the history book.
           </p>
 
           {teams.map((t) => (
@@ -435,38 +466,47 @@ function Draft({ leagueId, setup }: { leagueId: string; setup: Setup }) {
               </div>
               <p className="text-[10px] text-muted-foreground">{t.teamId ? "Kept from last season" : "New team"}</p>
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-muted-foreground">Carries on:</span>
-                {t.previousTeamIds.map((id) => (
-                  <span key={id} className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5">
-                    {pastTeamName.get(id) ?? "Old team"}
-                    <button
-                      type="button"
-                      aria-label="Remove link"
-                      onClick={() => updateTeam(t.key, { previousTeamIds: t.previousTeamIds.filter((x) => x !== id) })}
-                    >
+                <span className="text-muted-foreground">Franchise:</span>
+                {t.teamId ? (
+                  // Kept team: it stays the franchise it already was.
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5">
+                    {pastTeamName.get(t.teamId) ?? t.name}
+                    <button type="button" aria-label="Uncouple franchise" onClick={() => uncouple(t.key)}>
                       <XIcon className="size-3" />
                     </button>
                   </span>
-                ))}
-                <Select
-                  value={NO_FRANCHISE}
-                  onValueChange={(id) => id !== NO_FRANCHISE && updateTeam(t.key, { previousTeamIds: [...t.previousTeamIds, id] })}
-                >
-                  <SelectTrigger size="sm" className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NO_FRANCHISE}>Link an old franchise…</SelectItem>
-                    {setup.pastTeams
-                      // Teams still racing this season can't be "carried on" by another one.
-                      .filter((p) => !teams.some((x) => x.teamId === p.teamId) && !t.previousTeamIds.includes(p.teamId))
-                      .map((p) => (
-                        <SelectItem key={p.teamId} value={p.teamId}>
-                          {p.name} ({p.lastSeason})
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                ) : t.previousTeamIds[0] ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5">
+                    {pastTeamName.get(t.previousTeamIds[0]) ?? "Old team"}
+                    <button type="button" aria-label="Uncouple franchise" onClick={() => updateTeam(t.key, { previousTeamIds: [] })}>
+                      <XIcon className="size-3" />
+                    </button>
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-muted-foreground">None</span>
+                    <Select value={NO_FRANCHISE} onValueChange={(id) => id !== NO_FRANCHISE && updateTeam(t.key, { previousTeamIds: [id] })}>
+                      <SelectTrigger size="sm" className="w-64">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_FRANCHISE}>Link to an old franchise…</SelectItem>
+                        {setup.pastTeams
+                          // Not a team still in this draft, and not one another new team already carries on.
+                          .filter(
+                            (p) =>
+                              !teams.some((x) => x.teamId === p.teamId) &&
+                              !teams.some((x) => x.key !== t.key && x.previousTeamIds.includes(p.teamId)),
+                          )
+                          .map((p) => (
+                            <SelectItem key={p.teamId} value={p.teamId}>
+                              {p.name} ({p.lastSeason})
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
               </div>
             </div>
           ))}
@@ -498,7 +538,11 @@ function Draft({ leagueId, setup }: { leagueId: string; setup: Setup }) {
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Who&apos;s on which team</p>
               <div className="divide-y divide-border rounded-sm border border-border">
                 {roster.map((id) => (
-                  <div key={id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                  <div
+                    key={id}
+                    className="flex items-center gap-3 border-l-4 px-3 py-2 text-sm"
+                    style={{ borderLeftColor: teams.find((t) => t.key === assign[id])?.color ?? "transparent" }}
+                  >
                     <PlayerAvatar userId={id} name={namesById.get(id) ?? ""} size="sm" />
                     <span className="min-w-0 flex-1 truncate">{namesById.get(id) ?? "Unknown player"}</span>
                     <Select
@@ -519,6 +563,7 @@ function Draft({ leagueId, setup }: { leagueId: string; setup: Setup }) {
                         <SelectItem value={UNASSIGNED}>No team</SelectItem>
                         {teams.map((t) => (
                           <SelectItem key={t.key} value={t.key}>
+                            <span className="inline-block size-2.5 rounded-full mr-1.5 align-middle" style={{ backgroundColor: t.color }} />
                             {t.name || "Unnamed team"}
                           </SelectItem>
                         ))}
