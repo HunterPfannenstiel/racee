@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, formatPoints } from "@/lib/utils";
+import { TeamIdentity } from "@/components/avatar/TeamIdentity";
 import { medalBorderColor, medalColor } from "@/lib/colors";
 import type { ResultsRowData } from "./types";
 import { groupEntriesByRank } from "./rank-utils";
@@ -12,6 +13,8 @@ type PodiumProps = {
   currentUserId: string | null;
   leagueId: string | null;
   raceId: string | null;
+  /** "constructors": each entry is a team (userId holds the team id, currentUserId the viewer's team). */
+  mode?: "drivers" | "constructors";
 };
 
 // Stand shape: 2nd (left) - 1st (center, tallest) - 3rd (right, shortest).
@@ -40,13 +43,16 @@ function PodiumPlatform({
   currentUserId,
   leagueId,
   raceId,
+  mode = "drivers",
 }: {
   rank: number;
   entries: ResultsRowData[];
   currentUserId: string | null;
   leagueId: string | null;
   raceId: string | null;
+  mode?: "drivers" | "constructors";
 }) {
+  const teams = mode === "constructors";
   const color = medalColor[rank] ?? "text-muted-foreground";
   const isMe = entries.some((entry) => entry.userId === currentUserId);
   // Tied entries share the same total by construction -- shown once, not per name.
@@ -61,8 +67,11 @@ function PodiumPlatform({
             // A tied slot stacks multiple names -- the link target must be
             // the individual name, not the whole platform, or a tie would be
             // ambiguous about which player the click meant.
-            const href =
-              isEntryMe && leagueId && raceId && currentUserId
+            const href = teams
+              ? leagueId
+                ? `/teams?league=${encodeURIComponent(leagueId)}&team=${encodeURIComponent(entry.userId)}`
+                : null
+              : isEntryMe && leagueId && raceId && currentUserId
                 ? `/picks/${currentUserId}?leagueId=${leagueId}&raceId=${raceId}`
                 : !isEntryMe && leagueId && raceId && currentUserId
                   ? buildPvpHref({ leagueId, raceId, viewerId: currentUserId, opponentId: entry.userId })
@@ -71,7 +80,11 @@ function PodiumPlatform({
 
             return (
               <div key={entry.userId} className="flex min-w-0 max-w-full flex-col items-center">
-                <LeaguePlayerAvatar userId={entry.userId} name={entry.name} leagueId={leagueId} size="lg" className="mb-1" />
+                {teams ? (
+                  leagueId && <TeamIdentity leagueId={leagueId} teamId={entry.userId} name={entry.name} size="lg" className="mb-1" />
+                ) : (
+                  <LeaguePlayerAvatar userId={entry.userId} name={entry.name} leagueId={leagueId} size="lg" className="mb-1" />
+                )}
                 {href ? (
                   <Link href={href} className={cn(nameClassName, "hover:text-primary transition-colors")}>
                     {entry.name}
@@ -80,7 +93,7 @@ function PodiumPlatform({
                   <p className={nameClassName}>{entry.name}</p>
                 )}
                 <p className="flex max-w-full items-center gap-1 text-xs font-medium" style={{ color: entry.color }}>
-                  {entry.teamName && <UserTeamLogo userId={entry.userId} leagueId={leagueId} />}
+                  {entry.teamName && !teams && <UserTeamLogo userId={entry.userId} leagueId={leagueId} />}
                   <span className="truncate">{entry.teamName}</span>
                 </p>
               </div>
@@ -92,7 +105,7 @@ function PodiumPlatform({
           </p>
         )}
         <p className={cn("font-mono text-sm font-bold tabular-nums", color)}>
-          {total ?? NO_DATA}
+          {total === null ? NO_DATA : formatPoints(total)}
         </p>
       </div>
       <div
@@ -109,7 +122,7 @@ function PodiumPlatform({
   );
 }
 
-export function Podium({ entries, currentUserId, leagueId, raceId }: PodiumProps) {
+export function Podium({ entries, currentUserId, leagueId, raceId, mode }: PodiumProps) {
   const byRank = groupEntriesByRank(entries);
 
   return (
@@ -122,6 +135,7 @@ export function Podium({ entries, currentUserId, leagueId, raceId }: PodiumProps
           currentUserId={currentUserId}
           leagueId={leagueId}
           raceId={raceId}
+          mode={mode}
         />
       ))}
     </div>

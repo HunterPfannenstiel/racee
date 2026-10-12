@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell } from "lucide-react";
+import { RaceBellIcon } from "@/components/avatar/racing-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc/client";
 import { useUser } from "@/app/context/UserContext";
@@ -45,7 +45,7 @@ export function NotificationsBell() {
         className="relative shrink-0 text-muted-foreground transition-colors hover:text-foreground"
         aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
       >
-        <Bell className="size-5" />
+        <RaceBellIcon className="size-5" aria-hidden />
         {unread > 0 && (
           <span className="absolute -right-1.5 -top-1.5 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-4 text-primary-foreground">
             {unread > 9 ? "9+" : unread}

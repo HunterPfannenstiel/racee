@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Flag } from "lucide-react";
+import { Flag, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMutation } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc/client";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,26 @@ export function PhotoLightbox({ open, onClose, title, children, reportTarget }: 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && close()}>
       <DialogContent className="sm:max-w-sm" onClick={(e) => e.stopPropagation()}>
+        {/* Reporting is tucked into a menu so it isn't the first thing you see. */}
+        {reportTarget && !reporting && !report.isSuccess && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="absolute left-3 top-3 rounded-sm p-1 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label="More options"
+              >
+                <MoreHorizontal className="size-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onSelect={() => setReporting(true)}>
+                <Flag className="size-3.5" />
+                Report photo
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <div className="flex flex-col items-center gap-4 pt-2">
           {children}
           <DialogTitle className="text-center font-heading text-2xl">{title}</DialogTitle>
@@ -76,12 +97,7 @@ export function PhotoLightbox({ open, onClose, title, children, reportTarget }: 
                   </p>
                 )}
               </div>
-            ) : (
-              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => setReporting(true)}>
-                <Flag className="size-3.5" />
-                Report photo
-              </Button>
-            ))}
+            ) : null)}
         </div>
       </DialogContent>
     </Dialog>

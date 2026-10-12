@@ -101,3 +101,16 @@ export function StartLightsIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Notification bell with a checkered-flag band across it, matching the racing icon set. */
+export function RaceBellIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 3v1.5" />
+      <path d="M6 17v-6a6 6 0 0 1 12 0v6l1.5 1.5h-15z" />
+      <path d="M6 13.5h12M6 16h12" strokeWidth={1} />
+      <path d="M6 13.5h2v1.25H6zM10 13.5h2v1.25h-2zM14 13.5h2v1.25h-2zM8 14.75h2V16H8zM12 14.75h2V16h-2zM16 14.75h2V16h-2z" fill="currentColor" stroke="none" />
+      <path d="M10 21a2 2 0 0 0 4 0" />
+    </Svg>
+  );
+}
