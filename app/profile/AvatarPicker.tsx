@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, Check, X } from "lucide-react";
+import { Camera, Check, ChevronDown, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc/client";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ export function AvatarPicker({ userId, name, image, uploadsBlocked }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [iconsOpen, setIconsOpen] = useState(false);
 
   function onSaved() {
     setError(null);
@@ -92,7 +93,16 @@ export function AvatarPicker({ userId, name, image, uploadsBlocked }: Props) {
         </div>
 
         <div>
-          <p className="text-xs text-muted-foreground mb-2">Or pick an icon</p>
+          <button
+            type="button"
+            onClick={() => setIconsOpen((o) => !o)}
+            aria-expanded={iconsOpen}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"
+          >
+            Or pick an icon
+            <ChevronDown className={cn("size-3.5 transition-transform", iconsOpen && "rotate-180")} />
+          </button>
+          {iconsOpen && (
           <div className="grid grid-cols-5 gap-2">
             {AVATAR_PRESET_IDS.map((id: AvatarPresetId) => {
               const preset = AVATAR_PRESETS[id];
@@ -123,6 +133,7 @@ export function AvatarPicker({ userId, name, image, uploadsBlocked }: Props) {
               );
             })}
           </div>
+          )}
         </div>
 
         {uploadsBlocked && (

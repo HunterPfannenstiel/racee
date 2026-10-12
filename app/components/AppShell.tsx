@@ -116,7 +116,7 @@ function DesktopSidebar() {
           <div className="px-2 py-2 border-t border-border shrink-0">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link href={user ? "/profile" : "/signin"} className="w-full flex items-center justify-center h-10 rounded-sm text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors cursor-pointer">
+                <Link href={user ? `/players/${user.id}` : "/signin"} className="w-full flex items-center justify-center h-10 rounded-sm text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors cursor-pointer">
                   <CircleUser className="size-5" />
                 </Link>
               </TooltipTrigger>

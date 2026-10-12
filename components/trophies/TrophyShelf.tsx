@@ -166,13 +166,17 @@ const TIER_ORDER: Record<Medal, number> = { gold: 0, silver: 1, bronze: 2 };
 
 /**
  * The showcase at the top of a profile: the trophies the player picked for the
- * front shelf, or (if they haven't picked) their best ones automatically.
+ * front shelf (or, if they haven't picked, their best ones automatically), with
+ * every race medal they've won hanging underneath.
  */
 export function FrontShelf({ leagues, featuredTrophyKeys }: { leagues: ShelfLeague[]; featuredTrophyKeys: string[] }) {
   const all = leagues.flatMap((l) =>
     l.seasons.filter((s) => s.trophy).map((s) => ({ key: s.trophyKey, trophy: s.trophy as Medal, season: s, league: l.name })),
   );
-  if (all.length === 0) return null;
+  const medals = medalCounts(leagues.flatMap((l) => l.seasons));
+  const medalTiers = (["gold", "silver", "bronze"] as const).filter((m) => medals[m] > 0);
+  if (all.length === 0 && medalTiers.length === 0) return null;
+
   const byKey = new Map(all.map((t) => [t.key, t]));
   const picked = featuredTrophyKeys.flatMap((k) => (byKey.has(k) ? [byKey.get(k)!] : []));
   const shown =
@@ -184,27 +188,44 @@ export function FrontShelf({ leagues, featuredTrophyKeys }: { leagues: ShelfLeag
 
   return (
     <section aria-label="Front shelf">
-      <div className="flex items-end justify-center gap-4 overflow-x-auto px-2 pt-2">
-        {shown.map((t) => (
-          <div key={t.key} className="flex w-20 shrink-0 flex-col items-center gap-1 text-center">
-            <TrophyIcon
-              medal={t.trophy}
-              className={t.trophy === "gold" ? "size-16" : "size-12"}
-              title={`${MEDAL_LABEL[t.trophy]} trophy – ${t.season.label}, ${t.league}${t.season.total !== null ? `, ${formatPoints(t.season.total)} pts` : ""}`}
-            />
-          </div>
-        ))}
-      </div>
+      {shown.length > 0 && (
+        <div className="flex items-end justify-center gap-4 overflow-x-auto px-2 pt-2">
+          {shown.map((t) => (
+            <div key={t.key} className="flex w-20 shrink-0 flex-col items-center gap-1 text-center">
+              <TrophyIcon
+                medal={t.trophy}
+                className={t.trophy === "gold" ? "size-16" : "size-12"}
+                title={`${MEDAL_LABEL[t.trophy]} trophy – ${t.season.label}, ${t.league}${t.season.total !== null ? `, ${formatPoints(t.season.total)} pts` : ""}`}
+              />
+            </div>
+          ))}
+        </div>
+      )}
       {/* the shelf board */}
       <div className="h-2.5 rounded-sm bg-gradient-to-b from-amber-800 to-amber-950 shadow-[0_4px_8px_-2px_rgba(0,0,0,0.5)]" />
-      <div className="flex justify-center gap-4 overflow-x-auto px-2 pt-1.5">
-        {shown.map((t) => (
-          <div key={t.key} className="w-20 shrink-0 text-center">
-            <p className="text-xs font-semibold leading-tight">{t.season.label}</p>
-            <p className="truncate text-[10px] text-muted-foreground">{t.league}</p>
-          </div>
-        ))}
-      </div>
+      {shown.length > 0 && (
+        <div className="flex justify-center gap-4 overflow-x-auto px-2 pt-1.5">
+          {shown.map((t) => (
+            <div key={t.key} className="w-20 shrink-0 text-center">
+              <p className="text-xs font-semibold leading-tight">{t.season.label}</p>
+              <p className="truncate text-[10px] text-muted-foreground">{t.league}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {/* race medals hanging off pegs under the shelf */}
+      {medalTiers.length > 0 && (
+        <div className="mt-3 flex justify-center gap-8" aria-label="Race medals">
+          {medalTiers.map((m) => (
+            <div key={m} className="flex flex-col items-center">
+              <span className="h-1.5 w-3 rounded-full bg-amber-900" aria-hidden />
+              <span className="h-2 w-px bg-muted-foreground/60" aria-hidden />
+              <MedalIcon medal={m} className="size-10" title={`${medals[m]} ${MEDAL_LABEL[m].toLowerCase()} medal${medals[m] === 1 ? "" : "s"}`} />
+              <span className="mt-0.5 text-sm font-semibold tabular-nums">×{medals[m]}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

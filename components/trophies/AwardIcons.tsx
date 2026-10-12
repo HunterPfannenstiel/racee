@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc/client";
-import { MEDAL_HEX, MEDAL_LABEL, type Medal } from "@/lib/medals";
+import { MEDAL_HEX, MEDAL_LABEL, MEDAL_PLACE, type Medal } from "@/lib/medals";
 
 /**
  * Hand-drawn medal and trophy, in the same 24×24 round-stroke style as the
@@ -11,9 +11,9 @@ import { MEDAL_HEX, MEDAL_LABEL, type Medal } from "@/lib/medals";
  */
 type AwardProps = { medal: Medal; className?: string; title?: string };
 
-/** Race medal: ribbon with a round medal and a little checkered stripe. */
+/** Race medal: a solid disc with its place (1, 2, 3) on one plain ribbon. */
 export function MedalIcon({ medal, className, title }: AwardProps) {
-  const { fill, stroke } = MEDAL_HEX[medal];
+  const { fill, text } = MEDAL_HEX[medal];
   return (
     <svg
       viewBox="0 0 24 24"
@@ -22,14 +22,22 @@ export function MedalIcon({ medal, className, title }: AwardProps) {
       className={cn("inline-block shrink-0", className)}
       role="img"
       aria-label={title ?? `${MEDAL_LABEL[medal]} medal`}
-      strokeLinecap="round"
-      strokeLinejoin="round"
     >
       {title && <title>{title}</title>}
-      <path d="M7 2h4l2 6.5H9z" fill="#dc2626" stroke="#7f1d1d" strokeWidth={1.5} />
-      <path d="M17 2h-4l-2 6.5h4z" fill="#1d4ed8" stroke="#1e3a8a" strokeWidth={1.5} />
-      <circle cx="12" cy="15" r="6.5" fill={fill} stroke={stroke} strokeWidth={2} />
-      <circle cx="12" cy="15" r="3.6" fill="none" stroke={stroke} strokeWidth={1.25} />
+      <path d="M6.5 1h4.5l2.5 7h-4.5zM17.5 1H13l-2.5 7H15z" fill="#b91c1c" />
+      <circle cx="12" cy="15" r="8" fill={fill} />
+      <text
+        x="12"
+        y="15"
+        dy="0.36em"
+        textAnchor="middle"
+        fontSize="11"
+        fontWeight="800"
+        fontFamily="ui-sans-serif, system-ui, sans-serif"
+        fill={text}
+      >
+        {MEDAL_PLACE[medal]}
+      </text>
     </svg>
   );
 }

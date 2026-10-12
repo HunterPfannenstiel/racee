@@ -151,6 +151,32 @@ export class League {
     });
   }
 
+  /**
+   * Undoes startNextSeason: puts the league back to its ended previous season
+   * (from the history book's record of it) and brings its players back.
+   */
+  restorePreviousSeason(opts: {
+    label: string;
+    racesAfter: string | null;
+    racesThrough: string;
+    endedAt: string;
+    seasonId: string;
+    memberIds: readonly string[];
+  }): void {
+    if (this.isSeasonEnded) throw new InvariantViolationError("Reopen this season before going back to the last one");
+    if (this.props.seasonRacesAfter === null) throw new InvariantViolationError("This league has no earlier season to go back to");
+    this.props = LeaguePropsSchema.parse({
+      ...this.props,
+      seasonLabel: opts.label,
+      seasonRacesAfter: opts.racesAfter,
+      seasonRacesThrough: opts.racesThrough,
+      seasonEndedAt: opts.endedAt,
+      currentSeasonId: opts.seasonId,
+      memberIds: [...new Set([...this.props.memberIds, ...opts.memberIds])],
+      pendingMemberIds: this.props.pendingMemberIds.filter(id => !opts.memberIds.includes(id)),
+    });
+  }
+
   generateInviteToken(): string {
     const token = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
     this.props = { ...this.props, inviteToken: token };

@@ -25,6 +25,8 @@ import { BlobTrophyArtRepository } from "@/server/repositories/trophy-art/BlobTr
 import { BlobTrophyArtQuery } from "@/server/queries/trophy-art/BlobTrophyArtQuery";
 import { BlobSetTrophyArtCommand } from "@/server/commands/set-trophy-art/BlobSetTrophyArtCommand";
 import { BlobSetLeaguePrivateCommand } from "@/server/commands/set-league-private/BlobSetLeaguePrivateCommand";
+import { UndoNextSeasonCommand } from "@/server/commands/undo-next-season/UndoNextSeasonCommand";
+import { BlobRacePredictionBookRepository } from "@/server/repositories/race-prediction-book/BlobRacePredictionBookRepository";
 
 const leagueRepo = new BlobLeagueRepository();
 const raceRepo = new BlobRaceRepository();
@@ -49,6 +51,9 @@ const trophyArtRepo = new BlobTrophyArtRepository();
 const trophyArtQuery = new BlobTrophyArtQuery(trophyArtRepo);
 const setTrophyArtCommand = new BlobSetTrophyArtCommand(trophyArtRepo);
 const setLeaguePrivateCommand = new BlobSetLeaguePrivateCommand(leagueRepo);
+const undoNextSeasonCommand = new UndoNextSeasonCommand(
+  leagueRepo, raceRepo, new BlobRacePredictionBookRepository(), standingsRepo, teamRepo, historyRepo,
+);
 
 const SeasonStatusSchema = z.enum(["complete", "ended", "in_progress"]);
 const SeasonDTOSchema = SeasonRecordSchema.extend({ seasonId: z.string(), status: SeasonStatusSchema });
@@ -64,6 +69,7 @@ const LeagueHistorySchema = z.object({
     endedAt: z.string().nullable(),
     scoredRaces: z.number(),
     totalRaces: z.number(),
+    undoSeasonLabel: z.string().nullable(),
   }),
   seasons: z.array(SeasonDTOSchema),
   members: z.array(z.object({ id: z.string(), name: z.string() })),
@@ -154,6 +160,15 @@ export const historyRouter = {
     .output(Ok)
     .handler(async ({ context, input }) => {
       await startNextSeasonCommand.execute({ ...input, actorUserId: context.session.user.id });
+      return { ok: true as const };
+    }),
+
+  /** Undoes startNextSeason: back to the last season, ended. Commissioner-only. */
+  undoNextSeason: authed
+    .input(LeagueIdInput)
+    .output(Ok)
+    .handler(async ({ context, input }) => {
+      await undoNextSeasonCommand.execute({ leagueId: input.leagueId, actorUserId: context.session.user.id });
       return { ok: true as const };
     }),
 

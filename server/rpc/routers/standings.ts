@@ -5,6 +5,7 @@ import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRep
 import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepository";
 import { BlobLeagueStandingsRepository } from "@/server/repositories/league-standings/BlobLeagueStandingsRepository";
 import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
+import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
 import { LeagueStandingsViewQuery } from "@/server/queries/league-standings-view/LeagueStandingsViewQuery";
 
 const standingsViewQuery = new LeagueStandingsViewQuery(
@@ -12,6 +13,7 @@ const standingsViewQuery = new LeagueStandingsViewQuery(
   new BlobRaceRepository(),
   new BlobLeagueStandingsRepository(),
   new PrismaUserRepository(),
+  new BlobTeamRepository(),
 );
 
 const DriverRowSchema = z.object({

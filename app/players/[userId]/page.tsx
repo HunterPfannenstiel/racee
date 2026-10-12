@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
+import { SettingsIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useUser } from "@/app/context/UserContext";
 import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc/client";
 import { PageShell } from "@/components/ui/page-shell";
@@ -16,6 +20,8 @@ import { PickFeed } from "./PickFeed";
 export default function PlayerProfilePage() {
   const { userId } = useParams<{ userId: string }>();
   const { activeLeagueId } = useLeague();
+  const { user } = useUser();
+  const isSelf = user?.id === userId;
   const shelfQuery = useQuery(orpc.history.shelf.queryOptions({ input: { userId } }));
 
   // Opens on the league you're in (when the player plays in it), with an "All leagues" switch.
@@ -51,7 +57,17 @@ export default function PlayerProfilePage() {
   return (
     <PageShell title="PROFILE">
       <div className="space-y-8">
-        <PlayerHeader player={data.player} summary={data.summary} />
+        <div className="flex items-start justify-between gap-3">
+          <PlayerHeader player={data.player} summary={data.summary} />
+          {isSelf && (
+            <Button variant="outline" size="sm" className="shrink-0" asChild>
+              <Link href="/profile/settings">
+                <SettingsIcon className="size-3.5 mr-1" />
+                Settings
+              </Link>
+            </Button>
+          )}
+        </div>
         {shelfQuery.data && (
           <FrontShelf leagues={shelfQuery.data.leagues} featuredTrophyKeys={shelfQuery.data.featuredTrophyKeys} />
         )}
