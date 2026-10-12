@@ -21,6 +21,9 @@ import { StartNextSeasonCommand } from "@/server/commands/start-next-season/Star
 import { ImportPastSeasonCommand } from "@/server/commands/import-past-season/ImportPastSeasonCommand";
 import { BlobDeleteHistorySeasonCommand } from "@/server/commands/delete-history-season/BlobDeleteHistorySeasonCommand";
 import { BlobSetProfilePrivacyCommand } from "@/server/commands/set-profile-privacy/BlobSetProfilePrivacyCommand";
+import { BlobTrophyArtRepository } from "@/server/repositories/trophy-art/BlobTrophyArtRepository";
+import { BlobTrophyArtQuery } from "@/server/queries/trophy-art/BlobTrophyArtQuery";
+import { BlobSetTrophyArtCommand } from "@/server/commands/set-trophy-art/BlobSetTrophyArtCommand";
 
 const leagueRepo = new BlobLeagueRepository();
 const raceRepo = new BlobRaceRepository();
@@ -41,6 +44,9 @@ const startNextSeasonCommand = new StartNextSeasonCommand(
 const importPastSeasonCommand = new ImportPastSeasonCommand(leagueRepo, historyRepo);
 const deleteHistorySeasonCommand = new BlobDeleteHistorySeasonCommand(historyRepo);
 const setProfilePrivacyCommand = new BlobSetProfilePrivacyCommand(privacyRepo);
+const trophyArtRepo = new BlobTrophyArtRepository();
+const trophyArtQuery = new BlobTrophyArtQuery(trophyArtRepo);
+const setTrophyArtCommand = new BlobSetTrophyArtCommand(trophyArtRepo);
 
 const SeasonStatusSchema = z.enum(["complete", "ended", "in_progress"]);
 const SeasonDTOSchema = SeasonRecordSchema.extend({ seasonId: z.string(), status: SeasonStatusSchema });
@@ -65,6 +71,7 @@ const TrophyShelfSchema = z.object({
   userId: z.string(),
   name: z.string(),
   isSelf: z.boolean(),
+  featuredTrophyKeys: z.array(z.string()),
   leagues: z.array(
     z.object({
       leagueId: z.string(),
@@ -194,12 +201,31 @@ export const historyRouter = {
       shelfQuery.execute({ viewerId: context.session.user.id, userId: input.userId }),
     ),
 
-  /** Hides/shows one of your own leagues or trophies from other players. */
+  /** Your trophy-shelf settings: hide/show a league or trophy from other players, or set the front shelf. */
   setHidden: authed
-    .input(z.object({ leagueId: z.string().optional(), trophyKey: z.string().optional(), hidden: z.boolean() }))
+    .input(z.object({
+      leagueId: z.string().optional(),
+      trophyKey: z.string().optional(),
+      hidden: z.boolean().optional(),
+      featuredTrophyKeys: z.array(z.string()).max(6).optional(),
+    }))
     .output(Ok)
     .handler(async ({ context, input }) => {
       await setProfilePrivacyCommand.execute({ userId: context.session.user.id, ...input });
+      return { ok: true as const };
+    }),
+
+  /** Which trophy tiers use custom admin-uploaded art. */
+  trophyArt: authed
+    .output(z.object({ gold: z.string().nullable(), silver: z.string().nullable(), bronze: z.string().nullable() }))
+    .handler(async () => trophyArtQuery.execute()),
+
+  /** Uploads or clears the custom picture for one trophy tier. Site-admin only. */
+  setTrophyArt: adminOnly
+    .input(z.object({ tier: z.enum(["gold", "silver", "bronze"]), dataUrl: z.string().max(500_000).nullable() }))
+    .output(Ok)
+    .handler(async ({ input }) => {
+      await setTrophyArtCommand.execute(input);
       return { ok: true as const };
     }),
 };

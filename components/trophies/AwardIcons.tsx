@@ -1,4 +1,8 @@
+"use client";
+
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { orpc } from "@/lib/orpc/client";
 import { MEDAL_HEX, MEDAL_LABEL, type Medal } from "@/lib/medals";
 
 /**
@@ -30,8 +34,32 @@ export function MedalIcon({ medal, className, title }: AwardProps) {
   );
 }
 
-/** Season trophy: two-handled cup on a stepped base. */
+/** Custom trophy pictures the admin uploaded (shared, rarely changes). */
+function useTrophyArt() {
+  return useQuery({ ...orpc.history.trophyArt.queryOptions(), staleTime: 10 * 60 * 1000 }).data;
+}
+
+/** Season trophy: the admin's custom picture for the tier if there is one, else the hand-drawn cup. */
 export function TrophyIcon({ medal, className, title }: AwardProps) {
+  const art = useTrophyArt();
+  const custom = art?.[medal];
+  if (custom?.startsWith("upload:")) {
+    const label = title ?? `${MEDAL_LABEL[medal]} trophy`;
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- tiny auth-gated icon, next/image adds nothing here
+      <img
+        src={`/api/trophy-art/${medal}?v=${encodeURIComponent(custom.slice(7))}`}
+        alt={label}
+        title={title}
+        className={cn("inline-block shrink-0 object-contain", className)}
+      />
+    );
+  }
+  return <DrawnTrophy medal={medal} className={className} title={title} />;
+}
+
+/** The built-in hand-drawn trophy: two-handled cup on a stepped base. */
+export function DrawnTrophy({ medal, className, title }: AwardProps) {
   const { fill, stroke } = MEDAL_HEX[medal];
   return (
     <svg

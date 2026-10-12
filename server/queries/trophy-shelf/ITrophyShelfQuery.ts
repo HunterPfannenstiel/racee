@@ -32,6 +32,8 @@ export type TrophyShelfResult = {
   userId: string;
   name: string;
   isSelf: boolean;
+  /** Front-shelf trophies in order — only ones visible to this viewer. */
+  featuredTrophyKeys: string[];
   leagues: ShelfLeagueDTO[];
 };
 

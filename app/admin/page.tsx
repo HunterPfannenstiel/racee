@@ -45,8 +45,8 @@ const CARDS = [
   {
     href: "/admin/history",
     icon: HistoryIcon,
-    title: "League History",
-    description: "Add past seasons to a league's history book.",
+    title: "Trophies & History",
+    description: "Trophy art, and adding past seasons to a league's history book.",
   },
 ];
 

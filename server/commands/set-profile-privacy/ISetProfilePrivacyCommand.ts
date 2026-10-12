@@ -1,9 +1,11 @@
 export type SetProfilePrivacyPayload = {
   userId: string;
-  /** Exactly one of these is set. */
+  /** Hide/show: exactly one of leagueId / trophyKey with `hidden`. */
   leagueId?: string;
   trophyKey?: string;
-  hidden: boolean;
+  hidden?: boolean;
+  /** Or: the full front-shelf order. */
+  featuredTrophyKeys?: string[];
 };
 
 export interface ISetProfilePrivacyCommand {

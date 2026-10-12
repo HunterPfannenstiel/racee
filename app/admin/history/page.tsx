@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { QueryError, QueryLoading } from "@/components/ui/query-state";
 import { AwardTally } from "@/components/trophies/AwardIcons";
 import { formatPoints } from "@/lib/utils";
+import { TrophyArtCard } from "./TrophyArtCard";
 
 type DraftRow = {
   key: string;
@@ -244,6 +245,7 @@ export default function AdminHistoryPage() {
         <QueryError error={leaguesQuery.error} onRetry={() => leaguesQuery.refetch()} />
       ) : (
         <div className="space-y-6">
+          <TrophyArtCard />
           <select
             value={leagueId}
             onChange={(e) => setLeagueId(e.target.value)}

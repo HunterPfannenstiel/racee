@@ -46,3 +46,9 @@ export function leagueHistoryPath(leagueId: string) {
 }
 
 export const PROFILE_PRIVACY_PATH = "profiles/privacy.json";
+
+export const TROPHY_ART_PATH = "trophies/art.json";
+
+export function trophyArtImagePath(tier: string) {
+  return `trophies/${tier}.img`;
+}

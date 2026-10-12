@@ -42,6 +42,7 @@ export class BlobProfilePrivacyRepository implements IProfilePrivacyRepository {
       userId: privacy.userId,
       hiddenLeagueIds: [...privacy.hiddenLeagueIds],
       hiddenTrophyKeys: [...privacy.hiddenTrophyKeys],
+      featuredTrophyKeys: [...privacy.featuredTrophyKeys],
     };
     try {
       await blob.write(PROFILE_PRIVACY_PATH, [...all.filter((p) => p.userId !== privacy.userId), next]);

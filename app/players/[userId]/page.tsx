@@ -7,7 +7,7 @@ import { orpc } from "@/lib/orpc/client";
 import { PageShell } from "@/components/ui/page-shell";
 import { QueryLoading, QueryError } from "@/components/ui/query-state";
 import { useLeague } from "@/app/context/LeagueContext";
-import { TrophyShelf } from "@/components/trophies/TrophyShelf";
+import { FrontShelf, TrophyShelf } from "@/components/trophies/TrophyShelf";
 import { PlayerHeader } from "./PlayerHeader";
 import { StatStrip } from "./StatStrip";
 import { PropAccuracyBars } from "./PropAccuracyBars";
@@ -52,6 +52,9 @@ export default function PlayerProfilePage() {
     <PageShell title="PROFILE">
       <div className="space-y-8">
         <PlayerHeader player={data.player} summary={data.summary} />
+        {shelfQuery.data && (
+          <FrontShelf leagues={shelfQuery.data.leagues} featuredTrophyKeys={shelfQuery.data.featuredTrophyKeys} />
+        )}
 
         {scopedLeague && (
           <div className="flex items-center gap-1">

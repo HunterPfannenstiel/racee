@@ -103,11 +103,14 @@ export class TrophyShelfQuery implements ITrophyShelfQuery {
       }),
     );
 
+    const leagues = shelves.filter((s): s is ShelfLeagueDTO => s !== null).sort((a, b) => a.name.localeCompare(b.name));
+    const visibleTrophies = new Set(leagues.flatMap((l) => l.seasons.filter((s) => s.trophy).map((s) => s.trophyKey)));
     return {
       userId: user.userId,
       name: user.name,
       isSelf,
-      leagues: shelves.filter((s): s is ShelfLeagueDTO => s !== null).sort((a, b) => a.name.localeCompare(b.name)),
+      featuredTrophyKeys: privacy.featuredTrophyKeys.filter((k) => visibleTrophies.has(k)),
+      leagues,
     };
   }
 }
