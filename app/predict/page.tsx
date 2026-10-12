@@ -114,7 +114,12 @@ export default function PredictPage() {
   const activePick = (() => {
     if (!selectedRace || !data) return null;
     if (selectedPlayerId) {
-      return data.teammatePicks[selectedRace.id]?.[selectedPlayerId] ?? null;
+      // Open races' teammate picks come with openRaces; locked races' with pastRaces.
+      return (
+        data.teammatePicks[selectedRace.id]?.[selectedPlayerId] ??
+        pastData?.teammatePicks[selectedRace.id]?.[selectedPlayerId] ??
+        null
+      );
     }
     return selectedRace.myPick;
   })();
