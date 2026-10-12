@@ -56,6 +56,7 @@ export class LeagueHistoryQuery implements ILeagueHistoryQuery {
       leagueId: league.leagueId,
       leagueName: league.name,
       canManage,
+      isPrivate: league.isPrivate,
       current: {
         label,
         ended: league.isSeasonEnded,

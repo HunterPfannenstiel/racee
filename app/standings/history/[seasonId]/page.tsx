@@ -102,7 +102,9 @@ export default function PastSeasonPage() {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <SeasonStatusBadge status={season.status} />
-            <span className="text-xs text-muted-foreground">Read only{season.imported ? " · imported results" : ""}</span>
+            <span className="text-xs text-muted-foreground">
+              Read only{season.imported ? " · imported results" : " · tap a race for its results, or a score for that player's picks"}
+            </span>
           </div>
 
           {season.teams.length > 0 && (
@@ -131,7 +133,9 @@ export default function PastSeasonPage() {
                   {!showTeams && <th className="px-3 py-2 text-right" title="No races dropped for mulligans">Gross</th>}
                   {races.map((r) => (
                     <th key={r.raceId} className="px-2 py-2 text-center w-24 min-w-[6rem] truncate" title={r.replacesLabel ? `${r.label} — replacement for ${r.replacesLabel}` : r.label}>
-                      {r.label}
+                      <Link href={`/standings/history/${season.seasonId}/race/${r.raceId}`} className="uppercase tracking-widest hover:text-primary transition-colors">
+                        {r.label}
+                      </Link>
                       {r.replacesLabel && (
                         <span className="block truncate text-[9px] font-normal normal-case tracking-normal text-muted-foreground/80">
                           (replacement for {r.replacesLabel})
@@ -175,6 +179,11 @@ export default function PastSeasonPage() {
                           points={row.raceScores[r.raceId] ?? null}
                           mulliganed={row.mulliganed.has(r.raceId)}
                           medal={medalsByRace[r.raceId]?.[row.id]}
+                          href={
+                            row.userId && activeLeagueId && row.raceScores[r.raceId] !== undefined
+                              ? `/picks/${row.userId}?leagueId=${activeLeagueId}&raceId=${r.raceId}`
+                              : undefined
+                          }
                         />
                       ))}
                       <td className="px-3 py-2 text-right"><AwardTally counts={row.medals} /></td>

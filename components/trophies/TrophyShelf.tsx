@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDownIcon, EyeOffIcon } from "lucide-react";
+import { ChevronDownIcon, EyeOffIcon, LockIcon } from "lucide-react";
 import { cn, formatPoints } from "@/lib/utils";
 import { addMedalCounts, emptyMedalCounts, MEDAL_LABEL, type Medal, type MedalCounts } from "@/lib/medals";
 import { AwardTally, MedalIcon, TrophyIcon } from "./AwardIcons";
@@ -11,7 +11,8 @@ export type ShelfSeason = {
   label: string;
   status: "complete" | "ended" | "in_progress";
   rank: number | null;
-  total: number;
+  /** Null for a private league seen from outside. */
+  total: number | null;
   trophy: Medal | null;
   trophyKey: string;
   trophyHidden: boolean;
@@ -24,6 +25,8 @@ export type ShelfLeague = {
   leagueId: string;
   name: string;
   viewerIsMember: boolean;
+  /** Private league seen from outside: trophies, name and counts only. */
+  restricted?: boolean;
   hidden: boolean;
   seasons: ShelfSeason[];
 };
@@ -60,7 +63,7 @@ function SeasonRow({ season, leagueName }: { season: ShelfSeason; leagueName?: s
             <TrophyIcon
               medal={season.trophy}
               className="size-6"
-              title={`${MEDAL_LABEL[season.trophy]} trophy – ${season.label}${leagueName ? `, ${leagueName}` : ""}, ${formatPoints(season.total)} pts`}
+              title={`${MEDAL_LABEL[season.trophy]} trophy – ${season.label}${leagueName ? `, ${leagueName}` : ""}${season.total !== null ? `, ${formatPoints(season.total)} pts` : ""}`}
             />
           ) : null}
         </span>
@@ -72,7 +75,8 @@ function SeasonRow({ season, leagueName }: { season: ShelfSeason; leagueName?: s
           </span>
           <span className="block text-xs text-muted-foreground">
             {season.rank !== null ? `${ordinal(season.rank)} · ` : ""}
-            {formatPoints(season.total)} pts{status ? ` · ${status}` : ""}
+            {season.total !== null ? `${formatPoints(season.total)} pts` : "Private league"}
+            {status ? ` · ${status}` : ""}
           </span>
         </span>
         <AwardTally counts={season.medals} hideZeros />
@@ -143,6 +147,7 @@ export function TrophyShelf({ leagues, leagueId }: { leagues: ShelfLeague[]; lea
             <div key={l.leagueId} className="rounded-sm border border-border">
               <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-2">
                 <span className="min-w-0 flex-1 truncate text-sm font-semibold">{l.name}</span>
+                {l.restricted && <LockIcon className="size-3.5 text-muted-foreground" aria-label="Private league" />}
                 {l.hidden && <EyeOffIcon className="size-3.5 text-muted-foreground" aria-label="Hidden from others" />}
                 <AwardTally counts={trophyCounts(l.seasons)} kind="trophy" hideZeros />
               </div>
@@ -185,7 +190,7 @@ export function FrontShelf({ leagues, featuredTrophyKeys }: { leagues: ShelfLeag
             <TrophyIcon
               medal={t.trophy}
               className={t.trophy === "gold" ? "size-16" : "size-12"}
-              title={`${MEDAL_LABEL[t.trophy]} trophy – ${t.season.label}, ${t.league}, ${formatPoints(t.season.total)} pts`}
+              title={`${MEDAL_LABEL[t.trophy]} trophy – ${t.season.label}, ${t.league}${t.season.total !== null ? `, ${formatPoints(t.season.total)} pts` : ""}`}
             />
           </div>
         ))}

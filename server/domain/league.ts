@@ -42,6 +42,8 @@ export const LeaguePropsSchema = z.object({
   seasonEndedAt: z.string().nullable().optional().default(null),
   /** Id the current season gets in the history book; assigned when it ends so trophy links stay stable. */
   currentSeasonId: z.string().uuid().nullable().optional().default(null),
+  /** Private: nobody outside the league can see what happens inside it (only trophies, the name and basic counts). */
+  isPrivate: z.boolean().optional().default(false),
 });
 
 
@@ -80,6 +82,16 @@ export class League {
   /** "current" until the season ends, then the id it will keep in the history book. */
   get currentSeasonKey(): string { return this.props.currentSeasonId ?? "current"; }
   get currentSeasonId(): string | null { return this.props.currentSeasonId; }
+  get isPrivate(): boolean { return this.props.isPrivate; }
+
+  setPrivate(isPrivate: boolean): void {
+    this.props = { ...this.props, isPrivate };
+  }
+
+  /** Members and commissioners can see inside the league; for a private league, nobody else can. */
+  canBeSeenInsideBy(userId: string): boolean {
+    return !this.props.isPrivate || this.isMember(userId) || this.canManage(userId);
+  }
 
   /** True if a race on this date belongs to the league's current season. */
   includesRaceDate(date: string): boolean {

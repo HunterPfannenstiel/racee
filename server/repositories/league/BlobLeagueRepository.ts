@@ -34,6 +34,7 @@ function toDomain(raw: LeaguePersistence): League {
     seasonRacesThrough: raw.seasonRacesThrough,
     seasonEndedAt: raw.seasonEndedAt,
     currentSeasonId: raw.currentSeasonId,
+    isPrivate: raw.isPrivate,
   });
 }
 
@@ -61,6 +62,7 @@ function toPersistence(league: League): LeaguePersistence {
     seasonRacesThrough: league.seasonRacesThrough,
     seasonEndedAt: league.seasonEndedAt,
     currentSeasonId: league.currentSeasonId,
+    isPrivate: league.isPrivate,
   };
 }
 

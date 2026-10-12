@@ -42,7 +42,7 @@ export class UserProfileStatsQuery implements IUserProfileStatsQuery {
     private readonly books: IRacePredictionBookRepository,
   ) {}
 
-  async execute(userId: string, leagueId?: string | null): Promise<UserProfileStatsResult> {
+  async execute(userId: string, leagueId?: string | null, viewerId?: string): Promise<UserProfileStatsResult> {
     // Round 1: user lookup + leagues + racers in parallel
     const [user, everyLeague, allRacers] = await Promise.all([
       this.users.findById(userId),
@@ -50,7 +50,9 @@ export class UserProfileStatsQuery implements IUserProfileStatsQuery {
       this.racers.findAll(),
     ]);
     // Scoped to one league when viewing the player from inside it; otherwise every league.
-    const leagues = leagueId ? everyLeague.filter((l) => l.leagueId === leagueId) : everyLeague;
+    // Private leagues only count for the player themselves and people in that league.
+    const visible = everyLeague.filter((l) => !viewerId || viewerId === userId || l.canBeSeenInsideBy(viewerId));
+    const leagues = leagueId ? visible.filter((l) => l.leagueId === leagueId) : visible;
 
     if (!user) return emptyResult(userId);
 

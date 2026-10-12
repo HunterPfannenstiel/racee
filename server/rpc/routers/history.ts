@@ -24,6 +24,7 @@ import { BlobSetProfilePrivacyCommand } from "@/server/commands/set-profile-priv
 import { BlobTrophyArtRepository } from "@/server/repositories/trophy-art/BlobTrophyArtRepository";
 import { BlobTrophyArtQuery } from "@/server/queries/trophy-art/BlobTrophyArtQuery";
 import { BlobSetTrophyArtCommand } from "@/server/commands/set-trophy-art/BlobSetTrophyArtCommand";
+import { BlobSetLeaguePrivateCommand } from "@/server/commands/set-league-private/BlobSetLeaguePrivateCommand";
 
 const leagueRepo = new BlobLeagueRepository();
 const raceRepo = new BlobRaceRepository();
@@ -47,6 +48,7 @@ const setProfilePrivacyCommand = new BlobSetProfilePrivacyCommand(privacyRepo);
 const trophyArtRepo = new BlobTrophyArtRepository();
 const trophyArtQuery = new BlobTrophyArtQuery(trophyArtRepo);
 const setTrophyArtCommand = new BlobSetTrophyArtCommand(trophyArtRepo);
+const setLeaguePrivateCommand = new BlobSetLeaguePrivateCommand(leagueRepo);
 
 const SeasonStatusSchema = z.enum(["complete", "ended", "in_progress"]);
 const SeasonDTOSchema = SeasonRecordSchema.extend({ seasonId: z.string(), status: SeasonStatusSchema });
@@ -55,6 +57,7 @@ const LeagueHistorySchema = z.object({
   leagueId: z.string(),
   leagueName: z.string(),
   canManage: z.boolean(),
+  isPrivate: z.boolean(),
   current: z.object({
     label: z.string(),
     ended: z.boolean(),
@@ -77,6 +80,7 @@ const TrophyShelfSchema = z.object({
       leagueId: z.string(),
       name: z.string(),
       viewerIsMember: z.boolean(),
+      restricted: z.boolean(),
       hidden: z.boolean(),
       seasons: z.array(
         z.object({
@@ -84,7 +88,7 @@ const TrophyShelfSchema = z.object({
           label: z.string(),
           status: SeasonStatusSchema,
           rank: z.number().nullable(),
-          total: z.number(),
+          total: z.number().nullable(),
           trophy: MedalSchema.nullable(),
           trophyKey: z.string(),
           trophyHidden: z.boolean(),
@@ -226,6 +230,15 @@ export const historyRouter = {
     .output(Ok)
     .handler(async ({ input }) => {
       await setTrophyArtCommand.execute(input);
+      return { ok: true as const };
+    }),
+
+  /** Makes a league private (or public). Commissioner-only. */
+  setPrivate: authed
+    .input(LeagueIdInput.extend({ isPrivate: z.boolean() }))
+    .output(Ok)
+    .handler(async ({ context, input }) => {
+      await setLeaguePrivateCommand.execute({ ...input, actorUserId: context.session.user.id });
       return { ok: true as const };
     }),
 };

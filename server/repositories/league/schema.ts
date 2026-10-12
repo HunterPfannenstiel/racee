@@ -46,5 +46,6 @@ export const LeaguePersistenceSchema = z.object({
   seasonRacesThrough: z.string().nullable().optional().default(null),
   seasonEndedAt: z.string().nullable().optional().default(null),
   currentSeasonId: z.string().nullable().optional().default(null),
+  isPrivate: z.boolean().optional().default(false),
 });
 export type LeaguePersistence = z.infer<typeof LeaguePersistenceSchema>;

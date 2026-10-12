@@ -83,7 +83,7 @@ export const playersRouter = {
   profileStats: authed
     .input(z.object({ userId: z.string(), leagueId: z.string().uuid().nullish() }))
     .output(UserProfileStatsResultSchema)
-    .handler(async ({ input }) => {
-      return await userProfileStatsQuery.execute(input.userId, input.leagueId);
+    .handler(async ({ context, input }) => {
+      return await userProfileStatsQuery.execute(input.userId, input.leagueId, context.session.user.id);
     }),
 };

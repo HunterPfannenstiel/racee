@@ -7,7 +7,8 @@ export type ShelfSeasonDTO = {
   label: string;
   status: SeasonStatus;
   rank: number | null;
-  total: number;
+  /** Null when the league is private and the viewer isn't in it. */
+  total: number | null;
   /** Season trophy (top 3 of a finished season), unless hidden. */
   trophy: Medal | null;
   trophyKey: string;
@@ -23,6 +24,8 @@ export type ShelfLeagueDTO = {
   name: string;
   /** The viewer can open this league's standings and history. */
   viewerIsMember: boolean;
+  /** Private league seen from outside: only trophies, the name and medal/win counts. */
+  restricted: boolean;
   /** Self view only: whether this league is hidden from others. */
   hidden: boolean;
   seasons: ShelfSeasonDTO[];

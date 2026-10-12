@@ -42,7 +42,8 @@ export class TrophyShelfQuery implements ITrophyShelfQuery {
 
     const shelves = await Promise.all(
       allLeagues.map(async (league): Promise<ShelfLeagueDTO | null> => {
-        const viewerIsMember = league.isMember(input.viewerId) || league.commissionerId === input.viewerId;
+        const viewerIsMember = league.isMember(input.viewerId) || league.canManage(input.viewerId);
+        const restricted = !isSelf && !league.canBeSeenInsideBy(input.viewerId);
         const hidden = privacy.isLeagueHidden(league.leagueId);
         if (hidden && !isSelf && !viewerIsMember) return null;
 
@@ -61,12 +62,12 @@ export class TrophyShelfQuery implements ITrophyShelfQuery {
             label,
             status,
             rank: row.rank,
-            total: row.total,
+            total: restricted ? null : row.total,
             trophy: trophyHidden && !isSelf ? null : earned,
             trophyKey: key,
             trophyHidden: isSelf ? trophyHidden : false,
             medals: row.medals,
-            medalDetails: row.medalDetails,
+            medalDetails: restricted ? [] : row.medalDetails,
             raceWins: row.raceWins,
           };
         };
@@ -97,6 +98,7 @@ export class TrophyShelfQuery implements ITrophyShelfQuery {
           leagueId: league.leagueId,
           name: league.name,
           viewerIsMember,
+          restricted,
           hidden: isSelf ? hidden : false,
           seasons: seasons.reverse(),
         };

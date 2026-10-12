@@ -13,6 +13,7 @@ export type LeagueHistoryResult = {
   leagueId: string;
   leagueName: string;
   canManage: boolean;
+  isPrivate: boolean;
   current: {
     label: string;
     ended: boolean;
