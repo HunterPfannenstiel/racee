@@ -173,9 +173,22 @@ export function FrontShelf({ leagues, featuredTrophyKeys }: { leagues: ShelfLeag
   const all = leagues.flatMap((l) =>
     l.seasons.filter((s) => s.trophy).map((s) => ({ key: s.trophyKey, trophy: s.trophy as Medal, season: s, league: l.name })),
   );
-  const medals = medalCounts(leagues.flatMap((l) => l.seasons));
-  const medalTiers = (["gold", "silver", "bronze"] as const).filter((m) => medals[m] > 0);
-  if (all.length === 0 && medalTiers.length === 0) return null;
+  // Gold first, then silver, then bronze. Seasons hidden from outsiders only carry counts, so fall back to those.
+  const medalList = leagues
+    .flatMap((l) =>
+      l.seasons.flatMap((s) => {
+        const detailed = s.medalDetails.map((d) => ({
+          medal: d.medal,
+          title: `${MEDAL_LABEL[d.medal]} – ${d.raceLabel} ${s.label}, ${l.name}`,
+        }));
+        if (detailed.length > 0) return detailed;
+        return (["gold", "silver", "bronze"] as const).flatMap((m) =>
+          Array.from({ length: s.medals[m] }, () => ({ medal: m as Medal, title: `${MEDAL_LABEL[m]} – ${s.label}, ${l.name}` })),
+        );
+      }),
+    )
+    .sort((a, b) => TIER_ORDER[a.medal] - TIER_ORDER[b.medal]);
+  if (all.length === 0 && medalList.length === 0) return null;
 
   const byKey = new Map(all.map((t) => [t.key, t]));
   const picked = featuredTrophyKeys.flatMap((k) => (byKey.has(k) ? [byKey.get(k)!] : []));
@@ -213,16 +226,11 @@ export function FrontShelf({ leagues, featuredTrophyKeys }: { leagues: ShelfLeag
           ))}
         </div>
       )}
-      {/* race medals hanging off pegs under the shelf */}
-      {medalTiers.length > 0 && (
-        <div className="mt-3 flex justify-center gap-8" aria-label="Race medals">
-          {medalTiers.map((m) => (
-            <div key={m} className="flex flex-col items-center">
-              <span className="h-1.5 w-3 rounded-full bg-amber-900" aria-hidden />
-              <span className="h-2 w-px bg-muted-foreground/60" aria-hidden />
-              <MedalIcon medal={m} className="size-10" title={`${medals[m]} ${MEDAL_LABEL[m].toLowerCase()} medal${medals[m] === 1 ? "" : "s"}`} />
-              <span className="mt-0.5 text-sm font-semibold tabular-nums">×{medals[m]}</span>
-            </div>
+      {/* every race medal, one by one in a row under the shelf (wraps when it runs out of room) */}
+      {medalList.length > 0 && (
+        <div className="mt-3 flex flex-wrap justify-center gap-1.5" aria-label="Race medals">
+          {medalList.map((d, i) => (
+            <MedalIcon key={i} medal={d.medal} className="size-8" title={d.title} />
           ))}
         </div>
       )}
