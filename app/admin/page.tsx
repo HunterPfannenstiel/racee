@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/ui/page-shell";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
-import { CalendarIcon, FlagIcon, UserIcon, KeyRoundIcon, ShieldIcon } from "lucide-react";
+import { CalendarIcon, FlagIcon, UserIcon, KeyRoundIcon, ShieldIcon, FlagTriangleRightIcon, HistoryIcon, CalendarRangeIcon } from "lucide-react";
 import { getSession } from "@/server/auth/server";
 
 const CARDS = [
@@ -11,6 +11,12 @@ const CARDS = [
     icon: CalendarIcon,
     title: "Leagues",
     description: "Create and manage race leagues.",
+  },
+  {
+    href: "/admin/seasons",
+    icon: CalendarRangeIcon,
+    title: "Seasons",
+    description: "Set each season's start and end dates, and set up next season ahead of time.",
   },
   {
     href: "/admin/races",
@@ -35,6 +41,18 @@ const CARDS = [
     icon: ShieldIcon,
     title: "Users",
     description: "Manage user roles and admin access.",
+  },
+  {
+    href: "/admin/reports",
+    icon: FlagTriangleRightIcon,
+    title: "Reported",
+    description: "Review reported profile photos and team logos.",
+  },
+  {
+    href: "/admin/history",
+    icon: HistoryIcon,
+    title: "Trophies & History",
+    description: "Trophy art, and adding past seasons to a league's history book.",
   },
 ];
 

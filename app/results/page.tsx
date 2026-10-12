@@ -255,6 +255,8 @@ export default function ResultsPage() {
               playCutsceneDisabled={playCutsceneDisabled}
               onPlayConstructors={constructorCutsceneData ? handlePlayConstructors : undefined}
               playConstructorsDisabled={playConstructorsDisabled}
+              constructorEntries={constructorCutsceneData?.entries ?? null}
+              viewerTeamId={constructorCutsceneData?.currentUserId ?? null}
             />
           ) : (
             <RevealGate

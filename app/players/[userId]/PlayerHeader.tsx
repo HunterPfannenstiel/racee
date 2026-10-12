@@ -12,7 +12,7 @@ export function PlayerHeader({ player, summary }: PlayerHeaderProps) {
   return (
     <div className="flex flex-col items-start gap-3">
       <div className="flex items-center gap-4">
-        <LeaguePlayerAvatar userId={player.userId} name={player.name} size="xl" />
+        <LeaguePlayerAvatar userId={player.userId} name={player.name} size="xl" action="zoom" />
         <div>
           <p className="font-heading text-3xl font-bold text-foreground leading-tight">{player.name}</p>
         </div>

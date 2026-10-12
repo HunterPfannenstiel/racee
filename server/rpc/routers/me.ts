@@ -9,14 +9,22 @@ import { AVATAR_PRESET_IDS } from "@/lib/avatar";
 import { BlobAvatarImageRepository } from "@/server/repositories/avatar-image/BlobAvatarImageRepository";
 import { PrismaSetUserAvatarCommand } from "@/server/commands/set-user-avatar/PrismaSetUserAvatarCommand";
 import { UploadUserAvatarCommand } from "@/server/commands/upload-user-avatar/UploadUserAvatarCommand";
+import { BlobUserModerationRepository } from "@/server/repositories/moderation/BlobModerationRepository";
+import { BlobNotificationRepository } from "@/server/repositories/notification/BlobNotificationRepository";
+import { BlobUserNotificationsQuery } from "@/server/queries/user-notifications/BlobUserNotificationsQuery";
+import { BlobMarkNotificationsReadCommand } from "@/server/commands/mark-notifications-read/BlobMarkNotificationsReadCommand";
 
 const userRepo = new PrismaUserRepository();
 const leagueRepo = new BlobLeagueRepository();
 
-const meQuery = new MeQuery(userRepo, leagueRepo);
+const moderationRepo = new BlobUserModerationRepository();
+const notificationRepo = new BlobNotificationRepository();
+const meQuery = new MeQuery(userRepo, leagueRepo, moderationRepo);
+const notificationsQuery = new BlobUserNotificationsQuery(notificationRepo);
+const markNotificationsReadCommand = new BlobMarkNotificationsReadCommand(notificationRepo);
 const updateUserNameCommand = new PrismaUpdateUserNameCommand(userRepo);
 const setUserAvatarCommand = new PrismaSetUserAvatarCommand(userRepo);
-const uploadUserAvatarCommand = new UploadUserAvatarCommand(userRepo, new BlobAvatarImageRepository());
+const uploadUserAvatarCommand = new UploadUserAvatarCommand(userRepo, new BlobAvatarImageRepository(), moderationRepo);
 
 const AvatarResultSchema = z.object({ image: z.string().nullable() });
 
@@ -39,6 +47,7 @@ const MeSchema = z.object({
   name: z.string(),
   isAdmin: z.boolean(),
   image: z.string().nullable(),
+  photoUploadsBlocked: z.boolean(),
   leagues: z.array(LeagueMembershipSchema),
 });
 
@@ -85,4 +94,33 @@ export const meRouter = {
     .handler(async ({ context, input }) =>
       uploadUserAvatarCommand.execute({ userId: context.session.user.id, dataUrl: input.dataUrl }),
     ),
+
+  notifications: {
+    /** The signed-in user's notifications, newest first, with the unread count. */
+    list: authed
+      .output(
+        z.object({
+          notifications: z.array(
+            z.object({
+              id: z.string(),
+              kind: z.enum(["photo_removed", "season_ended", "season_started"]),
+              title: z.string(),
+              body: z.string(),
+              createdAt: z.string(),
+              read: z.boolean(),
+            }),
+          ),
+          unreadCount: z.number(),
+        }),
+      )
+      .handler(async ({ context }) => notificationsQuery.execute(context.session.user.id)),
+
+    /** Marks all of the signed-in user's notifications as read. */
+    markRead: authed
+      .output(z.object({ ok: z.literal(true) }))
+      .handler(async ({ context }) => {
+        await markNotificationsReadCommand.execute(context.session.user.id);
+        return { ok: true as const };
+      }),
+  },
 };

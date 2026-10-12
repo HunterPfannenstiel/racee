@@ -66,19 +66,20 @@ export function TeamLogoUpload({ leagueId, team, disabled, size = "lg" }: Props)
         className="hidden"
         onChange={(e) => handleFile(e.target.files?.[0])}
       />
-      <button
-        type="button"
-        onClick={() => fileRef.current?.click()}
-        disabled={busy}
-        className="relative rounded-[28%] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
-        aria-label={team.logo ? `Change ${team.name} logo` : `Upload ${team.name} logo`}
-        title={team.logo ? "Change logo" : "Upload logo"}
-      >
-        <TeamLogo leagueId={leagueId} teamId={team.id} name={team.name} color={team.color} logo={team.logo} size={size} />
-        <span className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-background border border-border">
-          {processing || mutation.isPending ? <Spinner className="size-2.5" /> : <Camera className="size-2.5 text-muted-foreground" />}
-        </span>
-      </button>
+      <span className="relative">
+        {/* Tapping the logo blows it up; only the camera button changes it. */}
+        <TeamLogo leagueId={leagueId} teamId={team.id} name={team.name} color={team.color} logo={team.logo} size={size} action="zoom" />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={busy}
+          className="absolute -right-1 -bottom-1 flex size-6 items-center justify-center rounded-full border border-border bg-background shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
+          aria-label={team.logo ? `Change ${team.name} logo` : `Upload ${team.name} logo`}
+          title={team.logo ? "Change logo" : "Upload logo"}
+        >
+          {processing || mutation.isPending ? <Spinner className="size-3" /> : <Camera className="size-3.5 text-muted-foreground" />}
+        </button>
+      </span>
       {team.logo && (
         <Button
           variant="link"

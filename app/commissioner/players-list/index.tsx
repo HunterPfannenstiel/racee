@@ -79,8 +79,8 @@ export function PlayersList({ leagueId }: PlayersListProps) {
           <MembersSection
             leagueId={leagueId}
             members={members}
-            onRemove={(id, clearScores, newCommissionerId) =>
-              removeMutation.mutate({ leagueId, userId: id, clearScores, newCommissionerId })
+            onRemove={(id, clearScores, newCommissionerId, eraseHistory) =>
+              removeMutation.mutate({ leagueId, userId: id, clearScores, newCommissionerId, eraseHistory })
             }
             actionPending={actionPending}
           />

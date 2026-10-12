@@ -56,7 +56,8 @@ export function useConstructorCutsceneData({
         // Ties share a place (1, 2, 2, 4), matching how driver results rank.
         rank: 1 + scored.filter((o) => o.points > s.points).length,
         color: team.color ?? "#6b7280",
-        teamName: "",
+        // Shown under the team name: who's on it.
+        teamName: team.memberIds.map((id) => standings.usersById[id]?.name ?? "").filter(Boolean).join(" · "),
       };
     });
     const viewerTeamId = viewerId ? (teams.find((t) => t.memberIds.includes(viewerId))?.id ?? null) : null;

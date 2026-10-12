@@ -12,6 +12,7 @@ import { StandingsTable } from "./StandingsTable";
 import { type StandingsRowData } from "./StandingsRow";
 import { useLeagueAvatars } from "@/components/avatar/useLeagueAvatars";
 import { computeStandingsMovement } from "@/lib/standings-movement";
+import { computeRaceMedals } from "@/lib/medals";
 
 export type { StandingsRowData };
 
@@ -99,8 +100,20 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     const movement = computeStandingsMovement(list, raceOrder, mulligans);
     return list.map((row) => ({ ...row, movement: movement[row.id] }));
   };
+  // Medals per race: players against players, teams against teams. Cancelled races have no scores, so no medals.
+  const withMedals = (list: StandingsRowData[]) => {
+    const medals = computeRaceMedals(list.map((r) => ({ id: r.id, scores: r.raceScores })));
+    return list.map((row) => ({
+      ...row,
+      raceMedals: Object.fromEntries(
+        Object.entries(medals).flatMap(([raceId, byRow]) => (byRow[row.id] ? [[raceId, byRow[row.id]]] : [])),
+      ),
+    }));
+  };
   const rows =
-    tab === "drivers" ? withMovement(mappedDriverRows, mulliganCount) : withMovement(mappedConstructorRows, 0);
+    tab === "drivers"
+      ? withMedals(withMovement(mappedDriverRows, mulliganCount))
+      : withMedals(withMovement(mappedConstructorRows, 0));
 
   return (
     <div className="space-y-4">

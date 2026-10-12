@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc/client";
 import { useLeague } from "@/app/context/LeagueContext";
@@ -20,9 +21,35 @@ import {
 
 /** Team dashboard for the active league: your team by default, any team via the switcher. */
 export default function TeamsPage() {
-  const { activeLeagueId } = useLeague();
+  return (
+    <Suspense fallback={<PageShell title="Teams"><QueryLoading /></PageShell>}>
+      <TeamsDashboard />
+    </Suspense>
+  );
+}
+
+function TeamsDashboard() {
+  const { activeLeagueId, setActiveLeagueId } = useLeague();
+  // ?league=&team= — set when a team logo elsewhere links here.
+  const params = useSearchParams();
+  const linkedLeague = params.get("league");
+  const linkedTeam = params.get("team");
   // Remember the picked team per league; switching leagues falls back to your own team.
-  const [picked, setPicked] = useState<{ leagueId: string; teamId: string } | null>(null);
+  const [picked, setPicked] = useState<{ leagueId: string; teamId: string } | null>(
+    linkedLeague && linkedTeam ? { leagueId: linkedLeague, teamId: linkedTeam } : null,
+  );
+  // Tapping a different team's logo while already here updates the pick.
+  const linkKey = `${linkedLeague ?? ""}|${linkedTeam ?? ""}`;
+  const [appliedLink, setAppliedLink] = useState(linkKey);
+  if (linkKey !== appliedLink) {
+    setAppliedLink(linkKey);
+    if (linkedLeague && linkedTeam) setPicked({ leagueId: linkedLeague, teamId: linkedTeam });
+  }
+  // A linked team in another league switches the app to that league.
+  useEffect(() => {
+    if (linkedLeague && activeLeagueId && linkedLeague !== activeLeagueId) setActiveLeagueId(linkedLeague);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to the link itself
+  }, [linkedLeague, activeLeagueId === null]);
   const teamId = picked && picked.leagueId === activeLeagueId ? picked.teamId : null;
 
   const dashboardQuery = useQuery(

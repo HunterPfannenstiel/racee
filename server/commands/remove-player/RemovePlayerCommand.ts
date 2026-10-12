@@ -1,4 +1,4 @@
-import type { ILeagueRepository, ILeagueStandingsRepository, ITeamRepository } from "@/server/repositories";
+import type { ILeagueHistoryRepository, ILeagueRepository, ILeagueStandingsRepository, ITeamRepository } from "@/server/repositories";
 import { NotFoundError } from "@/server/domain/errors";
 import { assertLeagueCommissioner, assertLeagueOwner } from "@/server/roles/league";
 import type { IRemovePlayerCommand, RemovePlayerPayload } from "./IRemovePlayerCommand";
@@ -13,6 +13,7 @@ export class RemovePlayerCommand implements IRemovePlayerCommand {
     private readonly leagues: ILeagueRepository,
     private readonly teams: ITeamRepository,
     private readonly standings: ILeagueStandingsRepository,
+    private readonly history: ILeagueHistoryRepository,
   ) {}
 
   async execute(payload: RemovePlayerPayload): Promise<void> {
@@ -44,6 +45,12 @@ export class RemovePlayerCommand implements IRemovePlayerCommand {
         standings.removeUser(payload.userId);
         await this.standings.save(standings);
       }
+    }
+
+    if (payload.eraseHistory) {
+      const history = await this.history.findByLeague(payload.leagueId);
+      history.removeUser(payload.userId);
+      await this.history.save(history);
     }
   }
 }

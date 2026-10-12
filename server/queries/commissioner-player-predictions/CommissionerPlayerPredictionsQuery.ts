@@ -40,7 +40,7 @@ export class CommissionerPlayerPredictionsQuery
 
     const allRacers = await this.racers.findAll();
 
-    const races = await this.races.findAllForMotorsport(league.motorsportId);
+    const races = await this.races.findAllForMotorsport(league.motorsportId).then((all) => league.currentSeasonRaces(all));
 
     // No open/lock/key filtering — commissioners need every race, regardless of state.
     const books = await this.books.findAllForRaces(

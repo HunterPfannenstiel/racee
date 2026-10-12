@@ -29,6 +29,15 @@ function toDomain(raw: LeaguePersistence): League {
     motorsportId: raw.motorsportId,
     teamPositionPoints: raw.teamPositionPoints,
     inviteToken: raw.inviteToken,
+    seasonLabel: raw.seasonLabel,
+    seasonRacesAfter: raw.seasonRacesAfter,
+    seasonRacesThrough: raw.seasonRacesThrough,
+    seasonEndedAt: raw.seasonEndedAt,
+    currentSeasonId: raw.currentSeasonId,
+    isPrivate: raw.isPrivate,
+    motorsportSeasonId: raw.motorsportSeasonId,
+    seasonWindowStart: raw.seasonWindowStart,
+    seasonWindowEnd: raw.seasonWindowEnd,
   });
 }
 
@@ -51,6 +60,15 @@ function toPersistence(league: League): LeaguePersistence {
     motorsportId: league.motorsportId,
     teamPositionPoints: league.teamPositionPoints ? [...league.teamPositionPoints] : undefined,
     inviteToken: league.inviteToken,
+    seasonLabel: league.seasonLabel,
+    seasonRacesAfter: league.seasonRacesAfter,
+    seasonRacesThrough: league.seasonRacesThrough,
+    seasonEndedAt: league.seasonEndedAt,
+    currentSeasonId: league.currentSeasonId,
+    isPrivate: league.isPrivate,
+    motorsportSeasonId: league.motorsportSeasonId,
+    seasonWindowStart: league.seasonWindowStart,
+    seasonWindowEnd: league.seasonWindowEnd,
   };
 }
 

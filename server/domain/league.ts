@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { InvariantViolationError } from "./errors";
 
 export const PropPointValuesSchema = z.object({
   driverOfDay: z.number().int().min(0),
@@ -32,6 +33,22 @@ export const LeaguePropsSchema = z.object({
   motorsportId: z.string().uuid(),
   teamPositionPoints: z.array(z.number().min(0)).optional(),
   inviteToken: z.string().nullable().optional().default(null),
+  /** Current season's name (e.g. "2027"). Null = named after the year of its first race. */
+  seasonLabel: z.string().min(1).nullable().optional().default(null),
+  /** Races dated on or before this belong to earlier seasons. Null = no earlier seasons. */
+  seasonRacesAfter: z.string().nullable().optional().default(null),
+  /** Set when the commissioner ends the season: the last race date it includes. */
+  seasonRacesThrough: z.string().nullable().optional().default(null),
+  seasonEndedAt: z.string().nullable().optional().default(null),
+  /** Id the current season gets in the history book; assigned when it ends so trophy links stay stable. */
+  currentSeasonId: z.string().uuid().nullable().optional().default(null),
+  /** Private: nobody outside the league can see what happens inside it (only trophies, the name and basic counts). */
+  isPrivate: z.boolean().optional().default(false),
+  /** The admin-defined motorsport season this league is racing. Null = not linked (yet). */
+  motorsportSeasonId: z.string().uuid().nullable().optional().default(null),
+  /** Copied from the linked admin season (or a guard against future seasons): races outside these days don't count. */
+  seasonWindowStart: z.string().nullable().optional().default(null),
+  seasonWindowEnd: z.string().nullable().optional().default(null),
 });
 
 
@@ -62,6 +79,155 @@ export class League {
   get hiddenAvatarUserIds(): readonly string[] { return this.props.hiddenAvatarUserIds; }
   get teamPositionPoints(): readonly number[] | undefined { return this.props.teamPositionPoints; }
   get inviteToken(): string | null { return this.props.inviteToken; }
+  get seasonLabel(): string | null { return this.props.seasonLabel; }
+  get seasonRacesAfter(): string | null { return this.props.seasonRacesAfter; }
+  get seasonRacesThrough(): string | null { return this.props.seasonRacesThrough; }
+  get seasonEndedAt(): string | null { return this.props.seasonEndedAt; }
+  get isSeasonEnded(): boolean { return this.props.seasonEndedAt !== null; }
+  /** "current" until the season ends, then the id it will keep in the history book. */
+  get currentSeasonKey(): string { return this.props.currentSeasonId ?? "current"; }
+  get currentSeasonId(): string | null { return this.props.currentSeasonId; }
+  get isPrivate(): boolean { return this.props.isPrivate; }
+  get motorsportSeasonId(): string | null { return this.props.motorsportSeasonId; }
+  get seasonWindowStart(): string | null { return this.props.seasonWindowStart; }
+  get seasonWindowEnd(): string | null { return this.props.seasonWindowEnd; }
+
+  /**
+   * Points the league at an admin season (or, with `seasonId` null, just fences
+   * it off with a date window). The window is what actually limits races.
+   */
+  setSeasonWindow(seasonId: string | null, start: string | null, end: string | null): void {
+    this.props = LeaguePropsSchema.parse({
+      ...this.props,
+      motorsportSeasonId: seasonId,
+      seasonWindowStart: start,
+      seasonWindowEnd: end,
+    });
+  }
+
+  /** A full copy of the league's stored fields (kept with a season so "go back" can restore it exactly). */
+  snapshot(): LeagueProps {
+    return structuredClone(this.props);
+  }
+
+  /** Puts back a snapshot taken with snapshot(); anyone who joined since stays a member. */
+  restoreSnapshot(snapshot: unknown): void {
+    const restored = LeaguePropsSchema.parse(snapshot);
+    if (restored.leagueId !== this.props.leagueId) throw new InvariantViolationError("That snapshot is from a different league");
+    this.props = LeaguePropsSchema.parse({
+      ...restored,
+      memberIds: [...new Set([...restored.memberIds, ...this.props.memberIds])],
+      pendingMemberIds: this.props.pendingMemberIds.filter(id => !restored.memberIds.includes(id)),
+      inviteToken: this.props.inviteToken,
+      playerColors: { ...restored.playerColors, ...this.props.playerColors },
+    });
+  }
+
+  setPrivate(isPrivate: boolean): void {
+    this.props = { ...this.props, isPrivate };
+  }
+
+  /** Members and commissioners can see inside the league; for a private league, nobody else can. */
+  canBeSeenInsideBy(userId: string): boolean {
+    return !this.props.isPrivate || this.isMember(userId) || this.canManage(userId);
+  }
+
+  /** True if a race on this date belongs to the league's current season. */
+  includesRaceDate(date: string): boolean {
+    const day = date.slice(0, 10);
+    if (this.props.seasonWindowStart && day < this.props.seasonWindowStart.slice(0, 10)) return false;
+    if (this.props.seasonWindowEnd && day > this.props.seasonWindowEnd.slice(0, 10)) return false;
+    if (this.props.seasonRacesAfter && day <= this.props.seasonRacesAfter.slice(0, 10)) return false;
+    if (this.props.seasonRacesThrough && day > this.props.seasonRacesThrough.slice(0, 10)) return false;
+    return true;
+  }
+
+  /** The current season's races, out of everything on the motorsport's calendar. */
+  currentSeasonRaces<T extends { date: string }>(races: readonly T[]): T[] {
+    return races.filter(r => this.includesRaceDate(r.date));
+  }
+
+  /** The season's display name: its label, else the year of its first race, else `fallbackYear`. */
+  displaySeasonLabel(seasonRaces: readonly { date: string }[], fallbackYear: string): string {
+    if (this.props.seasonLabel) return this.props.seasonLabel;
+    const first = [...seasonRaces].map(r => r.date).sort()[0];
+    return first ? first.slice(0, 4) : fallbackYear;
+  }
+
+  /** Ends the season after its last counted race. Later races on the calendar no longer count. */
+  endSeason(lastRaceDate: string | null, now: string, seasonId: string): void {
+    if (this.isSeasonEnded) throw new InvariantViolationError("This season has already ended");
+    this.props = LeaguePropsSchema.parse({
+      ...this.props,
+      seasonEndedAt: now,
+      seasonRacesThrough: lastRaceDate ?? now.slice(0, 10),
+      currentSeasonId: this.props.currentSeasonId ?? seasonId,
+    });
+  }
+
+  /** Undoes endSeason, as long as the next season hasn't started. */
+  reopenSeason(): void {
+    if (!this.isSeasonEnded) throw new InvariantViolationError("This season hasn't ended");
+    this.props = { ...this.props, seasonEndedAt: null, seasonRacesThrough: null };
+  }
+
+  /**
+   * Starts the next season: only races after the ended season's last race count,
+   * and only the players carried over stay members. The commissioner always stays.
+   */
+  startNextSeason(opts: {
+    label: string;
+    keepUserIds: readonly string[];
+    /** People joining for the new season. */
+    addUserIds?: readonly string[];
+    /** The admin season it races (seasonId null = not set up by the admins yet). */
+    window?: { seasonId: string | null; start: string | null; end: string | null };
+  }): void {
+    if (!this.isSeasonEnded) throw new InvariantViolationError("End the current season before starting the next one");
+    const keep = new Set([...opts.keepUserIds, ...(opts.addUserIds ?? []), this.props.commissionerId]);
+    const members = [...new Set([...this.props.memberIds.filter(id => keep.has(id)), ...(opts.addUserIds ?? [])])];
+    this.props = LeaguePropsSchema.parse({
+      ...this.props,
+      seasonLabel: opts.label,
+      seasonRacesAfter: this.props.seasonRacesThrough,
+      seasonRacesThrough: null,
+      seasonEndedAt: null,
+      currentSeasonId: null,
+      motorsportSeasonId: opts.window ? opts.window.seasonId : this.props.motorsportSeasonId,
+      seasonWindowStart: opts.window ? opts.window.start : this.props.seasonWindowStart,
+      seasonWindowEnd: opts.window ? opts.window.end : this.props.seasonWindowEnd,
+      memberIds: members,
+      pendingMemberIds: this.props.pendingMemberIds.filter(id => !members.includes(id)),
+      coCommissionerIds: this.props.coCommissionerIds.filter(id => keep.has(id)),
+      keptScoreUserIds: [],
+    });
+  }
+
+  /**
+   * Undoes startNextSeason: puts the league back to its ended previous season
+   * (from the history book's record of it) and brings its players back.
+   */
+  restorePreviousSeason(opts: {
+    label: string;
+    racesAfter: string | null;
+    racesThrough: string;
+    endedAt: string;
+    seasonId: string;
+    memberIds: readonly string[];
+  }): void {
+    if (this.isSeasonEnded) throw new InvariantViolationError("Reopen this season before going back to the last one");
+    if (this.props.seasonRacesAfter === null) throw new InvariantViolationError("This league has no earlier season to go back to");
+    this.props = LeaguePropsSchema.parse({
+      ...this.props,
+      seasonLabel: opts.label,
+      seasonRacesAfter: opts.racesAfter,
+      seasonRacesThrough: opts.racesThrough,
+      seasonEndedAt: opts.endedAt,
+      currentSeasonId: opts.seasonId,
+      memberIds: [...new Set([...this.props.memberIds, ...opts.memberIds])],
+      pendingMemberIds: this.props.pendingMemberIds.filter(id => !opts.memberIds.includes(id)),
+    });
+  }
 
   generateInviteToken(): string {
     const token = crypto.randomUUID().replace(/-/g, "").slice(0, 12);

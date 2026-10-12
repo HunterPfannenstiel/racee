@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { QueryLoading } from "@/components/ui/query-state";
 import { orpc } from "@/lib/orpc/client";
 import { LeagueConfigSection } from "../LeagueConfigSection";
+import { PrivacyCard } from "../PrivacyCard";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 import { ConnectedCoCommissioner } from "@/app/commissioner/co-commissioner/ConnectedCoCommissioner";
 import { ConnectedInviteLink } from "@/app/commissioner/invite-link/ConnectedInviteLink";
@@ -46,6 +47,7 @@ export default function CommissionerLeagueSettingsPage() {
       {league && (
         <>
           <LeagueConfigSection leagueId={leagueId} league={league} onError={setError} />
+          <PrivacyCard leagueId={leagueId} />
           <ConnectedInviteLink leagueId={leagueId} />
           <ConnectedCoCommissioner leagueId={leagueId} />
         </>

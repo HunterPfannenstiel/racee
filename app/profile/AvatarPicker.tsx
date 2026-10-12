@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, Check, X } from "lucide-react";
+import { Camera, Check, ChevronDown, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/lib/orpc/client";
 import { cn } from "@/lib/utils";
@@ -17,14 +17,17 @@ type Props = {
   userId: string;
   name: string;
   image: string | null;
+  /** An admin turned off photo uploads after removed photos; icons still work. */
+  uploadsBlocked?: boolean;
 };
 
 /** Profile picture: upload a photo or pick one of the built-in icons. Seen by everyone in your leagues. */
-export function AvatarPicker({ userId, name, image }: Props) {
+export function AvatarPicker({ userId, name, image, uploadsBlocked }: Props) {
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [iconsOpen, setIconsOpen] = useState(false);
 
   function onSaved() {
     setError(null);
@@ -76,7 +79,7 @@ export function AvatarPicker({ userId, name, image }: Props) {
               className="hidden"
               onChange={(e) => handleFile(e.target.files?.[0])}
             />
-            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={busy}>
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={busy || uploadsBlocked}>
               {processing || uploadMutation.isPending ? <Spinner className="w-3 h-3 mr-1" /> : <Camera className="size-3.5 mr-1" />}
               Upload photo
             </Button>
@@ -90,7 +93,16 @@ export function AvatarPicker({ userId, name, image }: Props) {
         </div>
 
         <div>
-          <p className="text-xs text-muted-foreground mb-2">Or pick an icon</p>
+          <button
+            type="button"
+            onClick={() => setIconsOpen((o) => !o)}
+            aria-expanded={iconsOpen}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"
+          >
+            Or pick an icon
+            <ChevronDown className={cn("size-3.5 transition-transform", iconsOpen && "rotate-180")} />
+          </button>
+          {iconsOpen && (
           <div className="grid grid-cols-5 gap-2">
             {AVATAR_PRESET_IDS.map((id: AvatarPresetId) => {
               const preset = AVATAR_PRESETS[id];
@@ -121,8 +133,14 @@ export function AvatarPicker({ userId, name, image }: Props) {
               );
             })}
           </div>
+          )}
         </div>
 
+        {uploadsBlocked && (
+          <p className="text-xs text-destructive">
+            Photo uploads are turned off for your account because photos were removed after being reported. You can still pick an icon.
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">
           Everyone in your leagues sees this picture. The ring around it is your team color in each league.
         </p>

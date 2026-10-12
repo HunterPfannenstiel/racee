@@ -1,7 +1,7 @@
-import { NotFoundError } from "@/server/domain/errors";
+import { InvariantViolationError, NotFoundError } from "@/server/domain/errors";
 import { assertLeagueCommissioner } from "@/server/roles/league";
 import { parseImageDataUrl } from "@/server/services/image-upload";
-import type { ILeagueRepository, ITeamLogoRepository, ITeamRepository } from "@/server/repositories";
+import type { ILeagueRepository, ITeamLogoRepository, ITeamRepository, IUserModerationRepository } from "@/server/repositories";
 import type { ISetTeamLogoCommand, SetTeamLogoPayload } from "./ISetTeamLogoCommand";
 
 /**
@@ -13,6 +13,7 @@ export class SetTeamLogoCommand implements ISetTeamLogoCommand {
     private readonly leagues: ILeagueRepository,
     private readonly teams: ITeamRepository,
     private readonly logos: ITeamLogoRepository,
+    private readonly moderation: IUserModerationRepository,
   ) {}
 
   async execute(payload: SetTeamLogoPayload): Promise<{ logo: string | null }> {
@@ -27,9 +28,12 @@ export class SetTeamLogoCommand implements ISetTeamLogoCommand {
       // The old file is left in storage; nothing points at it any more and the next upload overwrites it.
       team.setLogo(null);
     } else {
+      if ((await this.moderation.find(payload.actorUserId)).uploadsBlocked) {
+        throw new InvariantViolationError("Photo uploads are turned off for your account because photos were removed after being reported. You can still pick a built-in icon.");
+      }
       const image = parseImageDataUrl(payload.dataUrl);
       await this.logos.save(payload.leagueId, payload.teamId, image);
-      team.setLogo(`upload:${Date.now()}`);
+      team.setLogo(`upload:${Date.now()}`, payload.actorUserId);
     }
     await this.teams.save(team);
     return { logo: team.logo };

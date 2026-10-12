@@ -4,4 +4,5 @@ export type AvatarImage = { data: Uint8Array; contentType: string };
 export interface IAvatarImageRepository {
   find(userId: string): Promise<AvatarImage | null>;
   save(userId: string, image: AvatarImage): Promise<void>;
+  remove(userId: string): Promise<void>;
 }

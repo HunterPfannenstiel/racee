@@ -19,7 +19,7 @@ export default function CommissionerPage() {
   return (
     <PageShell title="Commissioner">
       <RequireUser>
-        <Link href="/profile" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit">
+        <Link href="/profile/settings" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit">
           <ChevronLeft className="size-3.5" />
           Profile
         </Link>

@@ -104,14 +104,23 @@ function groupByTiedTotal<T>(entries: T[], totalOf: (entry: T) => number): T[][]
   return groups;
 }
 
+/**
+ * Competition-style, like the standings: tied scores share a medal and the next
+ * score skips ahead (two golds → bronze next). A 0-point race earns no medal.
+ */
 export function assignMedals(entries: Omit<ScoreEntry, "medal">[]): ScoreEntry[] {
   const total = (e: Omit<ScoreEntry, "medal">) => e.gridPoints + e.propPoints;
   const podium = ["gold", "silver", "bronze"] as const;
   const groups = groupByTiedTotal(entries, total);
 
-  return groups.flatMap((group, groupIdx) => {
-    const medal = groupIdx < podium.length ? podium[groupIdx] : null;
-    return group.map((entry) => ({ ...entry, medal }));
+  let placed = 0;
+  return groups.flatMap((group) => {
+    const rank = placed + 1;
+    placed += group.length;
+    return group.map((entry) => {
+      const medal = total(entry) > 0 ? (podium[rank - 1] ?? null) : null;
+      return { ...entry, medal };
+    });
   });
 }
 

@@ -30,6 +30,8 @@ export const TeamSchema = TeamPropsSchema.pick({
 }).extend({
   id: z.string().uuid(),
   logo: z.string().nullable().optional(),
+  /** Earlier franchises this team carries on. */
+  previousTeamIds: z.array(z.string()).optional(),
 });
 
 export const ParticipantsSchema = z.object({

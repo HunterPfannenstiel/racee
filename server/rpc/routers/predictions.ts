@@ -75,6 +75,7 @@ const UserOpenRacesResultSchema = z.object({
 const UserPastRacesResultSchema = z.object({
   pastRaces: z.array(RacePredictionSchema),
   racersById: z.record(z.string(), RacerDTOSchema),
+  teammatePicks: z.record(z.string(), z.record(z.string(), MyPickSchema)),
 });
 
 const ScoreSchema = z.object({
@@ -132,8 +133,9 @@ export const predictionsRouter = {
 
   /**
    * The current user's own past (locked/graded) race predictions for a
-   * league, for the read-only "locked" prediction UI on /predict. Unlike
-   * `openRaces`, this never exposes teammate lineup/picks.
+   * league, for the read-only "locked" prediction UI on /predict, plus
+   * teammates' locked picks (as `openRaces` already exposes while open) so a
+   * teammate's lineup can still be viewed after the race locks.
    */
   pastRaces: authed
     .input(z.object({ leagueId: z.string().uuid() }))

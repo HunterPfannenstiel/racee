@@ -33,7 +33,7 @@ type MemberRowProps = {
   member: Member;
   /** Everyone else in the league — candidates to take over when the commissioner leaves. */
   otherMembers: Member[];
-  onRemove: (clearScores: boolean, newCommissionerId?: string) => void;
+  onRemove: (clearScores: boolean, newCommissionerId?: string, eraseHistory?: boolean) => void;
   isRemovePending: boolean;
 };
 
@@ -42,7 +42,9 @@ export function MemberRow({ leagueId, member, otherMembers, onRemove, isRemovePe
   const [newCommissionerId, setNewCommissionerId] = useState("");
   const isCommissioner = member.role === "commissioner";
   const needsSuccessor = isCommissioner && !newCommissionerId;
-  const remove = (clearScores: boolean) => onRemove(clearScores, isCommissioner ? newCommissionerId : undefined);
+  const [eraseHistory, setEraseHistory] = useState(false);
+  const remove = (clearScores: boolean) =>
+    onRemove(clearScores, isCommissioner ? newCommissionerId : undefined, eraseHistory);
   const [colorOpen, setColorOpen] = useState(false);
   const queryClient = useQueryClient();
   const { byUserId } = useLeagueAvatars(leagueId);
@@ -132,6 +134,20 @@ export function MemberRow({ leagueId, member, otherMembers, onRemove, isRemovePe
               </select>
             </div>
           )}
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={eraseHistory}
+              onChange={(e) => setEraseHistory(e.target.checked)}
+            />
+            <span>
+              Also erase them from the league history book
+              <span className="block text-xs text-muted-foreground">
+                Removes their rows from past seasons. Team totals stay. Can&apos;t be undone.
+              </span>
+            </span>
+          </label>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction variant="outline" onClick={() => remove(false)} disabled={isRemovePending || needsSuccessor}>

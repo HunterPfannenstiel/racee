@@ -16,6 +16,7 @@ import { DeleteTeamCommand } from "@/server/commands/delete-team/DeleteTeamComma
 import { JoinTeamCommand } from "@/server/commands/join-team/JoinTeamCommand";
 import { SetTeamLogoCommand } from "@/server/commands/set-team-logo/SetTeamLogoCommand";
 import { BlobTeamLogoRepository } from "@/server/repositories/team-logo/BlobTeamLogoRepository";
+import { BlobUserModerationRepository } from "@/server/repositories/moderation/BlobModerationRepository";
 
 const leagueRepo = new BlobLeagueRepository();
 const teamRepo = new BlobTeamRepository();
@@ -100,7 +101,7 @@ const TeamDashboardSchema = z.object({
 });
 const createTeamCommand = new CreateTeamCommand(leagueRepo, teamRepo);
 const updateTeamCommand = new UpdateTeamCommand(leagueRepo, teamRepo);
-const setTeamLogoCommand = new SetTeamLogoCommand(leagueRepo, teamRepo, new BlobTeamLogoRepository());
+const setTeamLogoCommand = new SetTeamLogoCommand(leagueRepo, teamRepo, new BlobTeamLogoRepository(), new BlobUserModerationRepository());
 const deleteTeamCommand = new DeleteTeamCommand(leagueRepo, teamRepo);
 const joinTeamCommand = new JoinTeamCommand(leagueRepo, teamRepo);
 
@@ -169,7 +170,9 @@ export const teamsRouter = {
       z.object({
         leagueId: z.string().uuid(),
         teamId: z.string().uuid(),
-        patch: TeamSchema.pick({ name: true, color: true }).partial(),
+        patch: TeamSchema.pick({ name: true, color: true })
+          .extend({ previousTeamIds: z.array(z.string()) })
+          .partial(),
       }),
     )
     .output(TeamSchema)

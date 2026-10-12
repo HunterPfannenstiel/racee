@@ -13,6 +13,7 @@ export const AVATAR_SIZES = {
   lg: { px: 40, ring: 3, text: "text-sm" },
   xl: { px: 64, ring: 3, text: "text-2xl" },
   "2xl": { px: 96, ring: 4, text: "text-4xl" },
+  hero: { px: 224, ring: 6, text: "text-7xl" },
 } as const;
 export type AvatarSize = keyof typeof AVATAR_SIZES;
 

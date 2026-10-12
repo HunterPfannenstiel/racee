@@ -22,5 +22,7 @@ export const TeamPersistenceSchema = z.object({
   memberIds: z.array(z.string()).default([]),
   color: z.string().optional(),
   logo: z.string().nullable().optional(),
+  logoUploadedBy: z.string().nullable().optional(),
+  previousTeamIds: z.array(z.string()).optional(),
 });
 export type TeamPersistence = z.infer<typeof TeamPersistenceSchema>;
