@@ -20,11 +20,14 @@ export function medalForRank(rank: number, points: number): Medal | null {
 export const MEDAL_LABEL: Record<Medal, string> = { gold: "Gold", silver: "Silver", bronze: "Bronze" };
 
 /** Raw hex colors for the medal/trophy art. */
-export const MEDAL_HEX: Record<Medal, { fill: string; stroke: string }> = {
-  gold: { fill: "#fbbf24", stroke: "#b45309" },
-  silver: { fill: "#cbd5e1", stroke: "#64748b" },
-  bronze: { fill: "#d97706", stroke: "#78350f" },
+/** Solid award colors, picked to stay clearly apart even at icon size (bronze is a deep brown, not amber). */
+export const MEDAL_HEX: Record<Medal, { fill: string; stroke: string; text: string }> = {
+  gold: { fill: "#facc15", stroke: "#a16207", text: "#422006" },
+  silver: { fill: "#d1d5db", stroke: "#6b7280", text: "#1f2937" },
+  bronze: { fill: "#a0522d", stroke: "#5c2a12", text: "#fff7ed" },
 };
+
+export const MEDAL_PLACE: Record<Medal, 1 | 2 | 3> = { gold: 1, silver: 2, bronze: 3 };
 
 /** Competition rank (1,1,3…) of each entry by points, highest first. */
 export function competitionRanks<T>(entries: readonly T[], pointsOf: (e: T) => number): Map<T, number> {

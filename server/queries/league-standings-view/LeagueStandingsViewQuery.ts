@@ -3,6 +3,7 @@ import type {
   IRaceRepository,
   ILeagueStandingsRepository,
   IUserRepository,
+  ITeamRepository,
 } from "@/server/repositories";
 import { NotFoundError } from "@/server/domain/errors";
 import { assertLeagueMember } from "@/server/roles/league";
@@ -30,6 +31,7 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
     private races: IRaceRepository,
     private standings: ILeagueStandingsRepository,
     private users: IUserRepository,
+    private teams: ITeamRepository,
   ) {}
 
   async execute(actorUserId: string, leagueId: string): Promise<LeagueStandingsViewResult> {
@@ -51,8 +53,14 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
     // stage of the cancelled race it replaces instead of shifting every boundary.
     const stages = computeSeasonStages(races, r => r.raceId, stageCount);
 
+    // Before the season's first race is scored, everyone in the league is listed at 0
+    // (with their team) so players can see who's racing this season.
+    const nothingScored = !sortedRaces.some(r => r.keySetAt !== null);
+    const scoredUserIds = new Set(standingsData?.individual.map(u => u.userId) ?? []);
+    const previewUserIds = nothingScored ? league.memberIds.filter(id => !scoredUserIds.has(id)) : [];
+
     // Load users referenced by standings
-    const userIds = standingsData?.individual.map(u => u.userId) ?? [];
+    const userIds = [...scoredUserIds, ...previewUserIds];
     const userList = await this.users.findByIds(userIds);
 
     const driverRows = standingsData
@@ -77,6 +85,11 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
         })
       : [];
 
+    const previewDriverRows = previewUserIds.map(userId => ({
+      userId, total: 0, mulliganed: 0, rawTotal: 0, propTotal: 0, raceScores: [],
+    }));
+    const leagueTeams = nothingScored ? await this.teams.findAllForLeague(leagueId) : [];
+
     const constructorRows = standingsData
       ? standingsData.rankTeams().map(({ teamId, total }) => {
           const rawScores = standingsData.teams.find(t => t.teamId === teamId)?.raceScores ?? [];
@@ -100,11 +113,16 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
         })
       : [];
 
+    const listedTeamIds = new Set(constructorRows.map(r => r.teamId));
+    const previewConstructorRows = leagueTeams
+      .filter(t => !listedTeamIds.has(t.teamId))
+      .map(t => ({ teamId: t.teamId, total: 0, rawTotal: 0, propTotal: 0, raceScores: [] }));
+
     return {
       gradedRaceIds: sortedRaces.filter(r => r.keySetAt !== null).map(r => r.raceId),
       stages,
-      driverRows,
-      constructorRows,
+      driverRows: [...driverRows, ...previewDriverRows],
+      constructorRows: [...constructorRows, ...previewConstructorRows],
       usersById: Object.fromEntries(userList.map(u => [u.userId, { id: u.userId, name: u.name }])),
     };
   }

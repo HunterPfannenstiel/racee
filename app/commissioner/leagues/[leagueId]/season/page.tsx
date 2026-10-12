@@ -44,6 +44,7 @@ export default function CommissionerSeasonPage() {
   const teamsQuery = useQuery(orpc.leagues.teams.list.queryOptions({ input: { leagueId } }));
   const [error, setError] = useState<string | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [confirmUndo, setConfirmUndo] = useState(false);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: orpc.history.key() });
@@ -56,6 +57,16 @@ export default function CommissionerSeasonPage() {
   );
   const reopenMutation = useMutation(
     orpc.history.reopenSeason.mutationOptions({ onSuccess: invalidate, onError: (e) => setError(errorMessage(e, "Couldn't reopen the season.")) }),
+  );
+
+  const undoMutation = useMutation(
+    orpc.history.undoNextSeason.mutationOptions({
+      onSuccess: () => {
+        invalidate();
+        queryClient.invalidateQueries({ queryKey: orpc.me.key() });
+      },
+      onError: (e) => setError(errorMessage(e, "Couldn't go back to last season.")),
+    }),
   );
 
   const data = historyQuery.data;
@@ -138,6 +149,28 @@ export default function CommissionerSeasonPage() {
             </CardContent>
           </Card>
 
+          {data.current.undoSeasonLabel && (
+            <Card>
+              <CardHeader>
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Started the new season by mistake?
+                </h2>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Go back to the {data.current.undoSeasonLabel} season, just as it was when it ended: its players and teams
+                  come back, its standings are rebuilt from everyone&apos;s picks, and it comes back out of the history
+                  book. Anything already scored in the {data.current.label} season counts toward {data.current.undoSeasonLabel}{" "}
+                  instead. Logos of teams that were reset don&apos;t come back.
+                </p>
+                <Button variant="outline" onClick={() => setConfirmUndo(true)} disabled={undoMutation.isPending}>
+                  {undoMutation.isPending && <Spinner className="w-3 h-3 mr-1" />}
+                  Go back to {data.current.undoSeasonLabel}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {data.current.ended && (
             <StartNextSeasonCard
               leagueId={leagueId}
@@ -151,6 +184,22 @@ export default function CommissionerSeasonPage() {
           )}
         </div>
       ) : null}
+
+      <AlertDialog open={confirmUndo} onOpenChange={setConfirmUndo}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Go back to the {data?.current.undoSeasonLabel} season?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The {data?.current.label} season is cancelled and the league returns to {data?.current.undoSeasonLabel},
+              ended with its trophies. You can reopen it or start the next season again from here.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => undoMutation.mutate({ leagueId })}>Go back</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmEnd} onOpenChange={setConfirmEnd}>
         <AlertDialogContent>

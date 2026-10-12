@@ -97,7 +97,7 @@ export function SidebarContent({ onNavigate }: Props) {
       {/* User — pinned to bottom */}
       <div className="px-3 py-2 border-t border-border shrink-0">
         <Link
-          href={user ? "/profile" : "/signin"}
+          href={user ? `/players/${user.id}` : "/signin"}
           onClick={onNavigate}
           className="flex items-center gap-2.5 min-h-10 px-3 rounded-sm text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors"
         >

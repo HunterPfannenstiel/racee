@@ -117,6 +117,23 @@ export class LeagueHistory {
     if (this._seasons.length === before) throw new InvariantViolationError("That season isn't in the history book");
   }
 
+  /** The most recent season played in Racee (not imported) — the one "undo next season" goes back to. */
+  get lastPlayedSeason(): SeasonRecord | null {
+    const played = this.seasons.filter(s => !s.imported);
+    return played[played.length - 1] ?? null;
+  }
+
+  /** The last race date of the played seasons before `seasonId` — where that season's races began after. */
+  lastRaceDateBefore(seasonId: string): string | null {
+    const target = this._seasons.find(s => s.seasonId === seasonId);
+    if (!target) return null;
+    const dates = this._seasons
+      .filter(s => !s.imported && s.seasonId !== seasonId && s.endedAt < target.endedAt)
+      .flatMap(s => s.races.map(r => r.date.slice(0, 10)))
+      .sort();
+    return dates[dates.length - 1] ?? null;
+  }
+
   /** Erases a player from every season (their rows and their name on team rosters). Team totals stay. */
   removeUser(userId: string): void {
     this._seasons = this._seasons.map(s => ({

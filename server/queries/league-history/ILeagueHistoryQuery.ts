@@ -20,6 +20,8 @@ export type LeagueHistoryResult = {
     endedAt: string | null;
     scoredRaces: number;
     totalRaces: number;
+    /** The season "Undo start of next season" would go back to (commissioners only; null when there is none). */
+    undoSeasonLabel: string | null;
   };
   /** Oldest first; the current season is last. */
   seasons: SeasonDTO[];

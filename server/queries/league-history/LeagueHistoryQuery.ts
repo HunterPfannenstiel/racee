@@ -63,6 +63,10 @@ export class LeagueHistoryQuery implements ILeagueHistoryQuery {
         endedAt: league.seasonEndedAt,
         scoredRaces: seasonRaces.filter((r) => r.keySetAt !== null).length,
         totalRaces: seasonRaces.filter((r) => !r.cancelled).length,
+        undoSeasonLabel:
+          canManage && league.seasonRacesAfter !== null && !league.isSeasonEnded
+            ? (history.lastPlayedSeason?.label ?? null)
+            : null,
       },
       seasons: [
         ...history.seasons.map((s) => ({ ...s, status: "complete" as const })),
