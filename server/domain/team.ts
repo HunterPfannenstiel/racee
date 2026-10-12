@@ -10,6 +10,8 @@ export const TeamPropsSchema = z.object({
   logo: z.string().nullable().default(null),
   /** Who uploaded the current logo (gets the strike if an admin removes it). */
   logoUploadedBy: z.string().nullable().default(null),
+  /** Earlier teams (from past seasons) this team carries on as a franchise, even under a new name. */
+  previousTeamIds: z.array(z.string()).default([]),
 });
 export type TeamProps = z.infer<typeof TeamPropsSchema>;
 
@@ -27,6 +29,12 @@ export class Team {
   get color() { return this.props.color; }
   get logo(): string | null { return this.props.logo; }
   get logoUploadedBy(): string | null { return this.props.logoUploadedBy; }
+  get previousTeamIds(): readonly string[] { return this.props.previousTeamIds; }
+
+  /** Ties this team to earlier franchises (replaces the list). A team can't continue itself. */
+  setPreviousTeams(teamIds: readonly string[]): void {
+    this.props = { ...this.props, previousTeamIds: [...new Set(teamIds.filter(id => id !== this.props.teamId))] };
+  }
 
   rename(name: string): void {
     this.props = TeamPropsSchema.parse({ ...this.props, name });

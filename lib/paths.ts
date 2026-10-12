@@ -52,3 +52,7 @@ export const TROPHY_ART_PATH = "trophies/art.json";
 export function trophyArtImagePath(tier: string) {
   return `trophies/${tier}.img`;
 }
+
+export function motorsportSeasonsPath(motorsportId: string) {
+  return `motorsports/${motorsportId}/seasons.json`;
+}

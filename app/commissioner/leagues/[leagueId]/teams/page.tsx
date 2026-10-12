@@ -23,6 +23,7 @@ import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
 import { TeamLogoUpload } from "@/components/avatar/TeamLogoUpload";
 
 const UNASSIGNED = "__unassigned__";
+const NO_FRANCHISE = "__none__";
 
 export default function CommissionerTeamsPage() {
   const { leagueId } = useParams<{ leagueId: string }>();
@@ -40,6 +41,7 @@ export default function CommissionerTeamsPage() {
 
   const rosterQuery = useQuery(orpc.leagues.teams.roster.queryOptions({ input }));
   const leagueQuery = useQuery(orpc.leagues.get.queryOptions({ input }));
+  const historyQuery = useQuery(orpc.history.get.queryOptions({ input }));
 
   const invalidateTeams = () => {
     queryClient.invalidateQueries({ queryKey: orpc.leagues.teams.roster.key({ input }) });
@@ -84,6 +86,20 @@ export default function CommissionerTeamsPage() {
   );
 
   const teams = useMemo(() => rosterQuery.data?.teams ?? [], [rosterQuery.data]);
+  // Teams from past seasons that aren't racing now — a current team can "carry on" one of them as a franchise.
+  const pastTeams = useMemo(() => {
+    const activeIds = new Set(teams.map((t) => t.id));
+    const byId = new Map<string, { teamId: string; label: string }>();
+    for (const season of [...(historyQuery.data?.seasons ?? [])].filter((s) => s.status === "complete").reverse()) {
+      for (const t of season.teams) {
+        if (t.teamId && !activeIds.has(t.teamId) && !byId.has(t.teamId)) {
+          byId.set(t.teamId, { teamId: t.teamId, label: `${t.name} (${season.label})` });
+        }
+      }
+    }
+    return [...byId.values()];
+  }, [historyQuery.data, teams]);
+  const pastTeamLabel = new Map(pastTeams.map((t) => [t.teamId, t.label]));
   const users = rosterQuery.data?.users ?? [];
   const leagueName = leagueQuery.data?.name ?? null;
   const loading = rosterQuery.isPending;
@@ -192,6 +208,30 @@ export default function CommissionerTeamsPage() {
                           autoFocus
                           className="h-8 text-sm"
                         />
+                        {pastTeams.length > 0 && (
+                          <Select
+                            value={team.previousTeamIds?.[0] ?? NO_FRANCHISE}
+                            onValueChange={(id) =>
+                              updateMutation.mutate({
+                                leagueId,
+                                teamId: team.id,
+                                patch: { previousTeamIds: id === NO_FRANCHISE ? [] : [id] },
+                              })
+                            }
+                          >
+                            <SelectTrigger size="sm" className="w-44" title="Carries on an old franchise">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={NO_FRANCHISE}>No old franchise</SelectItem>
+                              {pastTeams.map((p) => (
+                                <SelectItem key={p.teamId} value={p.teamId}>
+                                  Carries on {p.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                         <Button size="sm" onClick={() => handleSave(team)} disabled={busy}>
                           {busyOp === `save-${team.id}` && <Spinner className="w-3 h-3 mr-1" />}
                           Save
@@ -220,6 +260,11 @@ export default function CommissionerTeamsPage() {
                           <TeamLogoUpload leagueId={leagueId} team={team} disabled={busy} />
                           <div className="min-w-0">
                             <p className="text-sm font-medium">{team.name}</p>
+                            {(team.previousTeamIds?.length ?? 0) > 0 && (
+                              <p className="text-[10px] text-muted-foreground truncate">
+                                Carries on {team.previousTeamIds!.map((id) => pastTeamLabel.get(id) ?? "an old team").join(", ")}
+                              </p>
+                            )}
                             <p className="text-xs text-muted-foreground truncate">
                               {team.memberIds.length === 0
                                 ? "No members"

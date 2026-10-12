@@ -1,6 +1,6 @@
 import type { Team as TeamDTO } from "@/lib/schemas";
 
-export type UpdateTeamPatch = Partial<{ name: string; color: string }>;
+export type UpdateTeamPatch = Partial<{ name: string; color: string; previousTeamIds: string[] }>;
 
 export type UpdateTeamPayload = {
   leagueId: string;

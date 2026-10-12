@@ -170,7 +170,9 @@ export const teamsRouter = {
       z.object({
         leagueId: z.string().uuid(),
         teamId: z.string().uuid(),
-        patch: TeamSchema.pick({ name: true, color: true }).partial(),
+        patch: TeamSchema.pick({ name: true, color: true })
+          .extend({ previousTeamIds: z.array(z.string()) })
+          .partial(),
       }),
     )
     .output(TeamSchema)

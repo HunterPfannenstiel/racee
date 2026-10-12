@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/ui/page-shell";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
-import { CalendarIcon, FlagIcon, UserIcon, KeyRoundIcon, ShieldIcon, FlagTriangleRightIcon, HistoryIcon } from "lucide-react";
+import { CalendarIcon, FlagIcon, UserIcon, KeyRoundIcon, ShieldIcon, FlagTriangleRightIcon, HistoryIcon, CalendarRangeIcon } from "lucide-react";
 import { getSession } from "@/server/auth/server";
 
 const CARDS = [
@@ -11,6 +11,12 @@ const CARDS = [
     icon: CalendarIcon,
     title: "Leagues",
     description: "Create and manage race leagues.",
+  },
+  {
+    href: "/admin/seasons",
+    icon: CalendarRangeIcon,
+    title: "Seasons",
+    description: "Set each season's start and end dates, and set up next season ahead of time.",
   },
   {
     href: "/admin/races",

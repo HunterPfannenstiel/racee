@@ -13,3 +13,4 @@ export type { INotificationRepository } from "./notification/INotificationReposi
 export type { ILeagueHistoryRepository } from "./league-history/ILeagueHistoryRepository";
 export type { IProfilePrivacyRepository } from "./profile-privacy/IProfilePrivacyRepository";
 export type { ITrophyArtRepository } from "./trophy-art/ITrophyArtRepository";
+export type { IMotorsportCalendarRepository } from "./motorsport-calendar/IMotorsportCalendarRepository";

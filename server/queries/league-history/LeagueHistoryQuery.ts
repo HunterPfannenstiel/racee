@@ -63,13 +63,20 @@ export class LeagueHistoryQuery implements ILeagueHistoryQuery {
         endedAt: league.seasonEndedAt,
         scoredRaces: seasonRaces.filter((r) => r.keySetAt !== null).length,
         totalRaces: seasonRaces.filter((r) => !r.cancelled).length,
+        unscoredRaces: seasonRaces.filter((r) => !r.cancelled && r.keySetAt === null).length,
         undoSeasonLabel:
           canManage && league.seasonRacesAfter !== null && !league.isSeasonEnded
             ? (history.lastPlayedSeason?.label ?? null)
             : null,
       },
       seasons: [
-        ...history.seasons.map((s) => ({ ...s, status: "complete" as const })),
+        // The rules/teams snapshots stay server-side (they're only for "go back").
+        ...history.seasons.map((s) => {
+          const rest = { ...s };
+          delete rest.leagueSnapshot;
+          delete rest.teamsSnapshot;
+          return { ...rest, status: "complete" as const };
+        }),
         { ...current, status: league.isSeasonEnded ? ("ended" as const) : ("in_progress" as const) },
       ],
       members: canManage

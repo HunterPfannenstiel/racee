@@ -47,5 +47,8 @@ export const LeaguePersistenceSchema = z.object({
   seasonEndedAt: z.string().nullable().optional().default(null),
   currentSeasonId: z.string().nullable().optional().default(null),
   isPrivate: z.boolean().optional().default(false),
+  motorsportSeasonId: z.string().nullable().optional().default(null),
+  seasonWindowStart: z.string().nullable().optional().default(null),
+  seasonWindowEnd: z.string().nullable().optional().default(null),
 });
 export type LeaguePersistence = z.infer<typeof LeaguePersistenceSchema>;
