@@ -10,6 +10,7 @@ function toTeamDTO(team: TeamEntity): TeamDTO {
     memberIds: [...team.memberIds],
     color: team.color,
     logo: team.logo,
+    previousTeamIds: [...team.previousTeamIds],
   };
 }
 

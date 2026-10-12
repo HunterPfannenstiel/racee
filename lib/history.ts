@@ -15,6 +15,7 @@ type SeasonLike = {
   }[];
   teams: {
     teamId: string | null;
+    previousTeamIds?: string[];
     name: string;
     color: string | null;
     rank: number | null;
@@ -87,6 +88,7 @@ function aggregate<R extends SeasonLike["players"][number] | SeasonLike["teams"]
           finishes: [],
         };
       cur.name = r.name; // most recent name wins (seasons come oldest first)
+      if (ex.teamId) cur.teamId = ex.teamId;
       if (ex.color) cur.color = ex.color;
       cur.seasons++;
       cur.points += r.total;
@@ -115,12 +117,43 @@ export function playerCareers(seasons: readonly SeasonLike[]): CareerRow[] {
   );
 }
 
-/** Teams are followed by team id, so a kept ("franchise") team's history continues across seasons. */
+/**
+ * Which franchise each team id belongs to: teams linked as "carries on" (in any
+ * season) share one franchise, named after its most recent team.
+ */
+export function franchiseKeys(seasons: readonly SeasonLike[]): Map<string, string> {
+  const parent = new Map<string, string>();
+  const find = (id: string): string => {
+    let root = id;
+    while (parent.has(root) && parent.get(root) !== root) root = parent.get(root)!;
+    return root;
+  };
+  // Seasons come oldest first: the newer team becomes the root, so the franchise takes its id.
+  for (const season of seasons) {
+    for (const t of season.teams) {
+      if (!t.teamId) continue;
+      if (!parent.has(t.teamId)) parent.set(t.teamId, t.teamId);
+      for (const prev of t.previousTeamIds ?? []) {
+        if (!parent.has(prev)) parent.set(prev, prev);
+        const a = find(prev);
+        const b = find(t.teamId);
+        if (a !== b) parent.set(a, b);
+      }
+    }
+  }
+  return new Map([...parent.keys()].map((id) => [id, find(id)]));
+}
+
+/**
+ * Teams are followed by franchise: a kept team keeps its id across seasons, and
+ * a team tied to an earlier one ("carries on") continues that history too.
+ */
 export function teamCareers(seasons: readonly SeasonLike[]): CareerRow[] {
+  const franchise = franchiseKeys(seasons);
   return aggregate(
     seasons,
     (s) => s.teams,
-    (t) => t.teamId ?? `name:${t.name.toLowerCase()}`,
+    (t) => (t.teamId ? (franchise.get(t.teamId) ?? t.teamId) : `name:${t.name.toLowerCase()}`),
     (t) => ({ userId: null, teamId: t.teamId, color: t.color, gross: t.total }),
   );
 }

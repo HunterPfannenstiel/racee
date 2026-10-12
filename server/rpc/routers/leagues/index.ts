@@ -8,7 +8,9 @@ import { BlobUserLeaguesQuery } from "@/server/queries/user-leagues/BlobUserLeag
 import { BlobLeagueQuery } from "@/server/queries/league/BlobLeagueQuery";
 import { BlobAllLeaguesQuery } from "@/server/queries/all-leagues/BlobAllLeaguesQuery";
 import { BlobCommissionerLeaguesQuery } from "@/server/queries/commissioner-leagues/BlobCommissionerLeaguesQuery";
-import { BlobCreateLeagueCommand } from "@/server/commands/create-league/BlobCreateLeagueCommand";
+import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepository";
+import { CreateLeagueCommand } from "@/server/commands/create-league/CreateLeagueCommand";
+import { BlobMotorsportCalendarRepository } from "@/server/repositories/motorsport-calendar/BlobMotorsportCalendarRepository";
 import { BlobUpdateLeagueCommand } from "@/server/commands/update-league/BlobUpdateLeagueCommand";
 import { BlobDeleteLeagueCommand } from "@/server/commands/delete-league/BlobDeleteLeagueCommand";
 import { BlobJoinViaInviteCommand } from "@/server/commands/join-via-invite/BlobJoinViaInviteCommand";
@@ -41,7 +43,7 @@ const leagueQuery = new BlobLeagueQuery(leagueRepo);
 const allLeaguesQuery = new BlobAllLeaguesQuery(leagueRepo);
 const commissionerLeaguesQuery = new BlobCommissionerLeaguesQuery(leagueRepo);
 
-const createLeagueCommand = new BlobCreateLeagueCommand(leagueRepo);
+const createLeagueCommand = new CreateLeagueCommand(leagueRepo, new BlobMotorsportCalendarRepository(), new BlobRaceRepository());
 const updateLeagueCommand = new BlobUpdateLeagueCommand(leagueRepo);
 const deleteLeagueCommand = new BlobDeleteLeagueCommand(leagueRepo);
 const joinViaInviteCommand = new BlobJoinViaInviteCommand(leagueRepo);

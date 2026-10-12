@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authed, adminOnly } from "@/server/rpc/procedures";
+import { LeagueSchema } from "@/lib/schemas";
 import {
   MedalCountsSchema,
   MedalDetailSchema,
@@ -12,11 +13,13 @@ import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepositor
 import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
 import { BlobLeagueHistoryRepository } from "@/server/repositories/league-history/BlobLeagueHistoryRepository";
 import { BlobProfilePrivacyRepository } from "@/server/repositories/profile-privacy/BlobProfilePrivacyRepository";
+import { BlobMotorsportCalendarRepository } from "@/server/repositories/motorsport-calendar/BlobMotorsportCalendarRepository";
 import { BlobNotificationRepository } from "@/server/repositories/notification/BlobNotificationRepository";
+import { NextSeasonSetupQuery } from "@/server/queries/next-season-setup/NextSeasonSetupQuery";
 import { LeagueHistoryQuery } from "@/server/queries/league-history/LeagueHistoryQuery";
 import { TrophyShelfQuery } from "@/server/queries/trophy-shelf/TrophyShelfQuery";
 import { EndSeasonCommand } from "@/server/commands/end-season/EndSeasonCommand";
-import { BlobReopenSeasonCommand } from "@/server/commands/reopen-season/BlobReopenSeasonCommand";
+import { ReopenSeasonCommand } from "@/server/commands/reopen-season/ReopenSeasonCommand";
 import { StartNextSeasonCommand } from "@/server/commands/start-next-season/StartNextSeasonCommand";
 import { ImportPastSeasonCommand } from "@/server/commands/import-past-season/ImportPastSeasonCommand";
 import { BlobDeleteHistorySeasonCommand } from "@/server/commands/delete-history-season/BlobDeleteHistorySeasonCommand";
@@ -36,13 +39,16 @@ const userRepo = new PrismaUserRepository();
 const historyRepo = new BlobLeagueHistoryRepository();
 const privacyRepo = new BlobProfilePrivacyRepository();
 const notificationRepo = new BlobNotificationRepository();
+const calendarRepo = new BlobMotorsportCalendarRepository();
 
 const historyQuery = new LeagueHistoryQuery(leagueRepo, raceRepo, standingsRepo, teamRepo, userRepo, historyRepo);
 const shelfQuery = new TrophyShelfQuery(userRepo, leagueRepo, raceRepo, standingsRepo, historyRepo, privacyRepo);
+const nextSeasonSetupQuery = new NextSeasonSetupQuery(leagueRepo, raceRepo, teamRepo, userRepo, historyRepo, calendarRepo);
 const endSeasonCommand = new EndSeasonCommand(leagueRepo, raceRepo, notificationRepo);
-const reopenSeasonCommand = new BlobReopenSeasonCommand(leagueRepo);
+const bookRepo = new BlobRacePredictionBookRepository();
+const reopenSeasonCommand = new ReopenSeasonCommand(leagueRepo, raceRepo, bookRepo, standingsRepo, teamRepo);
 const startNextSeasonCommand = new StartNextSeasonCommand(
-  leagueRepo, raceRepo, standingsRepo, teamRepo, userRepo, historyRepo, notificationRepo,
+  leagueRepo, raceRepo, standingsRepo, teamRepo, userRepo, historyRepo, notificationRepo, calendarRepo,
 );
 const importPastSeasonCommand = new ImportPastSeasonCommand(leagueRepo, historyRepo);
 const deleteHistorySeasonCommand = new BlobDeleteHistorySeasonCommand(historyRepo);
@@ -52,11 +58,11 @@ const trophyArtQuery = new BlobTrophyArtQuery(trophyArtRepo);
 const setTrophyArtCommand = new BlobSetTrophyArtCommand(trophyArtRepo);
 const setLeaguePrivateCommand = new BlobSetLeaguePrivateCommand(leagueRepo);
 const undoNextSeasonCommand = new UndoNextSeasonCommand(
-  leagueRepo, raceRepo, new BlobRacePredictionBookRepository(), standingsRepo, teamRepo, historyRepo,
+  leagueRepo, raceRepo, bookRepo, standingsRepo, teamRepo, historyRepo, calendarRepo,
 );
 
 const SeasonStatusSchema = z.enum(["complete", "ended", "in_progress"]);
-const SeasonDTOSchema = SeasonRecordSchema.extend({ seasonId: z.string(), status: SeasonStatusSchema });
+const SeasonDTOSchema = SeasonRecordSchema.omit({ leagueSnapshot: true, teamsSnapshot: true }).extend({ seasonId: z.string(), status: SeasonStatusSchema });
 
 const LeagueHistorySchema = z.object({
   leagueId: z.string(),
@@ -69,6 +75,7 @@ const LeagueHistorySchema = z.object({
     endedAt: z.string().nullable(),
     scoredRaces: z.number(),
     totalRaces: z.number(),
+    unscoredRaces: z.number(),
     undoSeasonLabel: z.string().nullable(),
   }),
   seasons: z.array(SeasonDTOSchema),
@@ -132,6 +139,33 @@ export const historyRouter = {
       historyQuery.execute({ actorUserId: context.session.user.id, leagueId: input.leagueId, asAdmin: true }),
     ),
 
+  /** What the next-season draft page starts from. Commissioner-only. */
+  nextSeasonSetup: authed
+    .input(LeagueIdInput)
+    .output(z.object({
+      leagueId: z.string(),
+      leagueName: z.string(),
+      currentLabel: z.string(),
+      ended: z.boolean(),
+      nextSeason: z.object({ label: z.string(), startDate: z.string(), endDate: z.string() }).nullable(),
+      suggestedLabel: z.string(),
+      takenLabels: z.array(z.string()),
+      members: z.array(z.object({ id: z.string(), name: z.string() })),
+      candidates: z.array(z.object({ id: z.string(), name: z.string(), from: z.string() })),
+      teams: z.array(z.object({
+        teamId: z.string(),
+        name: z.string(),
+        color: z.string().nullable(),
+        memberIds: z.array(z.string()),
+        previousTeamIds: z.array(z.string()),
+      })),
+      pastTeams: z.array(z.object({ teamId: z.string(), name: z.string(), lastSeason: z.string() })),
+      settings: LeagueSchema,
+    }))
+    .handler(async ({ context, input }) =>
+      nextSeasonSetupQuery.execute({ actorUserId: context.session.user.id, leagueId: input.leagueId }),
+    ),
+
   /** Ends the current season and awards trophies. Commissioner-only. */
   endSeason: authed
     .input(LeagueIdInput)
@@ -155,7 +189,15 @@ export const historyRouter = {
     .input(LeagueIdInput.extend({
       label: z.string().min(1).max(40),
       keepUserIds: z.array(z.string()),
-      teams: z.enum(["keep", "reset"]),
+      addUserIds: z.array(z.string()).optional(),
+      teams: z.array(z.object({
+        teamId: z.string().uuid().nullable(),
+        name: z.string().trim().min(1).max(40),
+        color: z.string().optional(),
+        memberIds: z.array(z.string()),
+        previousTeamIds: z.array(z.string()),
+      })),
+      settings: LeagueSchema.omit({ id: true, name: true, motorsportId: true }).partial().optional(),
     }))
     .output(Ok)
     .handler(async ({ context, input }) => {

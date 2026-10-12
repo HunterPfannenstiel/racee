@@ -12,6 +12,7 @@ function toTeamDTO(team: TeamEntity): TeamDTO {
     memberIds: [...team.memberIds],
     color: team.color,
     logo: team.logo,
+    previousTeamIds: [...team.previousTeamIds],
   };
 }
 
@@ -35,6 +36,7 @@ export class UpdateTeamCommand implements IUpdateTeamCommand {
     if (!team) throw new NotFoundError("Team", payload.teamId);
     if (payload.patch.name !== undefined) team.rename(payload.patch.name);
     if ("color" in payload.patch) team.updateColor(payload.patch.color);
+    if (payload.patch.previousTeamIds !== undefined) team.setPreviousTeams(payload.patch.previousTeamIds);
     await this.teams.save(team);
     return toTeamDTO(team);
   }

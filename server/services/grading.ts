@@ -59,3 +59,19 @@ function applyWeeklyTeamPoints(scores: RaceScores, positionPoints: readonly numb
     })),
   });
 }
+
+/**
+ * Rebuilds a league's standings from scratch: every scored race of its current
+ * season, oldest first, graded from the saved picks. Used when a season comes
+ * back (reopen, go back) so races scored in between always count.
+ * `books` holds each race's prediction book (an empty one for races nobody picked).
+ */
+export function regradeSeason(
+  league: League,
+  scoredRaces: readonly { race: Race; book: RacePredictionBook }[],
+  standings: LeagueStandings,
+  teams: Team[],
+): void {
+  const ordered = [...scoredRaces].sort((a, b) => a.race.date.localeCompare(b.race.date));
+  for (const { race, book } of ordered) gradeLeagueRace(league, race, book, standings, teams);
+}

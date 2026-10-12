@@ -20,11 +20,11 @@ export function medalForRank(rank: number, points: number): Medal | null {
 export const MEDAL_LABEL: Record<Medal, string> = { gold: "Gold", silver: "Silver", bronze: "Bronze" };
 
 /** Raw hex colors for the medal/trophy art. */
-/** Solid award colors, picked to stay clearly apart even at icon size (bronze is a deep brown, not amber). */
-export const MEDAL_HEX: Record<Medal, { fill: string; stroke: string; text: string }> = {
-  gold: { fill: "#facc15", stroke: "#a16207", text: "#422006" },
-  silver: { fill: "#d1d5db", stroke: "#6b7280", text: "#1f2937" },
-  bronze: { fill: "#a0522d", stroke: "#5c2a12", text: "#fff7ed" },
+/** Award colors (matching the gold/silver/bronze art): body, highlight, outline and the number on it. */
+export const MEDAL_HEX: Record<Medal, { fill: string; light: string; stroke: string; text: string }> = {
+  gold: { fill: "#fcc42d", light: "#ffe27a", stroke: "#d9960b", text: "#a35f00" },
+  silver: { fill: "#e3e6ec", light: "#f8f9fb", stroke: "#9aa0aa", text: "#4a505c" },
+  bronze: { fill: "#f2a15c", light: "#f9c595", stroke: "#c4661f", text: "#8c3b0a" },
 };
 
 export const MEDAL_PLACE: Record<Medal, 1 | 2 | 3> = { gold: 1, silver: 2, bronze: 3 };

@@ -44,6 +44,11 @@ export const LeaguePropsSchema = z.object({
   currentSeasonId: z.string().uuid().nullable().optional().default(null),
   /** Private: nobody outside the league can see what happens inside it (only trophies, the name and basic counts). */
   isPrivate: z.boolean().optional().default(false),
+  /** The admin-defined motorsport season this league is racing. Null = not linked (yet). */
+  motorsportSeasonId: z.string().uuid().nullable().optional().default(null),
+  /** Copied from the linked admin season (or a guard against future seasons): races outside these days don't count. */
+  seasonWindowStart: z.string().nullable().optional().default(null),
+  seasonWindowEnd: z.string().nullable().optional().default(null),
 });
 
 
@@ -83,6 +88,40 @@ export class League {
   get currentSeasonKey(): string { return this.props.currentSeasonId ?? "current"; }
   get currentSeasonId(): string | null { return this.props.currentSeasonId; }
   get isPrivate(): boolean { return this.props.isPrivate; }
+  get motorsportSeasonId(): string | null { return this.props.motorsportSeasonId; }
+  get seasonWindowStart(): string | null { return this.props.seasonWindowStart; }
+  get seasonWindowEnd(): string | null { return this.props.seasonWindowEnd; }
+
+  /**
+   * Points the league at an admin season (or, with `seasonId` null, just fences
+   * it off with a date window). The window is what actually limits races.
+   */
+  setSeasonWindow(seasonId: string | null, start: string | null, end: string | null): void {
+    this.props = LeaguePropsSchema.parse({
+      ...this.props,
+      motorsportSeasonId: seasonId,
+      seasonWindowStart: start,
+      seasonWindowEnd: end,
+    });
+  }
+
+  /** A full copy of the league's stored fields (kept with a season so "go back" can restore it exactly). */
+  snapshot(): LeagueProps {
+    return structuredClone(this.props);
+  }
+
+  /** Puts back a snapshot taken with snapshot(); anyone who joined since stays a member. */
+  restoreSnapshot(snapshot: unknown): void {
+    const restored = LeaguePropsSchema.parse(snapshot);
+    if (restored.leagueId !== this.props.leagueId) throw new InvariantViolationError("That snapshot is from a different league");
+    this.props = LeaguePropsSchema.parse({
+      ...restored,
+      memberIds: [...new Set([...restored.memberIds, ...this.props.memberIds])],
+      pendingMemberIds: this.props.pendingMemberIds.filter(id => !restored.memberIds.includes(id)),
+      inviteToken: this.props.inviteToken,
+      playerColors: { ...restored.playerColors, ...this.props.playerColors },
+    });
+  }
 
   setPrivate(isPrivate: boolean): void {
     this.props = { ...this.props, isPrivate };
@@ -96,6 +135,8 @@ export class League {
   /** True if a race on this date belongs to the league's current season. */
   includesRaceDate(date: string): boolean {
     const day = date.slice(0, 10);
+    if (this.props.seasonWindowStart && day < this.props.seasonWindowStart.slice(0, 10)) return false;
+    if (this.props.seasonWindowEnd && day > this.props.seasonWindowEnd.slice(0, 10)) return false;
     if (this.props.seasonRacesAfter && day <= this.props.seasonRacesAfter.slice(0, 10)) return false;
     if (this.props.seasonRacesThrough && day > this.props.seasonRacesThrough.slice(0, 10)) return false;
     return true;
@@ -134,9 +175,17 @@ export class League {
    * Starts the next season: only races after the ended season's last race count,
    * and only the players carried over stay members. The commissioner always stays.
    */
-  startNextSeason(opts: { label: string; keepUserIds: readonly string[]; motorsportId?: string }): void {
+  startNextSeason(opts: {
+    label: string;
+    keepUserIds: readonly string[];
+    /** People joining for the new season. */
+    addUserIds?: readonly string[];
+    /** The admin season it races (seasonId null = not set up by the admins yet). */
+    window?: { seasonId: string | null; start: string | null; end: string | null };
+  }): void {
     if (!this.isSeasonEnded) throw new InvariantViolationError("End the current season before starting the next one");
-    const keep = new Set([...opts.keepUserIds, this.props.commissionerId]);
+    const keep = new Set([...opts.keepUserIds, ...(opts.addUserIds ?? []), this.props.commissionerId]);
+    const members = [...new Set([...this.props.memberIds.filter(id => keep.has(id)), ...(opts.addUserIds ?? [])])];
     this.props = LeaguePropsSchema.parse({
       ...this.props,
       seasonLabel: opts.label,
@@ -144,8 +193,11 @@ export class League {
       seasonRacesThrough: null,
       seasonEndedAt: null,
       currentSeasonId: null,
-      motorsportId: opts.motorsportId ?? this.props.motorsportId,
-      memberIds: this.props.memberIds.filter(id => keep.has(id)),
+      motorsportSeasonId: opts.window ? opts.window.seasonId : this.props.motorsportSeasonId,
+      seasonWindowStart: opts.window ? opts.window.start : this.props.seasonWindowStart,
+      seasonWindowEnd: opts.window ? opts.window.end : this.props.seasonWindowEnd,
+      memberIds: members,
+      pendingMemberIds: this.props.pendingMemberIds.filter(id => !members.includes(id)),
       coCommissionerIds: this.props.coCommissionerIds.filter(id => keep.has(id)),
       keptScoreUserIds: [],
     });

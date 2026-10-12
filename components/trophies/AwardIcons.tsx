@@ -11,9 +11,9 @@ import { MEDAL_HEX, MEDAL_LABEL, MEDAL_PLACE, type Medal } from "@/lib/medals";
  */
 type AwardProps = { medal: Medal; className?: string; title?: string };
 
-/** Race medal: a solid disc with its place (1, 2, 3) on one plain ribbon. */
+/** Race medal: striped V ribbon, a little loop, and a round medal with its place (1, 2, 3). */
 export function MedalIcon({ medal, className, title }: AwardProps) {
-  const { fill, text } = MEDAL_HEX[medal];
+  const { fill, light, stroke, text } = MEDAL_HEX[medal];
   return (
     <svg
       viewBox="0 0 24 24"
@@ -22,17 +22,27 @@ export function MedalIcon({ medal, className, title }: AwardProps) {
       className={cn("inline-block shrink-0", className)}
       role="img"
       aria-label={title ?? `${MEDAL_LABEL[medal]} medal`}
+      strokeLinejoin="round"
     >
       {title && <title>{title}</title>}
-      <path d="M6.5 1h4.5l2.5 7h-4.5zM17.5 1H13l-2.5 7H15z" fill="#b91c1c" />
-      <circle cx="12" cy="15" r="8" fill={fill} />
+      {/* ribbon */}
+      <path d="M4.4 1h4.3l4.4 7.6H8.8z" fill={stroke} />
+      <path d="M6.2 1h1.4l4.3 7.6h-1.4z" fill={light} />
+      <path d="M19.6 1h-4.3l-4.4 7.6h4.3z" fill={stroke} />
+      <path d="M17.8 1h-1.4l-4.3 7.6h1.4z" fill={light} />
+      {/* loop */}
+      <rect x="9.9" y="7.4" width="4.2" height="2.6" rx="0.7" fill="none" stroke={stroke} strokeWidth="1" />
+      {/* medal */}
+      <circle cx="12" cy="15.8" r="7" fill={stroke} />
+      <circle cx="12" cy="15.8" r="5.8" fill={fill} />
+      <path d="M7.6 14.6a4.6 4.6 0 0 1 3.3-3.3" fill="none" stroke={light} strokeWidth="1" strokeLinecap="round" />
       <text
         x="12"
-        y="15"
+        y="15.8"
         dy="0.36em"
         textAnchor="middle"
-        fontSize="11"
-        fontWeight="800"
+        fontSize="7.6"
+        fontWeight="900"
         fontFamily="ui-sans-serif, system-ui, sans-serif"
         fill={text}
       >
@@ -66,9 +76,10 @@ export function TrophyIcon({ medal, className, title }: AwardProps) {
   return <DrawnTrophy medal={medal} className={className} title={title} />;
 }
 
-/** The built-in hand-drawn trophy: two-handled cup on a stepped base. */
+/** The built-in trophy: two-handled cup with its place (1, 2, 3), on a stepped base. */
 export function DrawnTrophy({ medal, className, title }: AwardProps) {
-  const { fill, stroke } = MEDAL_HEX[medal];
+  const { fill, light, stroke, text } = MEDAL_HEX[medal];
+  const line = { stroke, strokeWidth: 0.7 };
   return (
     <svg
       viewBox="0 0 24 24"
@@ -81,12 +92,31 @@ export function DrawnTrophy({ medal, className, title }: AwardProps) {
       strokeLinejoin="round"
     >
       {title && <title>{title}</title>}
-      <path d="M7 4.5H4.5a2.5 2.5 0 0 0 0 5H7.5" fill="none" stroke={stroke} strokeWidth={2} />
-      <path d="M17 4.5h2.5a2.5 2.5 0 0 1 0 5H16.5" fill="none" stroke={stroke} strokeWidth={2} />
-      <path d="M6.5 3h11v4.5a5.5 5.5 0 0 1-11 0z" fill={fill} stroke={stroke} strokeWidth={2} />
-      <path d="M12 13v3.5" stroke={stroke} strokeWidth={2} />
-      <path d="M9 16.5h6l1 2.5H8z" fill={fill} stroke={stroke} strokeWidth={1.75} />
-      <path d="M6.5 19h11v2.5h-11z" fill="#3f3f46" stroke="#18181b" strokeWidth={1.5} />
+      {/* handles */}
+      <path d="M6.8 5.6H5.1C3 5.6 3.1 9.9 5.6 11.4l2.3 1.2M17.2 5.6h1.7c2.1 0 2 4.3-.5 5.8l-2.3 1.2" fill="none" stroke={stroke} strokeWidth="2.6" />
+      <path d="M6.8 5.6H5.1C3 5.6 3.1 9.9 5.6 11.4l2.3 1.2M17.2 5.6h1.7c2.1 0 2 4.3-.5 5.8l-2.3 1.2" fill="none" stroke={fill} strokeWidth="1.3" />
+      {/* cup */}
+      <path d="M6.4 4.4h11.2v4.6a5.6 5.6 0 0 1-11.2 0z" fill={fill} {...line} />
+      <path d="M8.1 6v2.6a3.6 3.6 0 0 0 1 2.5" fill="none" stroke={light} strokeWidth="0.9" />
+      <rect x="5.6" y="2.4" width="12.8" height="2.2" rx="0.8" fill={fill} {...line} />
+      <text
+        x="12"
+        y="8.7"
+        dy="0.36em"
+        textAnchor="middle"
+        fontSize="6.4"
+        fontWeight="900"
+        fontFamily="ui-sans-serif, system-ui, sans-serif"
+        fill={text}
+      >
+        {MEDAL_PLACE[medal]}
+      </text>
+      {/* stem and base */}
+      <rect x="10.8" y="14.4" width="2.4" height="1" rx="0.4" fill={fill} {...line} />
+      <path d="M10.7 15.4h2.6l.7 2.1H10z" fill={fill} {...line} />
+      <rect x="8.8" y="17.5" width="6.4" height="1.4" rx="0.5" fill={fill} {...line} />
+      <rect x="7.8" y="18.9" width="8.4" height="2.4" rx="0.5" fill={fill} {...line} />
+      <rect x="7" y="21.2" width="10" height="1.3" rx="0.6" fill={fill} {...line} />
     </svg>
   );
 }

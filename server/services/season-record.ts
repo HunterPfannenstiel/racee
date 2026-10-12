@@ -131,6 +131,7 @@ export function buildSeasonRecord(args: {
       raceScores: t.scores,
       memberUserIds: t.memberIds,
       memberNames: t.memberIds.map((id) => namesById.get(id) ?? "Unknown player"),
+      previousTeamIds: [...team.previousTeamIds],
     };
   });
   const teamRanks = competitionRanks(teamRows, (r) => r.total);

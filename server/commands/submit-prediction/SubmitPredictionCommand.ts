@@ -69,6 +69,9 @@ export class SubmitPredictionCommand implements ISubmitPredictionCommand {
     if (race.isLocked(new Date())) {
       throw new InvariantViolationError("Race submissions are closed");
     }
+    if (league.isSeasonEnded) {
+      throw new InvariantViolationError("This league's season has ended, so picks are closed until the next season starts");
+    }
     if (!league.includesRaceDate(race.date)) {
       throw new InvariantViolationError("That race isn't part of this league's current season");
     }

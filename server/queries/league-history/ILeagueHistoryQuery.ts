@@ -20,6 +20,8 @@ export type LeagueHistoryResult = {
     endedAt: string | null;
     scoredRaces: number;
     totalRaces: number;
+    /** Races in the season not scored yet (cancelled ones aside) — they won't count if the season ends now. */
+    unscoredRaces: number;
     /** The season "Undo start of next season" would go back to (commissioners only; null when there is none). */
     undoSeasonLabel: string | null;
   };

@@ -61,6 +61,8 @@ export const SeasonTeamRecordSchema = z.object({
   /** Who drove for the team that season. */
   memberUserIds: z.array(z.string()).default([]),
   memberNames: z.array(z.string()).default([]),
+  /** Earlier franchises this team carried on. */
+  previousTeamIds: z.array(z.string()).default([]),
 });
 export type SeasonTeamRecord = z.infer<typeof SeasonTeamRecordSchema>;
 
@@ -83,6 +85,25 @@ export const SeasonRecordSchema = z.object({
   races: z.array(SeasonRaceColumnSchema).default([]),
   players: z.array(SeasonPlayerRecordSchema),
   teams: z.array(SeasonTeamRecordSchema).default([]),
+  /**
+   * The league and its teams exactly as they were when this season rolled over,
+   * so "go back" can restore rules, settings and teams. Absent on imported
+   * seasons and seasons frozen before this was kept.
+   */
+  leagueSnapshot: z.record(z.string(), z.unknown()).optional(),
+  teamsSnapshot: z
+    .array(
+      z.object({
+        teamId: z.string(),
+        name: z.string(),
+        color: z.string().optional(),
+        memberIds: z.array(z.string()),
+        logo: z.string().nullable().default(null),
+        logoUploadedBy: z.string().nullable().default(null),
+        previousTeamIds: z.array(z.string()).default([]),
+      }),
+    )
+    .optional(),
 });
 export type SeasonRecord = z.infer<typeof SeasonRecordSchema>;
 export type SeasonRecordInput = z.input<typeof SeasonRecordSchema>;
