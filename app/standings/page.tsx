@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
+import { ScrollTextIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { PageShell } from "@/components/ui/page-shell";
 import { QueryError } from "@/components/ui/query-state";
@@ -45,6 +48,7 @@ export default function ViewPage() {
       ) : firstError ? (
         <QueryError error={firstError.error} onRetry={() => queries.forEach((q) => q.refetch())} />
       ) : leagueQuery.data && teamsQuery.data && standingsQuery.data ? (
+        <>
         <StandingsGrid
           league={leagueQuery.data}
           races={sortedRaces}
@@ -54,6 +58,13 @@ export default function ViewPage() {
           constructorRows={standingsQuery.data.constructorRows}
           stages={standingsQuery.data.stages}
         />
+        <Button variant="outline" asChild className="w-full">
+          <Link href="/standings/rules">
+            <ScrollTextIcon className="w-4 h-4 mr-1" />
+            League rules
+          </Link>
+        </Button>
+        </>
       ) : null}
     </PageShell>
   );
