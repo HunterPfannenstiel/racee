@@ -219,11 +219,11 @@ export default function CommissionerTeamsPage() {
                               })
                             }
                           >
-                            <SelectTrigger size="sm" className="w-44" title="Carries on an old franchise">
+                            <SelectTrigger size="sm" className="w-64" title="Carries on an old franchise">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value={NO_FRANCHISE}>No old franchise</SelectItem>
+                              <SelectItem value={NO_FRANCHISE}>No franchise link</SelectItem>
                               {pastTeams.map((p) => (
                                 <SelectItem key={p.teamId} value={p.teamId}>
                                   Carries on {p.label}
