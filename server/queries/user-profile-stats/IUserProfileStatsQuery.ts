@@ -62,5 +62,6 @@ export type UserProfileStatsResult = {
 };
 
 export interface IUserProfileStatsQuery {
-  execute(userId: string): Promise<UserProfileStatsResult>;
+  /** `leagueId` limits the stats to one league; omit for every league. */
+  execute(userId: string, leagueId?: string | null): Promise<UserProfileStatsResult>;
 }

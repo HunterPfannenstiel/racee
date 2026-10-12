@@ -1,21 +1,32 @@
 import Link from "next/link";
 import { Ban } from "lucide-react";
 import { cn, formatPoints } from "@/lib/utils";
+import { MedalIcon } from "@/components/trophies/AwardIcons";
+import type { Medal } from "@/lib/medals";
 
 type RaceCellProps = {
   points: number | null;
   mulliganed: boolean;
   href?: string;
+  /** Medal for this race — kept even when the race is mulliganed. */
+  medal?: Medal | null;
 };
 
-export function RaceCell({ points, mulliganed, href }: RaceCellProps) {
-  const content = points === null ? "—" : formatPoints(points);
+export function RaceCell({ points, mulliganed, href, medal }: RaceCellProps) {
+  const score = points === null ? "—" : formatPoints(points);
+  const content = medal ? (
+    <span className="inline-flex items-center gap-0.5">
+      <MedalIcon medal={medal} className="size-3.5" />
+      <span className={cn(mulliganed && "line-through")}>{score}</span>
+    </span>
+  ) : score;
   return (
     <td
       className={cn(
-        "px-2 py-2 text-sm text-center tabular-nums w-12 min-w-[3rem]",
+        "px-2 py-2 text-sm text-center tabular-nums whitespace-nowrap w-12 min-w-[3rem]",
         points === null && "text-muted-foreground",
-        mulliganed && "text-muted-foreground line-through"
+        mulliganed && "text-muted-foreground",
+        mulliganed && !medal && "line-through"
       )}
     >
       {href ? (

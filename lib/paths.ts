@@ -40,3 +40,9 @@ export const USER_MODERATION_PATH = "moderation/users.json";
 export function notificationsPath(userId: string) {
   return `notifications/${userId}.json`;
 }
+
+export function leagueHistoryPath(leagueId: string) {
+  return `leagues/${leagueId}/history.json`;
+}
+
+export const PROFILE_PRIVACY_PATH = "profiles/privacy.json";

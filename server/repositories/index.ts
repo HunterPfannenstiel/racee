@@ -10,3 +10,5 @@ export type { IAvatarImageRepository } from "./avatar-image/IAvatarImageReposito
 export type { ITeamLogoRepository } from "./team-logo/ITeamLogoRepository";
 export type { IPhotoReportRepository, IUserModerationRepository } from "./moderation/IModerationRepository";
 export type { INotificationRepository } from "./notification/INotificationRepository";
+export type { ILeagueHistoryRepository } from "./league-history/ILeagueHistoryRepository";
+export type { IProfilePrivacyRepository } from "./profile-privacy/IProfilePrivacyRepository";

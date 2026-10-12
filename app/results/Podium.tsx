@@ -7,6 +7,8 @@ import { groupEntriesByRank } from "./rank-utils";
 import { buildPvpHref } from "./player-vs-player/href";
 import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
 import { UserTeamLogo } from "@/components/avatar/UserTeamLogo";
+import { MedalIcon } from "@/components/trophies/AwardIcons";
+import { medalForRank } from "@/lib/medals";
 
 type PodiumProps = {
   entries: ResultsRowData[];
@@ -57,6 +59,7 @@ function PodiumPlatform({
   const isMe = entries.some((entry) => entry.userId === currentUserId);
   // Tied entries share the same total by construction -- shown once, not per name.
   const total = entries.length > 0 ? entries[0].total : null;
+  const medal = total === null ? null : medalForRank(rank, total);
 
   return (
     <div className="flex flex-1 min-w-0 flex-col items-center gap-2">
@@ -104,7 +107,8 @@ function PodiumPlatform({
             {NO_DATA}
           </p>
         )}
-        <p className={cn("font-mono text-sm font-bold tabular-nums", color)}>
+        <p className={cn("flex items-center gap-1 font-mono text-sm font-bold tabular-nums", color)}>
+          {total !== null && medal && <MedalIcon medal={medal} className="size-4" />}
           {total === null ? NO_DATA : formatPoints(total)}
         </p>
       </div>

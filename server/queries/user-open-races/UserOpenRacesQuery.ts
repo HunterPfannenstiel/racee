@@ -58,7 +58,7 @@ export class UserOpenRacesQuery implements IUserOpenRacesQuery {
 
     // Round 2: races + teammate names in parallel
     const [races, teammateUsers] = await Promise.all([
-      this.races.findAllForMotorsport(league.motorsportId),
+      this.races.findAllForMotorsport(league.motorsportId).then((all) => league.currentSeasonRaces(all)),
       teammateIds.length > 0
         ? this.users.findByIds([...teammateIds])
         : Promise.resolve([]),

@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { type ReactNode } from "react";
 import { type Race } from "@/lib/schemas";
+import type { Medal } from "@/lib/medals";
 import { medalColor } from "@/lib/colors";
 import { StickyCell } from "./StickyCell";
 import { RaceCell } from "./RaceCell";
@@ -23,6 +24,8 @@ export type StandingsRowData = {
   rawTotal: number;
   propTotal: number;
   raceScores: Record<string, number>;
+  /** Medal won in each race (players vs players, teams vs teams). */
+  raceMedals?: Record<string, Medal>;
   mulliganedRaceIds: Set<string>;
   linkTo?: string;
   raceLinks?: Record<string, string>;
@@ -98,7 +101,7 @@ export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, 
         const mulliganed = row.mulliganedRaceIds.has(race.id);
         return (
           <Fragment key={race.id}>
-            <RaceCell points={points} mulliganed={mulliganed} href={row.raceLinks?.[race.id]} />
+            <RaceCell points={points} mulliganed={mulliganed} href={row.raceLinks?.[race.id]} medal={row.raceMedals?.[race.id]} />
             {stageLastRaceIds.has(race.id) && (
               <>
                 <StageCell value={stageTotalsByRaceId[race.id] ?? 0} rank={false} />

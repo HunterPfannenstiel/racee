@@ -76,7 +76,7 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
     const [teams, standings, seasonRaces] = await Promise.all([
       this.teams.findAllForLeague(leagueId),
       this.standings.findByLeague(leagueId),
-      this.races.findAllForMotorsport(league.motorsportId),
+      this.races.findAllForMotorsport(league.motorsportId).then((all) => league.currentSeasonRaces(all)),
     ]);
     const teamScoringEnabled = (league.teamPositionPoints?.length ?? 0) > 0;
     const viewerTeamId = teams.find((t) => t.memberIds.includes(actorUserId))?.teamId ?? null;

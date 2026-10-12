@@ -16,6 +16,7 @@ import { RequireUser } from "@/components/RequireUser";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 import { PlayerAvatar } from "@/components/avatar/PlayerAvatar";
 import { AvatarPicker } from "./AvatarPicker";
+import { ShelfPrivacy } from "./ShelfPrivacy";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -130,6 +131,8 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
           )}
+
+          {user && <ShelfPrivacy userId={user.id} />}
 
           {user && user.leagues.some((l) => l.commissionerId === user.id) && (
             <Button variant="outline" className="w-full" asChild>

@@ -81,9 +81,9 @@ export const playersRouter = {
    * `authed` here is an intended lockdown per the migration brief.
    */
   profileStats: authed
-    .input(z.object({ userId: z.string() }))
+    .input(z.object({ userId: z.string(), leagueId: z.string().uuid().nullish() }))
     .output(UserProfileStatsResultSchema)
     .handler(async ({ input }) => {
-      return await userProfileStatsQuery.execute(input.userId);
+      return await userProfileStatsQuery.execute(input.userId, input.leagueId);
     }),
 };

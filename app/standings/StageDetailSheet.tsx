@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MedalIcon } from "@/components/trophies/AwardIcons";
 import { ChevronRight } from "lucide-react";
 import { type Race } from "@/lib/schemas";
 import { assignRanks } from "@/lib/scoring";
@@ -119,6 +120,9 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
                 >
                   {points !== null ? formatPoints(points) : "—"}
                 </p>
+                {selectedRow?.raceMedals?.[race.id] && (
+                  <MedalIcon medal={selectedRow.raceMedals[race.id]} className="size-4 shrink-0" />
+                )}
                 {href && <ChevronRight className="size-4 text-muted-foreground shrink-0" />}
               </div>
             );

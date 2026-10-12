@@ -42,13 +42,15 @@ export class UserProfileStatsQuery implements IUserProfileStatsQuery {
     private readonly books: IRacePredictionBookRepository,
   ) {}
 
-  async execute(userId: string): Promise<UserProfileStatsResult> {
+  async execute(userId: string, leagueId?: string | null): Promise<UserProfileStatsResult> {
     // Round 1: user lookup + leagues + racers in parallel
-    const [user, leagues, allRacers] = await Promise.all([
+    const [user, everyLeague, allRacers] = await Promise.all([
       this.users.findById(userId),
       this.leagues.findAll(),
       this.racers.findAll(),
     ]);
+    // Scoped to one league when viewing the player from inside it; otherwise every league.
+    const leagues = leagueId ? everyLeague.filter((l) => l.leagueId === leagueId) : everyLeague;
 
     if (!user) return emptyResult(userId);
 

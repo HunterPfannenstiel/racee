@@ -69,6 +69,9 @@ export class SubmitPredictionCommand implements ISubmitPredictionCommand {
     if (race.isLocked(new Date())) {
       throw new InvariantViolationError("Race submissions are closed");
     }
+    if (!league.includesRaceDate(race.date)) {
+      throw new InvariantViolationError("That race isn't part of this league's current season");
+    }
 
     // 4. Load-or-create the book, submit, persist. Mirrors
     // PredictionService.submitPrediction's submittedBy/submittedAt semantics

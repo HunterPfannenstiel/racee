@@ -46,7 +46,8 @@ export class SetRaceKeyCommand implements ISetRaceKeyCommand {
     // 3. Grade every league that uses this motorsport. Saves for one
     // league's book+standings happen sequentially (not Promise.all) to
     // reduce blob write races.
-    const relevantLeagues = allLeagues.filter(l => l.motorsportId === payload.motorsportId);
+    // Leagues whose current season doesn't include this race (an earlier or ended season) are left alone.
+    const relevantLeagues = allLeagues.filter(l => l.motorsportId === payload.motorsportId && l.includesRaceDate(race.date));
     for (const league of relevantLeagues) {
       await this.gradeLeague(league, race);
     }

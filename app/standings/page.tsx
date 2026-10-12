@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { ScrollTextIcon } from "lucide-react";
+import { HistoryIcon, ScrollTextIcon } from "lucide-react";
+import { SeasonBanner } from "./SeasonBanner";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { PageShell } from "@/components/ui/page-shell";
@@ -49,6 +50,7 @@ export default function ViewPage() {
         <QueryError error={firstError.error} onRetry={() => queries.forEach((q) => q.refetch())} />
       ) : leagueQuery.data && teamsQuery.data && standingsQuery.data ? (
         <>
+        <SeasonBanner leagueId={activeLeagueId} />
         <StandingsGrid
           league={leagueQuery.data}
           races={sortedRaces}
@@ -58,12 +60,20 @@ export default function ViewPage() {
           constructorRows={standingsQuery.data.constructorRows}
           stages={standingsQuery.data.stages}
         />
-        <Button variant="outline" asChild className="w-full">
-          <Link href="/standings/rules">
-            <ScrollTextIcon className="w-4 h-4 mr-1" />
-            League rules
-          </Link>
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/standings/history">
+              <HistoryIcon className="w-4 h-4 mr-1" />
+              League history
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/standings/rules">
+              <ScrollTextIcon className="w-4 h-4 mr-1" />
+              League rules
+            </Link>
+          </Button>
+        </div>
         </>
       ) : null}
     </PageShell>

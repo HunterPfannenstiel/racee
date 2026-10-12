@@ -8,6 +8,7 @@ import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepositor
 import { BlobRacerRepository } from "@/server/repositories/racer/BlobRacerRepository";
 import { BlobRacePredictionBookRepository } from "@/server/repositories/race-prediction-book/BlobRacePredictionBookRepository";
 import { BlobLeagueStandingsRepository } from "@/server/repositories/league-standings/BlobLeagueStandingsRepository";
+import { BlobLeagueHistoryRepository } from "@/server/repositories/league-history/BlobLeagueHistoryRepository";
 import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
 import { LeagueMembersQuery } from "@/server/queries/league-members/LeagueMembersQuery";
 import { LeaguePlayersQuery } from "@/server/queries/league-players/LeaguePlayersQuery";
@@ -51,7 +52,7 @@ const generateInviteLinkCommand = new BlobGenerateInviteLinkCommand(leagueRepo);
 const deactivateInviteLinkCommand = new BlobDeactivateInviteLinkCommand(leagueRepo);
 const acceptPendingPlayerCommand = new BlobAcceptPendingPlayerCommand(leagueRepo);
 const denyPendingPlayerCommand = new BlobDenyPendingPlayerCommand(leagueRepo);
-const removePlayerCommand = new RemovePlayerCommand(leagueRepo, teamRepo, standingsRepo);
+const removePlayerCommand = new RemovePlayerCommand(leagueRepo, teamRepo, standingsRepo, new BlobLeagueHistoryRepository());
 const setPlayerColorCommand = new SetPlayerColorCommand(leagueRepo, teamRepo);
 const setPlayerAvatarHiddenCommand = new BlobSetPlayerAvatarHiddenCommand(leagueRepo);
 const leagueAvatarsQuery = new LeagueAvatarsQuery(leagueRepo, teamRepo, userRepo);
@@ -177,6 +178,7 @@ export const playersRouter = {
   remove: authed
     .input(LeagueUserInput.extend({
       clearScores: z.boolean().optional().default(false),
+      eraseHistory: z.boolean().optional().default(false),
       newCommissionerId: z.string().min(1).optional(),
     }))
     .output(z.object({ ok: z.literal(true) }))
@@ -186,6 +188,7 @@ export const playersRouter = {
         userId: input.userId,
         actorUserId: context.session.user.id,
         clearScores: input.clearScores,
+        eraseHistory: input.eraseHistory,
         newCommissionerId: input.newCommissionerId,
       });
       return { ok: true as const };

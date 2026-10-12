@@ -5,7 +5,7 @@ import type {
   ILeagueStandingsRepository,
   ITeamRepository,
 } from "@/server/repositories";
-import { NotFoundError } from "@/server/domain/errors";
+import { NotFoundError, InvariantViolationError } from "@/server/domain/errors";
 import { RacePredictionBook } from "@/server/domain/race-prediction-book";
 import { LeagueStandings } from "@/server/domain/league-standings";
 import { assertLeagueCommissioner } from "@/server/roles/league";
@@ -41,6 +41,9 @@ export class SubmitPlayerPredictionCommand implements ISubmitPlayerPredictionCom
 
     const race = await this.races.findById(league.motorsportId, payload.raceId);
     if (!race) throw new NotFoundError("Race", payload.raceId);
+    if (!league.includesRaceDate(race.date)) {
+      throw new InvariantViolationError("That race isn't part of this league's current season");
+    }
 
     const now = new Date().toISOString();
     const book = (await this.books.findByRace(payload.leagueId, payload.raceId))

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/ui/page-shell";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
-import { CalendarIcon, FlagIcon, UserIcon, KeyRoundIcon, ShieldIcon, FlagTriangleRightIcon } from "lucide-react";
+import { CalendarIcon, FlagIcon, UserIcon, KeyRoundIcon, ShieldIcon, FlagTriangleRightIcon, HistoryIcon } from "lucide-react";
 import { getSession } from "@/server/auth/server";
 
 const CARDS = [
@@ -41,6 +41,12 @@ const CARDS = [
     icon: FlagTriangleRightIcon,
     title: "Reported",
     description: "Review reported profile photos and team logos.",
+  },
+  {
+    href: "/admin/history",
+    icon: HistoryIcon,
+    title: "League History",
+    description: "Add past seasons to a league's history book.",
   },
 ];
 
