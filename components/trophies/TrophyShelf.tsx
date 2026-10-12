@@ -196,35 +196,31 @@ export function FrontShelf({ leagues, featuredTrophyKeys }: { leagues: ShelfLeag
     picked.length > 0
       ? picked
       : [...all]
-          .sort((a, b) => TIER_ORDER[a.trophy] - TIER_ORDER[b.trophy] || b.season.label.localeCompare(a.season.label))
-          .slice(0, 6);
+          .sort((a, b) => TIER_ORDER[a.trophy] - TIER_ORDER[b.trophy] || b.season.label.localeCompare(a.season.label));
 
   return (
     <section aria-label="Front shelf">
-      {shown.length > 0 && (
-        <div className="flex items-end justify-center gap-4 overflow-x-auto px-2 pt-2">
+      {/* Trophies stand in a row on the shelf; each one carries its own piece of board, so when the
+          row runs out of room it wraps onto a new shelf instead of scrolling. */}
+      {shown.length > 0 ? (
+        <div className="flex flex-wrap justify-center gap-y-4">
           {shown.map((t) => (
-            <div key={t.key} className="flex w-20 shrink-0 flex-col items-center gap-1 text-center">
-              <TrophyIcon
-                medal={t.trophy}
-                className={t.trophy === "gold" ? "size-16" : "size-12"}
-                title={`${MEDAL_LABEL[t.trophy]} trophy – ${t.season.label}, ${t.league}${t.season.total !== null ? `, ${formatPoints(t.season.total)} pts` : ""}`}
-              />
+            <div key={t.key} className="flex w-24 shrink-0 flex-col items-center text-center">
+              <div className="flex h-16 items-end">
+                <TrophyIcon
+                  medal={t.trophy}
+                  className={t.trophy === "gold" ? "size-16" : "size-12"}
+                  title={`${MEDAL_LABEL[t.trophy]} trophy – ${t.season.label}, ${t.league}${t.season.total !== null ? `, ${formatPoints(t.season.total)} pts` : ""}`}
+                />
+              </div>
+              <div className="h-2.5 w-full bg-gradient-to-b from-amber-800 to-amber-950 shadow-[0_4px_8px_-2px_rgba(0,0,0,0.5)]" />
+              <p className="mt-1.5 text-xs font-semibold leading-tight">{t.season.label}</p>
+              <p className="w-full truncate px-1 text-[10px] text-muted-foreground">{t.league}</p>
             </div>
           ))}
         </div>
-      )}
-      {/* the shelf board */}
-      <div className="h-2.5 rounded-sm bg-gradient-to-b from-amber-800 to-amber-950 shadow-[0_4px_8px_-2px_rgba(0,0,0,0.5)]" />
-      {shown.length > 0 && (
-        <div className="flex justify-center gap-4 overflow-x-auto px-2 pt-1.5">
-          {shown.map((t) => (
-            <div key={t.key} className="w-20 shrink-0 text-center">
-              <p className="text-xs font-semibold leading-tight">{t.season.label}</p>
-              <p className="truncate text-[10px] text-muted-foreground">{t.league}</p>
-            </div>
-          ))}
-        </div>
+      ) : (
+        <div className="h-2.5 rounded-sm bg-gradient-to-b from-amber-800 to-amber-950 shadow-[0_4px_8px_-2px_rgba(0,0,0,0.5)]" />
       )}
       {/* every race medal, one by one in a row under the shelf (wraps when it runs out of room) */}
       {medalList.length > 0 && (
