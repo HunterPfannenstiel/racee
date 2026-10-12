@@ -72,6 +72,7 @@ export class UserOpenRacesQuery implements IUserOpenRacesQuery {
     // Filter to open races
     const openRacesList = races.filter(
       (race) =>
+        !race.cancelled &&
         race.startingGrid.length > 0 &&
         !race.isLocked(now) &&
         race.keySetAt === null,

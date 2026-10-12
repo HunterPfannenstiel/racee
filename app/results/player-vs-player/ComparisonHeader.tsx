@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { PvpPlayer, JumpDrawerSide } from "./types";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
 
 function PlayerStepper({
   side,
@@ -69,7 +70,7 @@ function PlayerSide({
       )}
     >
       <span className={cn("flex min-w-0 items-center gap-1.5", isEnd && "flex-row-reverse")}>
-        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: player.color }} />
+        <LeaguePlayerAvatar userId={player.userId} name={player.name} size="md" />
         <span className="min-w-0 truncate font-heading text-base font-bold text-foreground">{player.name}</span>
         {(player.isCurrentUser || showBackToYouChip) && (
           <span className={cn("flex shrink-0 items-center gap-1", isEnd && "flex-row-reverse")}>

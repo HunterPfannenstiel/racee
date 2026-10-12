@@ -25,7 +25,7 @@ export class CommissionerTeamsQuery implements ICommissionerTeamsQuery {
     const memberIds = league.memberIds;
     const users = memberIds.length > 0 ? await this.users.findByIds([...memberIds]) : [];
     return {
-      teams: teams.map((t) => ({ id: t.teamId, name: t.name, color: t.color, memberIds: [...t.memberIds] })),
+      teams: teams.map((t) => ({ id: t.teamId, name: t.name, color: t.color, logo: t.logo, memberIds: [...t.memberIds] })),
       users: users.map((u) => ({ id: u.userId, name: u.name })),
     };
   }

@@ -7,6 +7,8 @@ import type { CutsceneRowEvent, CutsceneRowMember } from "./build-cutscene-scrip
 import { ROW_HEIGHT_PX, resolveRowVisualState, resolveScrollOffset, type RowVisualState } from "./ladder-geometry";
 import { TeamColorShimmer } from "./TeamColorShimmer";
 import { RACE_BUG_REST_TOP_PCT } from "./RaceBug";
+import { formatCountUp } from "./formatCountUp";
+import { CutsceneIdentity } from "./CutsceneIdentity";
 
 // Clears the persistent RaceBug corner mark (centered on the RACE_BUG_REST_TOP_PCT
 // line, ~40px content block) and the CutscenePlayer Skip button (top-4 + ~16px
@@ -209,7 +211,7 @@ function LadderRow({
   const scale = useMotionValue(visual.scale);
   const opacity = useMotionValue(visual.opacity);
   const points = useMotionValue(visual.displayedValue);
-  const roundedPoints = useTransform(points, (v) => Math.round(v).toLocaleString());
+  const roundedPoints = useTransform(points, (v) => formatCountUp(v, member.points));
 
   const isTeammate = member.isTeammate === true;
   const brightness = useMotionValue(isTeammate ? resolveTeammateSettlePulseBrightness(settledMs) : 1);
@@ -311,6 +313,7 @@ function LadderRow({
         <span className="w-9 shrink-0 font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">
           #{member.rank}
         </span>
+        <CutsceneIdentity id={member.userId} name={member.name} size="md" className="relative" />
         <span className="flex-1 truncate text-base font-bold text-white sm:text-lg">{member.name}</span>
         <motion.span className="font-mono text-base font-bold tabular-nums text-white sm:text-lg">
           {roundedPoints}

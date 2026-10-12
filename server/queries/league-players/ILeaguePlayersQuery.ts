@@ -1,7 +1,7 @@
 export type LeaguePlayerDTO = {
   id: string;
   name: string;
-  role: "co-commissioner" | "member";
+  role: "commissioner" | "co-commissioner" | "member";
 };
 
 export type LeaguePlayersResult = {

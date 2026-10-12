@@ -18,6 +18,8 @@ function toDomain(raw: RacePersistence): Race {
     keyOrder: raw.keyOrder,
     propKey: raw.propKey,
     keySetAt: raw.keySetAt,
+    cancelled: raw.cancelled,
+    replacesRaceId: raw.replacesRaceId,
   });
 }
 
@@ -33,6 +35,8 @@ function toPersistence(race: Race): RacePersistence {
     keyOrder: race.keyOrder ? [...race.keyOrder] : null,
     propKey: race.propKey,
     keySetAt: race.keySetAt,
+    cancelled: race.cancelled,
+    replacesRaceId: race.replacesRaceId,
   };
 }
 

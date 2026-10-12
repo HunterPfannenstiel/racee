@@ -9,6 +9,8 @@ import { groupEntriesByRank } from "../rank-utils";
 import { OFF_FRAME_Y } from "./LadderStage";
 import { TeamColorShimmer } from "./TeamColorShimmer";
 import { useCountUpValue, type CountUpPhase } from "./useCountUpValue";
+import { UserTeamLogo } from "@/components/avatar/UserTeamLogo";
+import { CutsceneIdentity, useIsConstructorsCutscene } from "./CutsceneIdentity";
 
 // Same "no data" convention used elsewhere (Podium.tsx, formatStats.ts,
 // StatStrip.tsx, RaceCell.tsx) -- reused for a rank slot nobody holds (e.g.
@@ -213,6 +215,7 @@ function PodiumBox({
   shimmerElapsedMs: number | null;
   playbackRate: number;
 }) {
+  const isConstructors = useIsConstructorsCutscene();
   // Tied entries land on the same rank because they share the same total by
   // construction, so a single "primary" stands in for box-level theming
   // (glow/border tint, the one shared count-up) while every entry still gets
@@ -303,6 +306,7 @@ function PodiumBox({
       <motion.div style={{ opacity, scale }} className="flex min-w-0 max-w-full flex-col items-center gap-1">
         {entries.map((entry) => (
           <div key={entry.userId} className="flex min-w-0 max-w-full flex-col items-center">
+            <CutsceneIdentity id={entry.userId} name={entry.name} size="xl" className="mb-1" />
             <div className="flex min-w-0 max-w-full items-baseline gap-1.5">
               {entries.length > 1 && (
                 <span aria-hidden="true" className="shrink-0 text-xs leading-none text-white/50 sm:text-sm">
@@ -313,8 +317,9 @@ function PodiumBox({
                 {entry.name}
               </p>
             </div>
-            <p className="max-w-full truncate text-xs font-semibold sm:text-sm" style={{ color: entry.color }}>
-              {entry.teamName}
+            <p className="flex max-w-full items-center gap-1 text-xs font-semibold sm:text-sm" style={{ color: entry.color }}>
+              {entry.teamName && !isConstructors && <UserTeamLogo userId={entry.userId} size="sm" />}
+              <span className="truncate">{entry.teamName}</span>
             </p>
           </div>
         ))}

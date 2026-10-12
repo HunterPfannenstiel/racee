@@ -15,6 +15,7 @@ const RaceScorePersistenceSchema = z.object({
   gridPoints: z.number().int().min(0),
   propPoints: z.number().int().min(0),
   weeklyTeamPoints: z.number().min(0).default(0),
+  userId: z.string().optional(),
 });
 
 const StandingsPersistenceSchema = z.object({
@@ -65,6 +66,7 @@ function toPersistence(standings: LeagueStandings): StandingsPersistence {
         gridPoints: s.gridPoints,
         propPoints: s.propPoints,
         weeklyTeamPoints: s.weeklyTeamPoints,
+        ...(s.userId ? { userId: s.userId } : {}),
       })),
     })),
   };

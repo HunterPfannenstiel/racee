@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { authed } from "@/server/rpc/procedures";
-import { TeamSchema, UserSchema } from "@/lib/schemas";
+import { TeamSchema, UserSchema, PropNameSchema } from "@/lib/schemas";
+import { TeamDashboardQuery } from "@/server/queries/team-dashboard/TeamDashboardQuery";
+import { BlobLeagueStandingsRepository } from "@/server/repositories/league-standings/BlobLeagueStandingsRepository";
+import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepository";
+import { BlobRacePredictionBookRepository } from "@/server/repositories/race-prediction-book/BlobRacePredictionBookRepository";
 import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
 import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
 import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
@@ -10,6 +14,8 @@ import { CreateTeamCommand } from "@/server/commands/create-team/CreateTeamComma
 import { UpdateTeamCommand } from "@/server/commands/update-team/UpdateTeamCommand";
 import { DeleteTeamCommand } from "@/server/commands/delete-team/DeleteTeamCommand";
 import { JoinTeamCommand } from "@/server/commands/join-team/JoinTeamCommand";
+import { SetTeamLogoCommand } from "@/server/commands/set-team-logo/SetTeamLogoCommand";
+import { BlobTeamLogoRepository } from "@/server/repositories/team-logo/BlobTeamLogoRepository";
 
 const leagueRepo = new BlobLeagueRepository();
 const teamRepo = new BlobTeamRepository();
@@ -17,8 +23,84 @@ const userRepo = new PrismaUserRepository();
 
 const leagueTeamsQuery = new BlobLeagueTeamsQuery(teamRepo);
 const commissionerTeamsQuery = new CommissionerTeamsQuery(teamRepo, userRepo, leagueRepo);
+const teamDashboardQuery = new TeamDashboardQuery(
+  leagueRepo,
+  teamRepo,
+  new BlobLeagueStandingsRepository(),
+  new BlobRaceRepository(),
+  new BlobRacePredictionBookRepository(),
+  userRepo,
+);
+
+// Mirrors server/queries/team-dashboard/ITeamDashboardQuery.ts.
+const PropAccuracyStatSchema = z.object({
+  propType: PropNameSchema,
+  correct: z.number(),
+  total: z.number(),
+  accuracy: z.number(),
+});
+const TeamSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.string().nullable(),
+  logo: z.string().nullable(),
+  memberCount: z.number(),
+  teamPoints: z.number(),
+  teamRank: z.number().nullable(),
+  avgTeamPointsPerRace: z.number(),
+  combinedDriverPoints: z.number(),
+  avgDriverPointsPerMember: z.number(),
+  propAccuracy: z.number(),
+});
+const TeamDashboardSchema = z.object({
+  teamScoringEnabled: z.boolean(),
+  teamCount: z.number(),
+  team: TeamSummarySchema.nullable(),
+  pointsBehindLeader: z.number(),
+  members: z.array(
+    z.object({
+      userId: z.string(),
+      name: z.string(),
+      driverTotal: z.number(),
+      driverRank: z.number().nullable(),
+      gridPoints: z.number(),
+      propPoints: z.number(),
+      racesScored: z.number(),
+      avgPerRace: z.number(),
+      bestRace: z.object({ raceId: z.string(), title: z.string(), points: z.number() }).nullable(),
+      teamContribution: z.number(),
+      contributionShare: z.number(),
+      racesPredicted: z.number(),
+      propsCalled: z.number(),
+      propAccuracy: z.number(),
+      propAccuracyByType: z.array(PropAccuracyStatSchema),
+    }),
+  ),
+  teamPropAccuracyByType: z.array(PropAccuracyStatSchema),
+  races: z.array(
+    z.object({
+      raceId: z.string(),
+      title: z.string(),
+      label: z.string().nullable(),
+      teamPoints: z.number(),
+      rankThatRace: z.number().nullable(),
+      topMember: z.object({ userId: z.string(), name: z.string(), points: z.number() }).nullable(),
+    }),
+  ),
+  leagueTeams: z.array(TeamSummarySchema),
+  leagueAverages: z.object({
+    teamPoints: z.number(),
+    avgTeamPointsPerRace: z.number(),
+    combinedDriverPoints: z.number(),
+    avgDriverPointsPerMember: z.number(),
+    propAccuracy: z.number(),
+  }),
+  viewerTeamId: z.string().nullable(),
+  canEditLogo: z.boolean(),
+});
 const createTeamCommand = new CreateTeamCommand(leagueRepo, teamRepo);
 const updateTeamCommand = new UpdateTeamCommand(leagueRepo, teamRepo);
+const setTeamLogoCommand = new SetTeamLogoCommand(leagueRepo, teamRepo, new BlobTeamLogoRepository());
 const deleteTeamCommand = new DeleteTeamCommand(leagueRepo, teamRepo);
 const joinTeamCommand = new JoinTeamCommand(leagueRepo, teamRepo);
 
@@ -32,6 +114,14 @@ const RosterSchema = z.object({
 });
 
 export const teamsRouter = {
+  /** Team dashboard: a team's stats, members' contributions, and every team compared. Members only. */
+  dashboard: authed
+    .input(z.object({ leagueId: z.string().uuid(), teamId: z.string().uuid().nullable() }))
+    .output(TeamDashboardSchema)
+    .handler(async ({ context, input }) =>
+      teamDashboardQuery.execute(input.leagueId, input.teamId, context.session.user.id),
+    ),
+
   /** All teams in a league. */
   list: authed
     .input(LeagueIdInput)
@@ -57,7 +147,7 @@ export const teamsRouter = {
    * without it.
    */
   create: authed
-    .input(TeamSchema.omit({ memberIds: true }).extend({ leagueId: z.string().uuid() }))
+    .input(TeamSchema.omit({ memberIds: true, logo: true }).extend({ leagueId: z.string().uuid() }))
     .output(TeamSchema)
     .handler(async ({ context, input }) => {
       return await createTeamCommand.execute({
@@ -91,6 +181,25 @@ export const teamsRouter = {
         actorUserId: context.session.user.id,
       });
     }),
+
+  /** Uploads a team logo (a small image data URL), or removes it with null. Team members or commissioners. */
+  setLogo: authed
+    .input(
+      z.object({
+        leagueId: z.string().uuid(),
+        teamId: z.string().uuid(),
+        dataUrl: z.string().max(500_000).nullable(),
+      }),
+    )
+    .output(z.object({ logo: z.string().nullable() }))
+    .handler(async ({ context, input }) =>
+      setTeamLogoCommand.execute({
+        leagueId: input.leagueId,
+        teamId: input.teamId,
+        dataUrl: input.dataUrl,
+        actorUserId: context.session.user.id,
+      }),
+    ),
 
   /** Deletes a team. Same `leagueId` deviation as `create`/`update`. */
   delete: authed

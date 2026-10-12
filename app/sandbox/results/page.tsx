@@ -23,10 +23,37 @@ const PLAYBACK_RATES = [0.25, 0.5, 1, 2, 4];
 
 export default function ResultsSandbox() {
   const { races, selectedRaceId, onSelectRace, entries, raceName, leagueName, currentUserId } = useMockResults();
-  const cutsceneData = useMemo<CutsceneData>(
-    () => ({ entries, raceName, leagueName, currentUserId }),
-    [entries, raceName, leagueName, currentUserId],
-  );
+  const [mode, setMode] = useState<"drivers" | "constructors">("drivers");
+  const cutsceneData = useMemo<CutsceneData>(() => {
+    if (mode === "drivers") return { entries, raceName, leagueName, currentUserId };
+    // Mock constructors: group the fake players by team and split their points
+    // three ways (like weekly team points), so decimals show up too.
+    const byTeam = new Map<string, { name: string; color: string; points: number }>();
+    for (const e of entries) {
+      const key = e.teamName || e.name;
+      const t = byTeam.get(key) ?? { name: key, color: e.color, points: 0 };
+      t.points += e.total / 3;
+      byTeam.set(key, t);
+    }
+    const teams = [...byTeam.values()].sort((a, b) => b.points - a.points);
+    const viewerTeam = entries.find((e) => e.userId === currentUserId)?.teamName ?? null;
+    return {
+      entries: teams.map((t) => ({
+        userId: `team:${t.name}`,
+        name: t.name,
+        total: Math.round(t.points * 100) / 100,
+        rank: 1 + teams.filter((o) => o.points > t.points).length,
+        color: t.color,
+        teamName: "",
+      })),
+      raceName,
+      leagueName: `${leagueName} · Constructors`,
+      currentUserId: viewerTeam ? `team:${viewerTeam}` : null,
+      mode: "constructors",
+      leagueId: null,
+      teams: teams.map((t) => ({ id: `team:${t.name}`, name: t.name, color: t.color, logo: null })),
+    };
+  }, [mode, entries, raceName, leagueName, currentUserId]);
   // Mock race-1 has the viewer (u-4) ON the podium (rank 3) -- Beat 3's solo
   // break should NOT fire, Beat 4's "YOU" badge should. Mock race-2 has the
   // viewer in the field (rank 4) -- the inverse. Both scenarios need to be
@@ -65,6 +92,21 @@ export default function ResultsSandbox() {
             onClick={() => onSelectRace(race.id)}
           >
             {race.title}
+          </Button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Reveal:</span>
+        {(["drivers", "constructors"] as const).map((m) => (
+          <Button
+            key={m}
+            size="sm"
+            variant={mode === m ? "default" : "outline"}
+            className={cn(mode === m && "pointer-events-none", "capitalize")}
+            onClick={() => setMode(m)}
+          >
+            {m}
           </Button>
         ))}
       </div>
@@ -178,6 +220,7 @@ export default function ResultsSandbox() {
       </div>
 
       <CutscenePlayer
+        key={mode}
         ref={playerRef}
         data={cutsceneData}
         onProgress={(state) => {

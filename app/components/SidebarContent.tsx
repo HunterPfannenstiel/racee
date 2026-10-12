@@ -8,6 +8,7 @@ import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
 import { orpc } from "@/lib/orpc/client";
 import { cn } from "@/lib/utils";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
 
 const BASE_NAV = [
   { href: "/predict",       label: "Predict",       Icon: Flag },
@@ -25,6 +26,7 @@ export function SidebarContent({ onNavigate }: Props) {
   const { user, isAdmin } = useUser();
   const { activeLeagueId, setActiveLeagueId } = useLeague();
   const { data: leagues = [] } = useQuery(orpc.leagues.list.queryOptions({ enabled: !!user }));
+  const { data: me } = useQuery(orpc.me.get.queryOptions({ enabled: !!user }));
   const pathname = usePathname();
 
   const nav = [
@@ -99,7 +101,11 @@ export function SidebarContent({ onNavigate }: Props) {
           onClick={onNavigate}
           className="flex items-center gap-2.5 min-h-10 px-3 rounded-sm text-muted-foreground hover:text-foreground hover:bg-subtle transition-colors"
         >
-          <CircleUser className="size-4 shrink-0" />
+          {user ? (
+            <LeaguePlayerAvatar userId={user.id} name={user.name} fallbackImage={me?.image} size="sm" />
+          ) : (
+            <CircleUser className="size-4 shrink-0" />
+          )}
           {user ? (
             <span className="text-sm font-medium truncate">{user.name}</span>
           ) : (

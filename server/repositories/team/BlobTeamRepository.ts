@@ -7,11 +7,11 @@ import type { ITeamRepository } from "./ITeamRepository";
 import { TeamPersistenceSchema, type TeamPersistence } from "./schema";
 
 function toDomain(leagueId: string, raw: TeamPersistence): Team {
-  return new Team({ teamId: raw.id, leagueId, name: raw.name, memberIds: raw.memberIds, color: raw.color });
+  return new Team({ teamId: raw.id, leagueId, name: raw.name, memberIds: raw.memberIds, color: raw.color, logo: raw.logo ?? null });
 }
 
 function toPersistence(team: Team): TeamPersistence {
-  return { id: team.teamId, name: team.name, memberIds: [...team.memberIds], color: team.color };
+  return { id: team.teamId, name: team.name, memberIds: [...team.memberIds], color: team.color, ...(team.logo ? { logo: team.logo } : {}) };
 }
 
 async function readAll(leagueId: string): Promise<TeamPersistence[]> {

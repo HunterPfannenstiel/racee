@@ -9,6 +9,7 @@ function toTeamDTO(team: TeamEntity): TeamDTO {
     name: team.name,
     memberIds: [...team.memberIds],
     color: team.color,
+    logo: team.logo,
   };
 }
 

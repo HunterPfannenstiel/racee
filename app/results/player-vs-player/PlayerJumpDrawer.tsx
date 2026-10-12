@@ -5,6 +5,7 @@ import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { JumpablePlayer } from "./types";
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
 
 function PlayerRow({
   player,
@@ -23,7 +24,7 @@ function PlayerRow({
         player.hasSubmitted ? "transition-colors hover:bg-subtle" : "opacity-50"
       )}
     >
-      <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: player.color }} />
+      <LeaguePlayerAvatar userId={player.userId} name={player.name} size="md" />
       <span className="min-w-0 flex-1 truncate font-heading text-sm font-bold text-foreground">{player.name}</span>
       {player.hasSubmitted ? (
         <span className="shrink-0 font-mono text-xs text-muted-foreground">#{player.rank}</span>

@@ -47,6 +47,8 @@ const RacePatchInput = RaceSchema.pick({
   label: true,
   date: true,
   lockTime: true,
+  cancelled: true,
+  replacesRaceId: true,
 }).partial();
 
 export const racesRouter = {
@@ -80,6 +82,8 @@ export const racesRouter = {
         date: input.date,
         lockTime: input.lockTime,
         startingGrid: input.startingGrid,
+        cancelled: input.cancelled,
+        replacesRaceId: input.replacesRaceId,
       });
     }),
 

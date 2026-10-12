@@ -8,6 +8,8 @@ export type CreateRacePayload = {
   date: string;
   lockTime?: string;
   startingGrid: string[];
+  cancelled?: boolean;
+  replacesRaceId?: string | null;
 };
 
 export interface ICreateRaceCommand {

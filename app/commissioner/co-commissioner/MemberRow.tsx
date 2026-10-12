@@ -1,18 +1,22 @@
 "use client";
 
+import { LeaguePlayerAvatar } from "@/components/avatar/LeaguePlayerAvatar";
+
 type MemberRowProps = {
+  userId: string;
   name: string;
   onClick?: () => void;
 };
 
-export function MemberRow({ name, onClick }: MemberRowProps) {
+export function MemberRow({ userId, name, onClick }: MemberRowProps) {
   return (
     <button
       type="button"
-      className="w-full text-left px-4 py-3 text-sm transition-colors hover:bg-muted/50 text-foreground"
+      className="flex w-full items-center gap-2 text-left px-4 py-3 text-sm transition-colors hover:bg-muted/50 text-foreground"
       onClick={onClick}
     >
-      {name}
+      <LeaguePlayerAvatar userId={userId} name={name} size="md" />
+      <span className="truncate">{name}</span>
     </button>
   );
 }

@@ -4,7 +4,7 @@ import { assertLeagueCommissioner } from "@/server/roles/league";
 import type { ILeaguePlayersQuery, LeaguePlayerDTO, LeaguePlayersResult } from "./ILeaguePlayersQuery";
 
 /**
- * Current members (excluding the owning commissioner) plus pending join
+ * Current members (including the owning commissioner, listed first) plus pending join
  * requests — backs the commissioner players page. Unprefixed — composes the
  * league (blob) and user (prisma) repositories.
  */
@@ -19,7 +19,10 @@ export class LeaguePlayersQuery implements ILeaguePlayersQuery {
     if (!league) throw new NotFoundError("League", leagueId);
     assertLeagueCommissioner(actorUserId, league);
 
-    const memberIds = league.memberIds.filter((id) => id !== league.commissionerId);
+    const memberIds = [
+      league.commissionerId,
+      ...league.memberIds.filter((id) => id !== league.commissionerId),
+    ];
     const allIds = [...memberIds, ...league.pendingMemberIds];
     const users = allIds.length > 0 ? await this.users.findByIds(allIds) : [];
     const nameById = new Map(users.map((u) => [u.userId, u.name]));
@@ -28,7 +31,12 @@ export class LeaguePlayersQuery implements ILeaguePlayersQuery {
     const members: LeaguePlayerDTO[] = memberIds.map((id) => ({
       id,
       name: nameById.get(id) ?? "Unknown",
-      role: coCommissionerSet.has(id) ? ("co-commissioner" as const) : ("member" as const),
+      role:
+        id === league.commissionerId
+          ? ("commissioner" as const)
+          : coCommissionerSet.has(id)
+            ? ("co-commissioner" as const)
+            : ("member" as const),
     }));
 
     const pending: LeaguePlayerDTO[] = league.pendingMemberIds.map((id) => ({
