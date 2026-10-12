@@ -38,7 +38,7 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
     assertLeagueMember(actorUserId, league);
 
     const [races, standingsData] = await Promise.all([
-      this.races.findAllForMotorsport(league.motorsportId),
+      this.races.findAllForMotorsport(league.motorsportId).then((all) => league.currentSeasonRaces(all)),
       this.standings.findByLeague(leagueId),
     ]);
 

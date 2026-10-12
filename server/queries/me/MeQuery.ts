@@ -1,4 +1,4 @@
-import type { IUserRepository, ILeagueRepository } from "@/server/repositories";
+import type { IUserRepository, ILeagueRepository, IUserModerationRepository } from "@/server/repositories";
 import type { League } from "@/server/domain/league";
 import { NotFoundError } from "@/server/domain/errors";
 import type { IMeQuery, MeResult, MeLeagueDTO } from "./IMeQuery";
@@ -21,12 +21,14 @@ export class MeQuery implements IMeQuery {
   constructor(
     private users: IUserRepository,
     private leagues: ILeagueRepository,
+    private moderation: IUserModerationRepository,
   ) {}
 
   async execute(userId: string): Promise<MeResult> {
-    const [user, allLeagues] = await Promise.all([
+    const [user, allLeagues, moderation] = await Promise.all([
       this.users.findById(userId),
       this.leagues.findAll(),
+      this.moderation.find(userId),
     ]);
 
     if (!user) {
@@ -40,6 +42,7 @@ export class MeQuery implements IMeQuery {
       name: user.name,
       isAdmin: user.isAdmin,
       image: user.image,
+      photoUploadsBlocked: moderation.uploadsBlocked,
       leagues: leagues.map(serializeLeague),
     };
   }

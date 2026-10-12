@@ -16,6 +16,7 @@ import { RequireUser } from "@/components/RequireUser";
 import { OverhaulNotice } from "@/components/ui/overhaul-notice";
 import { PlayerAvatar } from "@/components/avatar/PlayerAvatar";
 import { AvatarPicker } from "./AvatarPicker";
+import { ShelfPrivacy } from "./ShelfPrivacy";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -111,7 +112,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {user && <AvatarPicker userId={user.id} name={user.name} image={user.image} />}
+          {user && <AvatarPicker userId={user.id} name={user.name} image={user.image} uploadsBlocked={user.photoUploadsBlocked} />}
 
           {user && user.leagues.length > 0 && (
             <Card>
@@ -130,6 +131,8 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
           )}
+
+          {user && <ShelfPrivacy userId={user.id} />}
 
           {user && user.leagues.some((l) => l.commissionerId === user.id) && (
             <Button variant="outline" className="w-full" asChild>

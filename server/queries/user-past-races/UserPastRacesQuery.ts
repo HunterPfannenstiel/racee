@@ -8,6 +8,7 @@ import type {
   IUserRepository,
   IRacePredictionBookRepository,
 } from "@/server/repositories";
+import type { MyPickDTO } from "@/server/queries/shared/race-prediction-dto";
 import type {
   IUserPastRacesQuery,
   UserPastRacesResult,
@@ -48,8 +49,9 @@ export class UserPastRacesQuery implements IUserPastRacesQuery {
     if (!league) throw new NotFoundError("League", leagueId);
     assertLeagueMember(userId, league);
 
-    // Resolve team membership (needed only to recognize a teammate as the
-    // submitter of a proxy pick — teammates' own picks aren't exposed here)
+    // Resolve team membership: to recognize a teammate as the submitter of a
+    // proxy pick, and to return teammates' locked picks (teammates can already
+    // see each other's picks while a race is open — see UserOpenRacesQuery).
     const userTeam = teams.find((t) => t.memberIds.includes(userId));
     const teammateIds = userTeam
       ? userTeam.memberIds.filter((id) => id !== userId)
@@ -57,7 +59,7 @@ export class UserPastRacesQuery implements IUserPastRacesQuery {
 
     // Round 2: races + teammate names in parallel
     const [races, teammateUsers] = await Promise.all([
-      this.races.findAllForMotorsport(league.motorsportId),
+      this.races.findAllForMotorsport(league.motorsportId).then((all) => league.currentSeasonRaces(all)),
       teammateIds.length > 0
         ? this.users.findByIds([...teammateIds])
         : Promise.resolve([]),
@@ -89,10 +91,9 @@ export class UserPastRacesQuery implements IUserPastRacesQuery {
       return userNameMap.get(submitterId) ?? submitterId;
     };
 
-    const pastRaces: PastRaceDTO[] = pastRacesList.map((race) => {
-      const book = bookByRaceId.get(race.raceId);
-      const pred = book?.predictionFor(userId);
-      const myPick = pred
+    const pickFor = (book: (typeof books)[number] | undefined, forUserId: string): MyPickDTO | null => {
+      const pred = book?.predictionFor(forUserId);
+      return pred
         ? {
             racerIds: [...pred.racerIds],
             propPicks: { ...pred.propPicks },
@@ -101,6 +102,21 @@ export class UserPastRacesQuery implements IUserPastRacesQuery {
             submittedByName: resolveSubmitterName(pred.submittedBy),
           }
         : null;
+    };
+    const teammatePicks: Record<string, Record<string, MyPickDTO>> = {};
+
+    const pastRaces: PastRaceDTO[] = pastRacesList.map((race) => {
+      const book = bookByRaceId.get(race.raceId);
+      const myPick = pickFor(book, userId);
+
+      if (teammateIds.length > 0) {
+        const raceTeammatePicks: Record<string, MyPickDTO> = {};
+        for (const tmId of teammateIds) {
+          const pick = pickFor(book, tmId);
+          if (pick) raceTeammatePicks[tmId] = pick;
+        }
+        if (Object.keys(raceTeammatePicks).length > 0) teammatePicks[race.raceId] = raceTeammatePicks;
+      }
 
       return {
         id: race.raceId,
@@ -130,6 +146,6 @@ export class UserPastRacesQuery implements IUserPastRacesQuery {
       }
     }
 
-    return { pastRaces, racersById };
+    return { pastRaces, racersById, teammatePicks };
   }
 }

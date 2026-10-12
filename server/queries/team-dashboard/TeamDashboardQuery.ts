@@ -76,7 +76,7 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
     const [teams, standings, seasonRaces] = await Promise.all([
       this.teams.findAllForLeague(leagueId),
       this.standings.findByLeague(leagueId),
-      this.races.findAllForMotorsport(league.motorsportId),
+      this.races.findAllForMotorsport(league.motorsportId).then((all) => league.currentSeasonRaces(all)),
     ]);
     const teamScoringEnabled = (league.teamPositionPoints?.length ?? 0) > 0;
     const viewerTeamId = teams.find((t) => t.memberIds.includes(actorUserId))?.teamId ?? null;
@@ -91,11 +91,10 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
     const target = (teamId && teams.find((t) => t.teamId === teamId)) || teams.find((t) => t.teamId === viewerTeamId) || teams[0];
     if (teamId && target.teamId !== teamId) throw new NotFoundError("Team", teamId);
 
-    // Season order, graded (scored) races only; cancelled races never have results.
-    const ordered = orderSeasonRaces(
-      seasonRaces.filter((r) => !r.cancelled),
-      (r) => r.raceId,
-    );
+    // Season order, graded (scored) races only. Order BEFORE dropping cancelled
+    // races: a replacement is placed right after the cancelled race it replaces,
+    // which only works while that race is still in the list.
+    const ordered = orderSeasonRaces(seasonRaces, (r) => r.raceId).filter((r) => !r.cancelled);
     const graded = ordered.filter((r) => r.keySetAt !== null);
     const gradedIds = new Set(graded.map((r) => r.raceId));
 
@@ -244,7 +243,7 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
     members.sort((a, b) => (teamScoringEnabled ? b.teamContribution - a.teamContribution : 0) || b.driverTotal - a.driverTotal);
 
     // ---- Race by race ----
-    const races: TeamRaceDTO[] = graded.map((race) => {
+    const races: TeamRaceDTO[] = graded.flatMap((race) => {
       const pts = teamRacePoints.get(target.teamId)?.get(race.raceId) ?? 0;
       const others = teams
         .map((t) => teamRacePoints.get(t.teamId)?.get(race.raceId))
@@ -257,14 +256,16 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
         .filter((x): x is { userId: string; name: string; points: number } => x !== null)
         .sort((a, b) => b.points - a.points);
       const hasTeamScore = teamRacePoints.get(target.teamId)?.has(race.raceId) ?? false;
-      return {
+      // Nothing to show for a race nobody on this team scored in.
+      if (!hasTeamScore && memberScores.length === 0) return [];
+      return [{
         raceId: race.raceId,
         title: race.title,
         label: race.label ?? null,
         teamPoints: pts,
         rankThatRace: teamScoringEnabled && hasTeamScore ? 1 + others.filter((p) => p > pts).length : null,
         topMember: memberScores[0] ?? null,
-      };
+      }];
     });
 
     return {

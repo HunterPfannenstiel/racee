@@ -10,6 +10,7 @@ import { orpc } from "@/lib/orpc/client";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { SidebarContent } from "@/app/components/SidebarContent";
 import EnvBadge from "@/app/components/EnvBadge";
+import { NotificationsBell } from "@/app/components/NotificationsBell";
 
 export default function Header() {
   const { user } = useUser();
@@ -44,6 +45,7 @@ export default function Header() {
         </div>
 
         <EnvBadge />
+        <NotificationsBell />
 
       </div>
 

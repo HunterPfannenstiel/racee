@@ -3,7 +3,8 @@
  * a JPEG data URL — keeps uploads tiny (usually 15–40 KB) no matter what the
  * phone camera produced.
  */
-export async function resizeImageToDataUrl(file: File, size = 256, quality = 0.85): Promise<string> {
+/** `format: "png"` keeps transparency (for trophy art); JPEG is smaller for photos. */
+export async function resizeImageToDataUrl(file: File, size = 256, quality = 0.85, format: "jpeg" | "png" = "jpeg"): Promise<string> {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -30,7 +31,7 @@ export async function resizeImageToDataUrl(file: File, size = 256, quality = 0.8
       size,
       size,
     );
-    return canvas.toDataURL("image/jpeg", quality);
+    return format === "png" ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", quality);
   } finally {
     URL.revokeObjectURL(url);
   }

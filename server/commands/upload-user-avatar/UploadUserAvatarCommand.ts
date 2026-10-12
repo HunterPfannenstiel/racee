@@ -1,5 +1,6 @@
 import { parseImageDataUrl } from "@/server/services/image-upload";
-import type { IAvatarImageRepository, IUserRepository } from "@/server/repositories";
+import { InvariantViolationError } from "@/server/domain/errors";
+import type { IAvatarImageRepository, IUserModerationRepository, IUserRepository } from "@/server/repositories";
 import type { IUploadUserAvatarCommand, UploadUserAvatarPayload } from "./IUploadUserAvatarCommand";
 
 /**
@@ -10,9 +11,13 @@ export class UploadUserAvatarCommand implements IUploadUserAvatarCommand {
   constructor(
     private readonly users: IUserRepository,
     private readonly images: IAvatarImageRepository,
+    private readonly moderation: IUserModerationRepository,
   ) {}
 
   async execute(payload: UploadUserAvatarPayload): Promise<{ image: string }> {
+    if ((await this.moderation.find(payload.userId)).uploadsBlocked) {
+      throw new InvariantViolationError("Photo uploads are turned off for your account because photos were removed after being reported. You can still pick a built-in icon.");
+    }
     const { data, contentType } = parseImageDataUrl(payload.dataUrl);
 
     await this.images.save(payload.userId, { data, contentType });

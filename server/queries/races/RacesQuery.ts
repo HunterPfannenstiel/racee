@@ -47,6 +47,7 @@ export class RacesQuery implements IRacesQuery {
       throw new NotFoundError("League", input.leagueId);
     }
     const all = await this.races.findAllForMotorsport(league.motorsportId);
-    return all.map(toRaceDTO);
+    // A league only sees its current season's races; earlier seasons live in its history.
+    return league.currentSeasonRaces(all).map(toRaceDTO);
   }
 }

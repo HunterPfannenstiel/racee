@@ -33,3 +33,22 @@ export function avatarImagePath(userId: string) {
 export function teamLogoPath(leagueId: string, teamId: string) {
   return `team-logos/${leagueId}/${teamId}.img`;
 }
+
+export const PHOTO_REPORTS_PATH = "moderation/photo-reports.json";
+export const USER_MODERATION_PATH = "moderation/users.json";
+
+export function notificationsPath(userId: string) {
+  return `notifications/${userId}.json`;
+}
+
+export function leagueHistoryPath(leagueId: string) {
+  return `leagues/${leagueId}/history.json`;
+}
+
+export const PROFILE_PRIVACY_PATH = "profiles/privacy.json";
+
+export const TROPHY_ART_PATH = "trophies/art.json";
+
+export function trophyArtImagePath(tier: string) {
+  return `trophies/${tier}.img`;
+}

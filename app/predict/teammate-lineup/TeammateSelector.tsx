@@ -8,6 +8,8 @@ type TeammateSelectorProps = {
   /** Whose lineup is shown — drives the avatar. Omit to hide it. */
   userId?: string | null;
   displayName: string;
+  /** The player's real name, for avatar initials when the label says "You". */
+  avatarName?: string;
   isProxy: boolean;
   teamColor?: string;
   onNext: () => void;
@@ -17,6 +19,7 @@ type TeammateSelectorProps = {
 export function TeammateSelector({
   userId,
   displayName,
+  avatarName,
   isProxy,
   teamColor,
   onNext,
@@ -34,7 +37,7 @@ export function TeammateSelector({
       </Button>
 
       <span className="flex min-w-0 items-center gap-2">
-      {userId && <LeaguePlayerAvatar userId={userId} name={displayName} size="sm" />}
+      {userId && <LeaguePlayerAvatar userId={userId} name={avatarName ?? displayName} size="sm" />}
       <span
         className="font-mono text-sm font-semibold"
         style={
