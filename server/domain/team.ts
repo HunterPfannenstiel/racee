@@ -8,6 +8,8 @@ export const TeamPropsSchema = z.object({
   color: z.string().optional(),
   /** Uploaded team logo, "upload:<version>" — see lib/avatar.ts teamLogoSrc. */
   logo: z.string().nullable().default(null),
+  /** Who uploaded the current logo (gets the strike if an admin removes it). */
+  logoUploadedBy: z.string().nullable().default(null),
 });
 export type TeamProps = z.infer<typeof TeamPropsSchema>;
 
@@ -24,13 +26,14 @@ export class Team {
   get memberIds(): readonly string[] { return this.props.memberIds; }
   get color() { return this.props.color; }
   get logo(): string | null { return this.props.logo; }
+  get logoUploadedBy(): string | null { return this.props.logoUploadedBy; }
 
   rename(name: string): void {
     this.props = TeamPropsSchema.parse({ ...this.props, name });
   }
 
-  setLogo(logo: string | null): void {
-    this.props = { ...this.props, logo };
+  setLogo(logo: string | null, uploadedBy: string | null = null): void {
+    this.props = { ...this.props, logo, logoUploadedBy: logo ? uploadedBy : null };
   }
 
   updateColor(color: string | undefined): void {

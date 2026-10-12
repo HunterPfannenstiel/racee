@@ -58,7 +58,7 @@ export function SeasonStandingsSection({ rows, currentRowId }: Props) {
               {row.userId ? (
                 <LeaguePlayerAvatar userId={row.userId} name={row.label} size="lg" />
               ) : row.team ? (
-                <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="lg" />
+                <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="lg" action="navigate" />
               ) : null}
 
               <div className="flex-1 min-w-0">
@@ -68,7 +68,7 @@ export function SeasonStandingsSection({ rows, currentRowId }: Props) {
                 {row.teamName && row.teamName !== row.label && (
                   <p className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground leading-none mt-0.5 min-w-0">
                     {row.team && (
-                      <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="xs" />
+                      <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="xs" action="navigate" />
                     )}
                     <span className="truncate">{row.teamName}</span>
                   </p>

@@ -13,6 +13,15 @@ export class BlobAvatarImageRepository implements IAvatarImageRepository {
     }
   }
 
+  async remove(userId: string): Promise<void> {
+    const path = avatarImagePath(userId);
+    try {
+      await blob.delete(path);
+    } catch (e) {
+      throw new PersistenceError("delete", path, e);
+    }
+  }
+
   async save(userId: string, image: AvatarImage): Promise<void> {
     const path = avatarImagePath(userId);
     try {

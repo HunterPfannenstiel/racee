@@ -33,3 +33,10 @@ export function avatarImagePath(userId: string) {
 export function teamLogoPath(leagueId: string, teamId: string) {
   return `team-logos/${leagueId}/${teamId}.img`;
 }
+
+export const PHOTO_REPORTS_PATH = "moderation/photo-reports.json";
+export const USER_MODERATION_PATH = "moderation/users.json";
+
+export function notificationsPath(userId: string) {
+  return `notifications/${userId}.json`;
+}

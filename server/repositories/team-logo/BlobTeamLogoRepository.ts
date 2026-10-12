@@ -14,6 +14,15 @@ export class BlobTeamLogoRepository implements ITeamLogoRepository {
     }
   }
 
+  async remove(leagueId: string, teamId: string): Promise<void> {
+    const path = teamLogoPath(leagueId, teamId);
+    try {
+      await blob.delete(path);
+    } catch (e) {
+      throw new PersistenceError("delete", path, e);
+    }
+  }
+
   async save(leagueId: string, teamId: string, image: UploadedImage): Promise<void> {
     const path = teamLogoPath(leagueId, teamId);
     try {

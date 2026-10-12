@@ -30,6 +30,6 @@ export function UserTeamLogo({ userId, leagueId, size = "xs", className }: Props
   const team = teams?.find((t) => t.memberIds.includes(userId));
   if (!id || !team) return null;
   return (
-    <TeamLogo leagueId={id} teamId={team.id} name={team.name} color={team.color} logo={team.logo} size={size} className={className} />
+    <TeamLogo leagueId={id} teamId={team.id} name={team.name} color={team.color} logo={team.logo} size={size} className={className} action="navigate" />
   );
 }

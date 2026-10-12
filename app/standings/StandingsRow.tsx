@@ -77,7 +77,7 @@ export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, 
           {row.userId ? (
             <LeaguePlayerAvatar userId={row.userId} name={row.label} size="sm" />
           ) : row.team ? (
-            <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="sm" />
+            <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="sm" action="navigate" />
           ) : null}
           {row.linkTo ? (
             <Link href={row.linkTo} className="min-w-0 hover:text-primary transition-colors">

@@ -18,6 +18,8 @@ export type MeResult = {
   isAdmin: boolean;
   /** Avatar value — see lib/avatar.ts. */
   image: string | null;
+  /** True when an admin has turned off photo uploads for this account. */
+  photoUploadsBlocked: boolean;
   leagues: MeLeagueDTO[];
 };
 

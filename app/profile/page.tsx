@@ -111,7 +111,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {user && <AvatarPicker userId={user.id} name={user.name} image={user.image} />}
+          {user && <AvatarPicker userId={user.id} name={user.name} image={user.image} uploadsBlocked={user.photoUploadsBlocked} />}
 
           {user && user.leagues.length > 0 && (
             <Card>

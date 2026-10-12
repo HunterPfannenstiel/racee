@@ -17,10 +17,12 @@ type Props = {
   userId: string;
   name: string;
   image: string | null;
+  /** An admin turned off photo uploads after removed photos; icons still work. */
+  uploadsBlocked?: boolean;
 };
 
 /** Profile picture: upload a photo or pick one of the built-in icons. Seen by everyone in your leagues. */
-export function AvatarPicker({ userId, name, image }: Props) {
+export function AvatarPicker({ userId, name, image, uploadsBlocked }: Props) {
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +78,7 @@ export function AvatarPicker({ userId, name, image }: Props) {
               className="hidden"
               onChange={(e) => handleFile(e.target.files?.[0])}
             />
-            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={busy}>
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={busy || uploadsBlocked}>
               {processing || uploadMutation.isPending ? <Spinner className="w-3 h-3 mr-1" /> : <Camera className="size-3.5 mr-1" />}
               Upload photo
             </Button>
@@ -123,6 +125,11 @@ export function AvatarPicker({ userId, name, image }: Props) {
           </div>
         </div>
 
+        {uploadsBlocked && (
+          <p className="text-xs text-destructive">
+            Photo uploads are turned off for your account because photos were removed after being reported. You can still pick an icon.
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">
           Everyone in your leagues sees this picture. The ring around it is your team color in each league.
         </p>

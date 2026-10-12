@@ -87,7 +87,7 @@ export function TeamHeader({ leagueId, data }: { leagueId: string; data: TeamDas
       {data.canEditLogo ? (
         <TeamLogoUpload leagueId={leagueId} team={team} size="2xl" />
       ) : (
-        <TeamLogo leagueId={leagueId} teamId={team.id} name={team.name} color={team.color} logo={team.logo} size="2xl" />
+        <TeamLogo leagueId={leagueId} teamId={team.id} name={team.name} color={team.color} logo={team.logo} size="2xl" action="zoom" />
       )}
       <div className="min-w-0">
         <p className="font-heading text-3xl font-bold leading-tight text-foreground truncate">{team.name}</p>
@@ -100,7 +100,7 @@ export function TeamHeader({ leagueId, data }: { leagueId: string; data: TeamDas
         ) : null}
         <div className="mt-2 flex -space-x-1.5">
           {data.members.map((m) => (
-            <LeaguePlayerAvatar key={m.userId} userId={m.userId} name={m.name} leagueId={leagueId} size="sm" />
+            <LeaguePlayerAvatar key={m.userId} userId={m.userId} name={m.name} leagueId={leagueId} size="sm" action="zoom" />
           ))}
         </div>
       </div>
@@ -169,7 +169,7 @@ export function ContributionSection({ leagueId, data }: { leagueId: string; data
           const value = useTeamPoints ? m.teamContribution : m.driverTotal;
           return (
             <div key={m.userId} className="flex items-center gap-3">
-              <LeaguePlayerAvatar userId={m.userId} name={m.name} leagueId={leagueId} size="md" />
+              <LeaguePlayerAvatar userId={m.userId} name={m.name} leagueId={leagueId} size="md" action="zoom" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <Link href={`/players/${m.userId}`} className="truncate text-sm font-medium hover:text-primary">
@@ -238,7 +238,7 @@ function MemberCard({ leagueId, m, teamScoring }: { leagueId: string; m: TeamMem
   return (
     <details className="group rounded-lg border border-border bg-surface">
       <summary className="flex cursor-pointer list-none items-center gap-3 p-3">
-        <LeaguePlayerAvatar userId={m.userId} name={m.name} leagueId={leagueId} size="lg" />
+        <LeaguePlayerAvatar userId={m.userId} name={m.name} leagueId={leagueId} size="lg" action="zoom" />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{m.name}</p>
           <p className="font-mono text-xs text-muted-foreground">
@@ -408,7 +408,7 @@ export function RaceByRace({ leagueId, data }: { leagueId: string; data: TeamDas
               <p className="truncate text-sm">{r.title}</p>
               {r.topMember && (
                 <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <LeaguePlayerAvatar userId={r.topMember.userId} name={r.topMember.name} leagueId={leagueId} size="xs" />
+                  <LeaguePlayerAvatar userId={r.topMember.userId} name={r.topMember.name} leagueId={leagueId} size="xs" action="zoom" />
                   <span className="truncate">
                     Top: {r.topMember.name} ({formatPoints(r.topMember.points)})
                   </span>

@@ -8,3 +8,5 @@ export type { IUserRepository } from "./user/IUserRepository";
 export type { IMotorsportRepository } from "./motorsport/IMotorsportRepository";
 export type { IAvatarImageRepository } from "./avatar-image/IAvatarImageRepository";
 export type { ITeamLogoRepository } from "./team-logo/ITeamLogoRepository";
+export type { IPhotoReportRepository, IUserModerationRepository } from "./moderation/IModerationRepository";
+export type { INotificationRepository } from "./notification/INotificationRepository";

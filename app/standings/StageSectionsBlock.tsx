@@ -65,7 +65,7 @@ export function StageSectionsBlock({ rows, stages, currentRowId, showStageLabel,
                     {row.userId ? (
                       <LeaguePlayerAvatar userId={row.userId} name={row.label} size="md" />
                     ) : row.team ? (
-                      <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="md" />
+                      <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="md" action="navigate" />
                     ) : null}
 
                     {/* name + team */}
@@ -76,7 +76,7 @@ export function StageSectionsBlock({ rows, stages, currentRowId, showStageLabel,
                       {row.teamName && row.teamName !== row.label && (
                         <p className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground leading-none mt-0.5 min-w-0">
                           {row.team && (
-                            <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="xs" />
+                            <TeamLogo leagueId={row.team.leagueId} teamId={row.team.id} name={row.team.name} color={row.team.color} logo={row.team.logo} size="xs" action="navigate" />
                           )}
                           <span className="truncate">{row.teamName}</span>
                         </p>

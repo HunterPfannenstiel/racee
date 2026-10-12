@@ -34,5 +34,5 @@ export function CutsceneIdentity({ id, name, size, className }: { id: string; na
     if (!team) return null;
     return <TeamLogo leagueId={leagueId ?? ""} teamId={team.id} name={team.name} color={team.color} logo={team.logo} size={size} className={className} />;
   }
-  return <LeaguePlayerAvatar userId={id} name={name} size={size} className={className} />;
+  return <LeaguePlayerAvatar userId={id} name={name} size={size} className={className} action="none" />;
 }

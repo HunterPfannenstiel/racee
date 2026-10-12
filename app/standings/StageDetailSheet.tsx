@@ -52,7 +52,7 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
               {selectedRow.userId ? (
                 <LeaguePlayerAvatar userId={selectedRow.userId} name={selectedRow.label} size="lg" />
               ) : selectedRow.team ? (
-                <TeamLogo leagueId={selectedRow.team.leagueId} teamId={selectedRow.team.id} name={selectedRow.team.name} color={selectedRow.team.color} logo={selectedRow.team.logo} size="lg" />
+                <TeamLogo leagueId={selectedRow.team.leagueId} teamId={selectedRow.team.id} name={selectedRow.team.name} color={selectedRow.team.color} logo={selectedRow.team.logo} size="lg" action="navigate" />
               ) : (
                 <div className="w-1 h-6 rounded-full shrink-0" style={{ backgroundColor: selectedRow.color }} />
               )}
@@ -73,7 +73,7 @@ export function StageDetailSheet({ open, onClose, rows, selectedRowId, stageIdx,
           {selectedRow?.teamName && selectedRow.teamName !== selectedRow.label && (
             <p className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground mt-1 ml-3">
               {selectedRow.team && (
-                <TeamLogo leagueId={selectedRow.team.leagueId} teamId={selectedRow.team.id} name={selectedRow.team.name} color={selectedRow.team.color} logo={selectedRow.team.logo} size="xs" />
+                <TeamLogo leagueId={selectedRow.team.leagueId} teamId={selectedRow.team.id} name={selectedRow.team.name} color={selectedRow.team.color} logo={selectedRow.team.logo} size="xs" action="navigate" />
               )}
               {selectedRow.teamName}
             </p>
