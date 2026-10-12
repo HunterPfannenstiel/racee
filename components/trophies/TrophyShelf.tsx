@@ -173,9 +173,22 @@ export function FrontShelf({ leagues, featuredTrophyKeys }: { leagues: ShelfLeag
   const all = leagues.flatMap((l) =>
     l.seasons.filter((s) => s.trophy).map((s) => ({ key: s.trophyKey, trophy: s.trophy as Medal, season: s, league: l.name })),
   );
-  const medals = medalCounts(leagues.flatMap((l) => l.seasons));
-  const medalTiers = (["gold", "silver", "bronze"] as const).filter((m) => medals[m] > 0);
-  if (all.length === 0 && medalTiers.length === 0) return null;
+  // Gold first, then silver, then bronze. Seasons hidden from outsiders only carry counts, so fall back to those.
+  const medalList = leagues
+    .flatMap((l) =>
+      l.seasons.flatMap((s) => {
+        const detailed = s.medalDetails.map((d) => ({
+          medal: d.medal,
+          title: `${MEDAL_LABEL[d.medal]} – ${d.raceLabel} ${s.label}, ${l.name}`,
+        }));
+        if (detailed.length > 0) return detailed;
+        return (["gold", "silver", "bronze"] as const).flatMap((m) =>
+          Array.from({ length: s.medals[m] }, () => ({ medal: m as Medal, title: `${MEDAL_LABEL[m]} – ${s.label}, ${l.name}` })),
+        );
+      }),
+    )
+    .sort((a, b) => TIER_ORDER[a.medal] - TIER_ORDER[b.medal]);
+  if (all.length === 0 && medalList.length === 0) return null;
 
   const byKey = new Map(all.map((t) => [t.key, t]));
   const picked = featuredTrophyKeys.flatMap((k) => (byKey.has(k) ? [byKey.get(k)!] : []));
@@ -183,46 +196,37 @@ export function FrontShelf({ leagues, featuredTrophyKeys }: { leagues: ShelfLeag
     picked.length > 0
       ? picked
       : [...all]
-          .sort((a, b) => TIER_ORDER[a.trophy] - TIER_ORDER[b.trophy] || b.season.label.localeCompare(a.season.label))
-          .slice(0, 6);
+          .sort((a, b) => TIER_ORDER[a.trophy] - TIER_ORDER[b.trophy] || b.season.label.localeCompare(a.season.label));
 
   return (
     <section aria-label="Front shelf">
-      {shown.length > 0 && (
-        <div className="flex items-end justify-center gap-4 overflow-x-auto px-2 pt-2">
+      {/* Trophies stand in a row on the shelf; each one carries its own piece of board, so when the
+          row runs out of room it wraps onto a new shelf instead of scrolling. */}
+      {shown.length > 0 ? (
+        <div className="flex flex-wrap justify-center gap-y-4">
           {shown.map((t) => (
-            <div key={t.key} className="flex w-20 shrink-0 flex-col items-center gap-1 text-center">
-              <TrophyIcon
-                medal={t.trophy}
-                className={t.trophy === "gold" ? "size-16" : "size-12"}
-                title={`${MEDAL_LABEL[t.trophy]} trophy – ${t.season.label}, ${t.league}${t.season.total !== null ? `, ${formatPoints(t.season.total)} pts` : ""}`}
-              />
+            <div key={t.key} className="flex w-24 shrink-0 flex-col items-center text-center">
+              <div className="flex h-16 items-end">
+                <TrophyIcon
+                  medal={t.trophy}
+                  className={t.trophy === "gold" ? "size-16" : "size-12"}
+                  title={`${MEDAL_LABEL[t.trophy]} trophy – ${t.season.label}, ${t.league}${t.season.total !== null ? `, ${formatPoints(t.season.total)} pts` : ""}`}
+                />
+              </div>
+              <div className="h-2.5 w-full bg-gradient-to-b from-amber-800 to-amber-950 shadow-[0_4px_8px_-2px_rgba(0,0,0,0.5)]" />
+              <p className="mt-1.5 text-xs font-semibold leading-tight">{t.season.label}</p>
+              <p className="w-full truncate px-1 text-[10px] text-muted-foreground">{t.league}</p>
             </div>
           ))}
         </div>
+      ) : (
+        <div className="h-2.5 rounded-sm bg-gradient-to-b from-amber-800 to-amber-950 shadow-[0_4px_8px_-2px_rgba(0,0,0,0.5)]" />
       )}
-      {/* the shelf board */}
-      <div className="h-2.5 rounded-sm bg-gradient-to-b from-amber-800 to-amber-950 shadow-[0_4px_8px_-2px_rgba(0,0,0,0.5)]" />
-      {shown.length > 0 && (
-        <div className="flex justify-center gap-4 overflow-x-auto px-2 pt-1.5">
-          {shown.map((t) => (
-            <div key={t.key} className="w-20 shrink-0 text-center">
-              <p className="text-xs font-semibold leading-tight">{t.season.label}</p>
-              <p className="truncate text-[10px] text-muted-foreground">{t.league}</p>
-            </div>
-          ))}
-        </div>
-      )}
-      {/* race medals hanging off pegs under the shelf */}
-      {medalTiers.length > 0 && (
-        <div className="mt-3 flex justify-center gap-8" aria-label="Race medals">
-          {medalTiers.map((m) => (
-            <div key={m} className="flex flex-col items-center">
-              <span className="h-1.5 w-3 rounded-full bg-amber-900" aria-hidden />
-              <span className="h-2 w-px bg-muted-foreground/60" aria-hidden />
-              <MedalIcon medal={m} className="size-10" title={`${medals[m]} ${MEDAL_LABEL[m].toLowerCase()} medal${medals[m] === 1 ? "" : "s"}`} />
-              <span className="mt-0.5 text-sm font-semibold tabular-nums">×{medals[m]}</span>
-            </div>
+      {/* every race medal, one by one in a row under the shelf (wraps when it runs out of room) */}
+      {medalList.length > 0 && (
+        <div className="mt-3 flex flex-wrap justify-center gap-1.5" aria-label="Race medals">
+          {medalList.map((d, i) => (
+            <MedalIcon key={i} medal={d.medal} className="size-8" title={d.title} />
           ))}
         </div>
       )}

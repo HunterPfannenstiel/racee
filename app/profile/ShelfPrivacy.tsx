@@ -53,8 +53,8 @@ export function ShelfPrivacy({ userId }: { userId: string }) {
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Front shelf</p>
             <p className="text-xs text-muted-foreground">
-              Star up to {MAX_FRONT} trophies to show off at the top of your profile. Pick none and your best ones show
-              automatically.
+              Star up to {MAX_FRONT} trophies to show off at the top of your profile. Pick none and all your trophies
+              show, best first.
             </p>
             {front.length > 0 && (
               <ol className="space-y-1">
