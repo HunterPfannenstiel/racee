@@ -4,7 +4,12 @@ import type {
   ILeagueStandingsRepository,
   IUserRepository,
   ITeamRepository,
+  ISeasonPropsRepository,
+  ISeasonQuestionLibraryRepository,
+  IMotorsportCalendarRepository,
 } from "@/server/repositories";
+import { loadSeasonBonus } from "@/server/queries/shared/season-bonus";
+import { loadFinaleGate } from "@/server/queries/shared/finale-gate";
 import { NotFoundError } from "@/server/domain/errors";
 import { assertLeagueMember } from "@/server/roles/league";
 import type {
@@ -32,6 +37,9 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
     private standings: ILeagueStandingsRepository,
     private users: IUserRepository,
     private teams: ITeamRepository,
+    private seasonProps: ISeasonPropsRepository,
+    private seasonQuestions: ISeasonQuestionLibraryRepository,
+    private calendars: IMotorsportCalendarRepository,
   ) {}
 
   async execute(actorUserId: string, leagueId: string): Promise<LeagueStandingsViewResult> {
@@ -43,6 +51,14 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
       this.races.findAllForMotorsport(league.motorsportId).then((all) => league.currentSeasonRaces(all)),
       this.standings.findByLeague(leagueId),
     ]);
+
+    // Season-bet points join the totals once they're revealed (nothing while hidden).
+    const bonus = await loadSeasonBonus(
+      { props: this.seasonProps, libraries: this.seasonQuestions },
+      league,
+      await this.teams.findAllForLeague(leagueId),
+      races,
+    );
 
     const mulliganCount = league.mulliganCount;
     const stageCount = league.stageCount ?? 0;
@@ -69,10 +85,12 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
           .filter(({ userId }) => league.showsInStandings(userId))
           .map(({ userId, total, mulliganed }) => {
           const scores = [...(standingsData.individual.find(u => u.userId === userId)?.raceScores ?? [])];
+          const seasonBonus = bonus.players.get(userId) ?? 0;
           return {
             userId,
-            total,
+            total: total + seasonBonus,
             mulliganed,
+            seasonBonus,
             rawTotal: scores.reduce((s, r) => s + r.gridPoints, 0),
             propTotal: scores.reduce((s, r) => s + r.propPoints, 0),
             raceScores: scores.map(r => ({
@@ -82,11 +100,11 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
               weeklyTeamPoints: r.weeklyTeamPoints,
             })),
           };
-        })
+        }).sort((a, b) => b.total - a.total)
       : [];
 
     const previewDriverRows = previewUserIds.map(userId => ({
-      userId, total: 0, mulliganed: 0, rawTotal: 0, propTotal: 0, raceScores: [],
+      userId, total: bonus.players.get(userId) ?? 0, mulliganed: 0, seasonBonus: bonus.players.get(userId) ?? 0, rawTotal: 0, propTotal: 0, raceScores: [],
     }));
     const leagueTeams = nothingScored ? await this.teams.findAllForLeague(leagueId) : [];
 
@@ -103,26 +121,37 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
             });
           }
           const scores = [...byRace.entries()].map(([raceId, pts]) => ({ raceId, ...pts }));
+          const seasonBonus = bonus.teams.get(teamId) ?? 0;
           return {
             teamId,
-            total,
+            total: total + seasonBonus,
+            seasonBonus,
             rawTotal: scores.reduce((s, r) => s + r.gridPoints, 0),
             propTotal: scores.reduce((s, r) => s + r.propPoints, 0),
             raceScores: scores,
           };
-        })
+        }).sort((a, b) => b.total - a.total)
       : [];
 
     const listedTeamIds = new Set(constructorRows.map(r => r.teamId));
     const previewConstructorRows = leagueTeams
       .filter(t => !listedTeamIds.has(t.teamId))
-      .map(t => ({ teamId: t.teamId, total: 0, rawTotal: 0, propTotal: 0, raceScores: [] }));
+      .map(t => ({ teamId: t.teamId, total: bonus.teams.get(t.teamId) ?? 0, seasonBonus: bonus.teams.get(t.teamId) ?? 0, rawTotal: 0, propTotal: 0, raceScores: [] }));
+
+    // Once the season's last race has started, the standings stay hidden from players until the
+    // admins and the commissioner have both released the finale. Commissioners still see them (to finish grading).
+    const gate = await loadFinaleGate({ props: this.seasonProps, calendars: this.calendars }, league, races);
+    const finalePending = gate.phase === "pending";
+    const hideFromViewer = finalePending && !league.canManage(actorUserId);
 
     return {
       gradedRaceIds: sortedRaces.filter(r => r.keySetAt !== null).map(r => r.raceId),
-      stages,
-      driverRows: [...driverRows, ...previewDriverRows],
-      constructorRows: [...constructorRows, ...previewConstructorRows],
+      stages: hideFromViewer ? [] : stages,
+      driverRows: hideFromViewer ? [] : [...driverRows, ...previewDriverRows],
+      constructorRows: hideFromViewer ? [] : [...constructorRows, ...previewConstructorRows],
+      finalePending,
+      finaleHidden: hideFromViewer,
+      seasonBetsHidden: !bonus.revealed,
       usersById: Object.fromEntries(userList.map(u => [u.userId, { id: u.userId, name: u.name }])),
     };
   }

@@ -5,7 +5,12 @@ import type {
   IRaceRepository,
   ITeamRepository,
   IUserRepository,
+  ISeasonPropsRepository,
+  ISeasonQuestionLibraryRepository,
+  IMotorsportCalendarRepository,
 } from "@/server/repositories";
+import { loadSeasonBonus } from "@/server/queries/shared/season-bonus";
+import { loadFinaleGate } from "@/server/queries/shared/finale-gate";
 import { NotFoundError } from "@/server/domain/errors";
 import { assertLeagueMember, isLeagueCommissioner } from "@/server/roles/league";
 import { buildSeasonRecord, seasonParticipantIds } from "@/server/services/season-record";
@@ -20,6 +25,9 @@ export class LeagueHistoryQuery implements ILeagueHistoryQuery {
     private readonly teams: ITeamRepository,
     private readonly users: IUserRepository,
     private readonly history: ILeagueHistoryRepository,
+    private readonly seasonProps: ISeasonPropsRepository,
+    private readonly seasonQuestions: ISeasonQuestionLibraryRepository,
+    private readonly calendars: IMotorsportCalendarRepository,
   ) {}
 
   async execute(input: { actorUserId: string; leagueId: string; asAdmin?: boolean }): Promise<LeagueHistoryResult> {
@@ -41,7 +49,12 @@ export class LeagueHistoryQuery implements ILeagueHistoryQuery {
     const now = new Date().toISOString();
     const label = league.displaySeasonLabel(seasonRaces, now.slice(0, 4));
 
-    const current = buildSeasonRecord({
+    const bonus = await loadSeasonBonus({ props: this.seasonProps, libraries: this.seasonQuestions }, league, teams, seasonRaces);
+    // The final results stay hidden from players until the admins and the commissioner release the finale.
+    const gate = await loadFinaleGate({ props: this.seasonProps, calendars: this.calendars }, league, seasonRaces);
+    const hideCurrent = gate.phase === "pending" && !canManage && !input.asAdmin;
+    const built = buildSeasonRecord({
+      bonus,
       seasonId: league.currentSeasonKey,
       label,
       endedAt: league.seasonEndedAt ?? now,
@@ -51,6 +64,7 @@ export class LeagueHistoryQuery implements ILeagueHistoryQuery {
       teams,
       namesById,
     });
+    const current = hideCurrent ? { ...built, players: [], teams: [] } : built;
 
     return {
       leagueId: league.leagueId,
