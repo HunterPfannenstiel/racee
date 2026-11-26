@@ -129,6 +129,7 @@ export function gradeSeasonProps(props: SeasonProps, library: readonly LibraryQu
 export function pointsRevealed(props: SeasonProps, ctx: { seasonEnded: boolean; racesLeft: number }): boolean {
   if (!props.enabled || !props.open) return false;
   if (ctx.seasonEnded) return true;
+  if (props.pointsReleasedAt !== null) return true;
   if (props.pointsReveal === "always") return true;
   if (props.pointsReveal === "racesLeft") return ctx.racesLeft <= props.revealRacesLeft;
   return false;

@@ -29,9 +29,11 @@ export type SeasonPropsViewResult = {
   lockReason: "closed" | "seasonEnded" | "lockDate" | null;
   canPick: boolean;
   picksVisible: "afterLock" | "seasonEnd";
-  pointsReveal: "always" | "racesLeft" | "seasonEnd";
+  pointsReveal: "always" | "racesLeft" | "seasonEnd" | "manual";
   revealRacesLeft: number;
   pointsRevealed: boolean;
+  /** True when the commissioner released the points by hand. */
+  pointsReleased: boolean;
   racesLeft: number;
   seasonEnded: boolean;
   /** The commissioner has released the season finale. */

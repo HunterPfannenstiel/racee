@@ -58,7 +58,9 @@ export const SeasonPropsSchema = z.object({
   /** When everyone can see everyone's picks. */
   picksVisible: z.enum(["afterLock", "seasonEnd"]).default("afterLock"),
   /** When the bonus points start counting in the standings. */
-  pointsReveal: z.enum(["always", "racesLeft", "seasonEnd"]).default("always"),
+  pointsReveal: z.enum(["always", "racesLeft", "seasonEnd", "manual"]).default("always"),
+  /** When the commissioner released the bonus points by hand (counts in any reveal mode). */
+  pointsReleasedAt: z.string().nullable().default(null),
   revealRacesLeft: z.number().int().min(0).max(60).default(3),
   scale: z.array(ScaleStepSchema).max(50).default([]),
   questions: z.array(SeasonQuestionSchema).max(40).default([]),
@@ -73,7 +75,7 @@ export type SeasonPropsData = z.infer<typeof SeasonPropsSchema>;
 export type SeasonPropsInput = z.input<typeof SeasonPropsSchema>;
 
 /** The setup a commissioner edits (everything except the picks). */
-export type SeasonPropsSetup = Omit<SeasonPropsInput, "leagueId" | "seasonKey" | "picks" | "finaleReleasedAt" | "settingsAtEnd">;
+export type SeasonPropsSetup = Omit<SeasonPropsInput, "leagueId" | "seasonKey" | "picks" | "finaleReleasedAt" | "pointsReleasedAt" | "settingsAtEnd">;
 
 const SETTING_KEYS = {
   enabled: true, open: true, locksAt: true, latePickUserIds: true, picksVisible: true,
@@ -114,6 +116,7 @@ export class SeasonProps {
   get revealRacesLeft() { return this.props.revealRacesLeft; }
   get scale(): readonly ScaleStep[] { return this.props.scale; }
   get questions(): readonly SeasonQuestion[] { return this.props.questions; }
+  get pointsReleasedAt(): string | null { return this.props.pointsReleasedAt; }
   get finaleReleasedAt(): string | null { return this.props.finaleReleasedAt; }
   get settingsAtEnd(): Readonly<Record<string, unknown>> | null { return this.props.settingsAtEnd; }
   get picks(): Readonly<Record<string, Readonly<Record<string, string>>>> { return this.props.picks; }
@@ -216,6 +219,11 @@ export class SeasonProps {
   setLatePicker(userId: string, allowed: boolean): void {
     const rest = this.props.latePickUserIds.filter(id => id !== userId);
     this.props = { ...this.props, latePickUserIds: allowed ? [...rest, userId] : rest };
+  }
+
+  /** Commissioner releases (or takes back) the bonus points by hand. */
+  setPointsReleased(at: string | null): void {
+    this.props = { ...this.props, pointsReleasedAt: at };
   }
 
   /** Marks the finale as released (the final standings can show). */

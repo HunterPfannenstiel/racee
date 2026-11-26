@@ -91,6 +91,7 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
       pointsReveal: props.pointsReveal,
       revealRacesLeft: props.revealRacesLeft,
       pointsRevealed: revealed,
+      pointsReleased: props.pointsReleasedAt !== null,
       racesLeft,
       seasonEnded,
       finaleReleased: gate.commissionerReleased,

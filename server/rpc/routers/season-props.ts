@@ -9,6 +9,7 @@ import { BlobNotificationRepository } from "@/server/repositories/notification/B
 import { LeagueFinaleQuery } from "@/server/queries/league-finale/LeagueFinaleQuery";
 import { ReleaseFinaleCommand } from "@/server/commands/release-finale/ReleaseFinaleCommand";
 import { CommissionerSetSeasonPicksCommand } from "@/server/commands/commissioner-set-season-picks/CommissionerSetSeasonPicksCommand";
+import { SetSeasonPointsReleasedCommand } from "@/server/commands/set-season-points-released/SetSeasonPointsReleasedCommand";
 import { SetLateSeasonPickerCommand } from "@/server/commands/set-late-season-picker/SetLateSeasonPickerCommand";
 import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
 import { BlobMotorsportCalendarRepository } from "@/server/repositories/motorsport-calendar/BlobMotorsportCalendarRepository";
@@ -43,6 +44,7 @@ const releaseFinaleCommand = new ReleaseFinaleCommand(leagueRepo, raceRepo, prop
 const adminReleaseCommand = new AdminReleaseFinaleCommand(calendarRepo, raceRepo, leagueRepo, propsRepo, notificationRepo);
 const adminOverviewQuery = new AdminFinaleOverviewQuery(calendarRepo, raceRepo, leagueRepo, propsRepo, libraryRepo);
 const setPlayerPicksCommand = new CommissionerSetSeasonPicksCommand(leagueRepo, propsRepo, userRepo, notificationRepo);
+const pointsReleasedCommand = new SetSeasonPointsReleasedCommand(leagueRepo, propsRepo);
 const lateSeasonPickerCommand = new SetLateSeasonPickerCommand(leagueRepo, propsRepo);
 const libraryQuery = new SeasonQuestionLibraryQuery(libraryRepo, racerRepo);
 const saveCommand = new SaveSeasonPropsCommand(leagueRepo, propsRepo);
@@ -74,9 +76,10 @@ const ViewSchema = z.object({
   lockReason: z.enum(["closed", "seasonEnded", "lockDate"]).nullable(),
   canPick: z.boolean(),
   picksVisible: z.enum(["afterLock", "seasonEnd"]),
-  pointsReveal: z.enum(["always", "racesLeft", "seasonEnd"]),
+  pointsReveal: z.enum(["always", "racesLeft", "seasonEnd", "manual"]),
   revealRacesLeft: z.number(),
   pointsRevealed: z.boolean(),
+  pointsReleased: z.boolean(),
   racesLeft: z.number(),
   seasonEnded: z.boolean(),
   finaleReleased: z.boolean(),
@@ -142,7 +145,7 @@ const SetupSchema = z.object({
   locksAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   latePickUserIds: z.array(z.string()),
   picksVisible: z.enum(["afterLock", "seasonEnd"]),
-  pointsReveal: z.enum(["always", "racesLeft", "seasonEnd"]),
+  pointsReveal: z.enum(["always", "racesLeft", "seasonEnd", "manual"]),
   revealRacesLeft: z.number().int().min(0).max(60),
   scale: z.array(ScaleStepSchema),
   questions: z.array(SeasonQuestionSchema),
@@ -188,6 +191,15 @@ export const seasonPropsRouter = {
     .output(z.object({ ok: z.literal(true) }))
     .handler(async ({ context, input }) => {
       await lateSeasonPickerCommand.execute({ actorUserId: context.session.user.id, ...input });
+      return { ok: true as const };
+    }),
+
+  /** Commissioner: release (or take back) the season bet points by hand. */
+  releasePoints: authed
+    .input(z.object({ leagueId: z.string().uuid(), released: z.boolean() }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(async ({ context, input }) => {
+      await pointsReleasedCommand.execute({ actorUserId: context.session.user.id, ...input });
       return { ok: true as const };
     }),
 

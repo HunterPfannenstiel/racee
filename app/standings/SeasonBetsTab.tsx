@@ -23,7 +23,9 @@ export function SeasonBetsTab({ leagueId }: { leagueId: string }) {
       ? data.revealAfterRace
         ? `Your points will be added to your total starting after the ${data.revealAfterRace}.`
         : `Your points will be added to your total when ${data.revealRacesLeft} race${data.revealRacesLeft === 1 ? " is" : "s are"} left.`
-      : "Your points will be added to your total when the season ends.";
+      : data.pointsReveal === "manual"
+        ? "Your points will be added to your total when your commissioner releases them."
+        : "Your points will be added to your total when the season ends.";
 
   return (
     <div className="space-y-3">

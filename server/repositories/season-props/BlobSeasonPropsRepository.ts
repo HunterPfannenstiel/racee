@@ -34,6 +34,7 @@ export class BlobSeasonPropsRepository implements ISeasonPropsRepository {
         picksVisible: props.picksVisible,
         pointsReveal: props.pointsReveal,
         revealRacesLeft: props.revealRacesLeft,
+        pointsReleasedAt: props.pointsReleasedAt,
         finaleReleasedAt: props.finaleReleasedAt,
         settingsAtEnd: props.settingsAtEnd,
         scale: props.scale,

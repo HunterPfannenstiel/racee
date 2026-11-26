@@ -86,6 +86,15 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
   const [saved, setSaved] = useState(false);
   const dirty = () => setSaved(false);
 
+  const release = useMutation(
+    orpc.seasonProps.releasePoints.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: orpc.seasonProps.key() });
+        queryClient.invalidateQueries({ queryKey: orpc.standings.key() });
+        queryClient.invalidateQueries({ queryKey: orpc.history.key() });
+      },
+    }),
+  );
   const save = useMutation(
     orpc.seasonProps.save.mutationOptions({
       onSuccess: () => {
@@ -216,7 +225,7 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
               ) : (
                 <div className="space-y-2">
                   <Select value={q.kind} onValueChange={(kind) => edit(q.questionId, { kind: kind as QuestionKind, answers: [], options: kind === "choice" ? q.options : [] })}>
-                    <SelectTrigger size="sm" className="w-44">
+                    <SelectTrigger size="sm" className="w-full sm:w-72">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -247,7 +256,7 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
 
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <Select value={q.scoring} onValueChange={(v) => edit(q.questionId, { scoring: v as "scale" | "flat" })}>
-                  <SelectTrigger size="sm" className="w-44">
+                  <SelectTrigger size="sm" className="w-full sm:w-72">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -297,7 +306,7 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
           <div className="flex flex-wrap items-center gap-2">
             {available.length > 0 && (
               <Select value="__none__" onValueChange={(v) => v !== "__none__" && addFromLibrary(v)}>
-                <SelectTrigger size="sm" className="w-64">
+                <SelectTrigger size="sm" className="w-full sm:w-96">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -370,11 +379,12 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
             <p className="text-xs text-muted-foreground">The bonus points count in the standings…</p>
             <div className="flex flex-wrap items-center gap-2">
               <Select value={pointsReveal} onValueChange={(v) => { dirty(); setPointsReveal(v as typeof pointsReveal); }}>
-                <SelectTrigger className="w-full sm:w-72"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-96"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="always">As soon as questions are answered</SelectItem>
                   <SelectItem value="racesLeft">When a few races are left</SelectItem>
                   <SelectItem value="seasonEnd">Only when the season ends</SelectItem>
+                  <SelectItem value="manual">Only when I release them</SelectItem>
                 </SelectContent>
               </Select>
               {pointsReveal === "racesLeft" && (
@@ -383,6 +393,25 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
                   <Input type="number" min={0} className="w-20 h-8" value={revealRacesLeft} onChange={(e) => { dirty(); setRevealRacesLeft(Math.max(0, Math.floor(Number(e.target.value) || 0))); }} />
                 </label>
               )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Button
+                type="button"
+                size="sm"
+                variant={data.pointsReleased ? "outline" : "default"}
+                disabled={release.isPending || (!data.pointsReleased && data.pointsRevealed)}
+                onClick={() => release.mutate({ leagueId, released: !data.pointsReleased })}
+              >
+                {release.isPending && <Spinner className="w-3 h-3 mr-1" />}
+                {data.pointsReleased ? "Take the points back" : "Release the points now"}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {data.pointsReleased
+                  ? "Released by you. Points count in the standings."
+                  : data.pointsRevealed
+                    ? "Points already count."
+                    : "Overrides the setting above and starts counting the points right away."}
+              </span>
             </div>
             <p className="text-[11px] text-muted-foreground">
               Hidden points stay out of the standings and every calculation until they&apos;re revealed, so the totals jump on reveal day.
