@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { StickyCell } from "./StickyCell";
 import { RaceHeaderCell, SortArrow } from "./RaceCell";
 import { cn } from "@/lib/utils";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { StandingsRow, type StandingsRowData } from "./StandingsRow";
 
 type SortDir = "asc" | "desc";
@@ -101,6 +102,9 @@ export function StandingsTable({ rows, races, nameHeader, stages, showSummary = 
   // The official position (by Total) stays fixed whatever column the table is sorted by.
   const positionByRowId = Object.fromEntries(rows.map((r, i) => [r.id, i + 1]));
   const [sort, setSort] = useState<{ key: string; dir: SortDir } | null>(null);
+  // The Bets column starts collapsed to a thin handle so the table reads Player, Total, races.
+  const [betsOpen, setBetsOpen] = useState(false);
+  const betsState = seasonBets ? (betsOpen ? ("open" as const) : ("collapsed" as const)) : undefined;
   const stageIdxByKey = (key: string) => Number(key.slice(key.indexOf(":") + 1));
   const valueOf = (row: StandingsRowData, key: string): number | string => {
     if (key === "name") return row.label.toLowerCase();
@@ -151,17 +155,30 @@ export function StandingsTable({ rows, races, nameHeader, stages, showSummary = 
               <SortButton label={nameHeader} sortDir={sortDirFor("name")} onSort={() => toggleSort("name")} underlineClass="" />
             </StickyCell>
             {seasonBets && (
-              <StickyCell as="th" col="bets" className="text-right">
-                <SortButton
-                  label="Bets"
-                  tooltip={seasonBets.hidden ? "season-long bet points: hidden until the commissioner's reveal" : "season-long bet points, added once (not every week)"}
-                  sortDir={sortDirFor("bets")}
-                  onSort={() => toggleSort("bets")}
-                  underlineClass="border-muted-foreground/50"
-                />
+              <StickyCell as="th" col="bets" bets={betsState} className="text-right">
+                <span className="flex items-center justify-end gap-0.5">
+                  {betsOpen && (
+                    <SortButton
+                      label="Bets"
+                      tooltip={seasonBets.hidden ? "season-long bet points: hidden until the commissioner's reveal" : "season-long bet points, added once (not every week)"}
+                      sortDir={sortDirFor("bets")}
+                      onSort={() => toggleSort("bets")}
+                      underlineClass="border-muted-foreground/50"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setBetsOpen(!betsOpen)}
+                    aria-label={betsOpen ? "Hide season bets" : "Show season bets"}
+                    title={betsOpen ? "Hide season bets" : "Show season bets"}
+                    className="rounded p-0.5 hover:text-foreground"
+                  >
+                    {betsOpen ? <ChevronLeftIcon className="size-3.5" /> : <ChevronRightIcon className="size-3.5" />}
+                  </button>
+                </span>
               </StickyCell>
             )}
-            <StickyCell as="th" col="total" withBets={!!seasonBets}>
+            <StickyCell as="th" col="total" bets={betsState}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span>
@@ -226,7 +243,7 @@ export function StandingsTable({ rows, races, nameHeader, stages, showSummary = 
               stageRanksByRaceId={Object.fromEntries(stageData.map((s) => [s.lastRaceId, s.ranksByRowId[row.id] ?? 0]))}
               seasonRank={seasonRankByRowId[row.id] ?? 0}
               showSummary={showSummary}
-              bets={seasonBets}
+              bets={seasonBets && { hidden: seasonBets.hidden, open: betsOpen }}
             />
           ))}
         </tbody>

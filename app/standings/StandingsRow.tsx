@@ -47,7 +47,7 @@ type StandingsRowProps = {
   seasonRank: number;
   showSummary: boolean;
   /** The league plays season bets: show the Bets column (a dash while the points are hidden). */
-  bets?: { hidden: boolean };
+  bets?: { hidden: boolean; open: boolean };
 };
 
 function SummaryCell({ value, muted }: { value: ReactNode; muted?: boolean }) {
@@ -97,14 +97,16 @@ export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, 
       </StickyCell>
 
       {bets && (
-        <StickyCell col="bets" className="text-right">
-          <span className="font-mono text-xs tabular-nums text-muted-foreground">
-            {bets.hidden ? "—" : (row.seasonBonus ?? 0) > 0 ? `+${formatPoints(row.seasonBonus ?? 0)}` : "0"}
-          </span>
+        <StickyCell col="bets" bets={bets.open ? "open" : "collapsed"} className="text-right">
+          {bets.open && (
+            <span className="font-mono text-xs tabular-nums text-muted-foreground">
+              {bets.hidden ? "—" : (row.seasonBonus ?? 0) > 0 ? `+${formatPoints(row.seasonBonus ?? 0)}` : "0"}
+            </span>
+          )}
         </StickyCell>
       )}
 
-      <StickyCell col="total" withBets={!!bets}>
+      <StickyCell col="total" bets={bets ? (bets.open ? "open" : "collapsed") : undefined}>
         <span className="font-semibold tabular-nums">{formatPoints(row.total)}</span>
       </StickyCell>
 
