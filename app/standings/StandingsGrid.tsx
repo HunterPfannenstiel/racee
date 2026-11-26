@@ -19,8 +19,8 @@ export type { StandingsRowData };
 type Tab = "drivers" | "constructors";
 type ViewMode = "cards" | "table";
 
-type DriverRow = { userId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
-type ConstructorRow = { teamId: string; total: number; rawTotal: number; propTotal: number; raceScores: RaceScoreEntry[] };
+type DriverRow = { userId: string; total: number; rawTotal: number; propTotal: number; seasonBonus: number; raceScores: RaceScoreEntry[] };
+type ConstructorRow = { teamId: string; total: number; rawTotal: number; propTotal: number; seasonBonus: number; raceScores: RaceScoreEntry[] };
 
 type StandingsGridProps = {
   league: League;
@@ -30,9 +30,11 @@ type StandingsGridProps = {
   driverRows: DriverRow[];
   constructorRows: ConstructorRow[];
   stages: string[][];
+  /** The league plays season bets; `hidden` while their points are kept out of the totals. */
+  seasonBets?: { hidden: boolean };
 };
 
-export function StandingsGrid({ league, races, usersById, teams, driverRows, constructorRows, stages }: StandingsGridProps) {
+export function StandingsGrid({ league, races, usersById, teams, driverRows, constructorRows, stages, seasonBets }: StandingsGridProps) {
   const [tab, setTab] = useState<Tab>("drivers");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [sheet, setSheet] = useState<{ rowId: string; stageIdx: number } | null>(null);
@@ -53,7 +55,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
   // Ring colors: team color, or the player's own league color when they aren't on a team.
   const { byUserId: avatars } = useLeagueAvatars(league.id);
 
-  const mappedDriverRows: StandingsRowData[] = driverRows.map(({ userId, total, rawTotal, propTotal, raceScores }) => ({
+  const mappedDriverRows: StandingsRowData[] = driverRows.map(({ userId, total, rawTotal, propTotal, seasonBonus, raceScores }) => ({
     id: userId,
     userId,
     label: usersById[userId]?.name ?? "Unknown User",
@@ -63,6 +65,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     total,
     rawTotal,
     propTotal,
+    seasonBonus,
     raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.gridPoints + r.propPoints])),
     mulliganedRaceIds: getMulliganedRaceIds(raceScores, mulliganCount),
     linkTo: `/players/${userId}`,
@@ -75,7 +78,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     driverRows.map((r) => [r.userId, r.raceScores.reduce((sum, s) => sum + (s.weeklyTeamPoints ?? 0), 0)])
   );
 
-  const mappedConstructorRows: StandingsRowData[] = constructorRows.map(({ teamId, total, rawTotal, propTotal, raceScores }) => ({
+  const mappedConstructorRows: StandingsRowData[] = constructorRows.map(({ teamId, total, rawTotal, propTotal, seasonBonus, raceScores }) => ({
     id: teamId,
     label: teamsById[teamId]?.name ?? teamId,
     color: teamsById[teamId]?.color ?? "#6b7280",
@@ -84,6 +87,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
     total,
     rawTotal,
     propTotal,
+    seasonBonus,
     raceScores: Object.fromEntries(raceScores.map((r) => [r.raceId, r.weeklyTeamPoints])),
     mulliganedRaceIds: new Set(),
     memberScores: (teamsById[teamId]?.memberIds ?? [])
@@ -169,6 +173,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
           nameHeader={tab === "drivers" ? "Player" : "Team"}
           stages={stages}
           showSummary={tab === "drivers"}
+          seasonBets={seasonBets}
         />
       ) : (
         <>

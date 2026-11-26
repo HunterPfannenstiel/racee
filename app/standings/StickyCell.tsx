@@ -3,12 +3,14 @@ import { cn } from "@/lib/utils";
 export const COL_WIDTHS = {
   pos:   60,
   name:  144,
+  bets:  72,
   total: 64,
 } as const;
 
 const COL_LEFT: Record<keyof typeof COL_WIDTHS, number> = {
   pos:   0,
   name:  COL_WIDTHS.pos,
+  bets:  COL_WIDTHS.pos + COL_WIDTHS.name,
   total: COL_WIDTHS.pos + COL_WIDTHS.name,
 };
 
@@ -16,13 +18,15 @@ type Col = keyof typeof COL_WIDTHS;
 
 type StickyCellProps = {
   col: Col;
+  /** The table has a Bets column, which pushes Total to the right. */
+  withBets?: boolean;
   as?: "td" | "th";
   color?: string;
   className?: string;
   children?: React.ReactNode;
 };
 
-export function StickyCell({ col, as: Tag = "td", color, className, children }: StickyCellProps) {
+export function StickyCell({ col, withBets, as: Tag = "td", color, className, children }: StickyCellProps) {
   const isTotal = col === "total";
 
   return (
@@ -34,7 +38,7 @@ export function StickyCell({ col, as: Tag = "td", color, className, children }: 
         className
       )}
       style={{
-        left: COL_LEFT[col],
+        left: COL_LEFT[col] + (col === "total" && withBets ? COL_WIDTHS.bets : 0),
         width: COL_WIDTHS[col],
         minWidth: COL_WIDTHS[col],
       }}

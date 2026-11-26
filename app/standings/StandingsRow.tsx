@@ -23,6 +23,8 @@ export type StandingsRowData = {
   total: number;
   rawTotal: number;
   propTotal: number;
+  /** Season-bet points already included in `total` (0 while hidden). */
+  seasonBonus?: number;
   raceScores: Record<string, number>;
   /** Medal won in each race (players vs players, teams vs teams). */
   raceMedals?: Record<string, Medal>;
@@ -44,6 +46,8 @@ type StandingsRowProps = {
   stageRanksByRaceId: Record<string, number>;
   seasonRank: number;
   showSummary: boolean;
+  /** The league plays season bets: show the Bets column (a dash while the points are hidden). */
+  bets?: { hidden: boolean };
 };
 
 function SummaryCell({ value, muted }: { value: ReactNode; muted?: boolean }) {
@@ -63,7 +67,7 @@ function StageCell({ value, rank }: { value: number; rank: boolean }) {
   );
 }
 
-export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, stageTotalsByRaceId, stageRanksByRaceId, seasonRank, showSummary }: StandingsRowProps) {
+export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, stageTotalsByRaceId, stageRanksByRaceId, seasonRank, showSummary, bets }: StandingsRowProps) {
   const gap = leaderTotal - row.total;
 
   return (
@@ -92,7 +96,15 @@ export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, 
         </span>
       </StickyCell>
 
-      <StickyCell col="total">
+      {bets && (
+        <StickyCell col="bets" className="text-right">
+          <span className="font-mono text-xs tabular-nums text-muted-foreground">
+            {bets.hidden ? "—" : (row.seasonBonus ?? 0) > 0 ? `+${formatPoints(row.seasonBonus ?? 0)}` : "0"}
+          </span>
+        </StickyCell>
+      )}
+
+      <StickyCell col="total" withBets={!!bets}>
         <span className="font-semibold tabular-nums">{formatPoints(row.total)}</span>
       </StickyCell>
 
@@ -115,7 +127,7 @@ export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, 
       {showSummary && (
         <>
           <SummaryCell value={formatPoints(row.rawTotal)} />
-          <SummaryCell value={formatPoints(row.total - row.propTotal)} />
+          <SummaryCell value={formatPoints(row.total - (row.seasonBonus ?? 0) - row.propTotal)} />
           <SummaryCell value={formatPoints(row.propTotal)} />
           <SummaryCell value={formatPoints(row.rawTotal + row.propTotal)} />
           <SummaryCell value={<span className={medalColor[seasonRank] ?? "text-muted-foreground"}>{seasonRank}</span>} />

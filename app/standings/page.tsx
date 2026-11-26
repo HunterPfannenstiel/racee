@@ -72,6 +72,7 @@ export default function ViewPage() {
           driverRows={standingsQuery.data.driverRows}
           constructorRows={standingsQuery.data.constructorRows}
           stages={standingsQuery.data.stages}
+          seasonBets={standingsQuery.data.seasonBetsOn ? { hidden: standingsQuery.data.seasonBetsHidden } : undefined}
         />
         )}
         <div className="grid grid-cols-2 gap-2">

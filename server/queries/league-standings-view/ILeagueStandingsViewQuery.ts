@@ -31,6 +31,8 @@ export type LeagueStandingsViewResult = {
   finaleHidden: boolean;
   /** True while the league's season-bet points are hidden (not in anyone's total yet). */
   seasonBetsHidden: boolean;
+  /** The league plays season bets (so the standings show a Bets column). */
+  seasonBetsOn: boolean;
   usersById: Record<string, UserDTO>;
 };
 

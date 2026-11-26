@@ -17,6 +17,7 @@ type StandingsTableProps = {
   nameHeader: string;
   stages: string[][];
   showSummary?: boolean;
+  seasonBets?: { hidden: boolean };
 };
 
 type SortProps = { sortDir?: SortDir | null; onSort?: () => void };
@@ -91,7 +92,7 @@ function computeSeasonRanks(rows: StandingsRowData[]): Record<string, number> {
   return Object.fromEntries(ranked.map(({ id, rank }) => [id, rank]));
 }
 
-export function StandingsTable({ rows, races, nameHeader, stages, showSummary = true }: StandingsTableProps) {
+export function StandingsTable({ rows, races, nameHeader, stages, showSummary = true, seasonBets }: StandingsTableProps) {
   const leaderTotal = rows[0]?.total ?? 0;
   const stageData = computeStageData(rows, stages);
   const stageLastRaceIds = new Set(stageData.map((s) => s.lastRaceId));
@@ -106,7 +107,8 @@ export function StandingsTable({ rows, races, nameHeader, stages, showSummary = 
     if (key === "total" || key === "gap") return row.total;
     if (key === "move") return row.movement ?? Number.NEGATIVE_INFINITY;
     if (key === "grid") return row.rawTotal;
-    if (key === "mul") return row.total - row.propTotal;
+    if (key === "mul") return row.total - (row.seasonBonus ?? 0) - row.propTotal;
+    if (key === "bets") return row.seasonBonus ?? 0;
     if (key === "props") return row.propTotal;
     if (key === "gross" || key === "srank") return row.rawTotal + row.propTotal;
     if (key.startsWith("race:")) return row.raceScores[key.slice(5)] ?? Number.NEGATIVE_INFINITY;
@@ -148,14 +150,25 @@ export function StandingsTable({ rows, races, nameHeader, stages, showSummary = 
             <StickyCell as="th" col="name">
               <SortButton label={nameHeader} sortDir={sortDirFor("name")} onSort={() => toggleSort("name")} underlineClass="" />
             </StickyCell>
-            <StickyCell as="th" col="total">
+            {seasonBets && (
+              <StickyCell as="th" col="bets" className="text-right">
+                <SortButton
+                  label="Bets"
+                  tooltip={seasonBets.hidden ? "season-long bet points: hidden until the commissioner's reveal" : "season-long bet points, added once (not every week)"}
+                  sortDir={sortDirFor("bets")}
+                  onSort={() => toggleSort("bets")}
+                  underlineClass="border-muted-foreground/50"
+                />
+              </StickyCell>
+            )}
+            <StickyCell as="th" col="total" withBets={!!seasonBets}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span>
-                    <SortButton label="Total" tooltip="grid + props - mulligans" sortDir={sortDirFor("total")} onSort={() => toggleSort("total")} underlineClass="border-muted-foreground/50" />
+                    <SortButton label="Total" tooltip={seasonBets ? "grid + props + season bets - mulligans" : "grid + props - mulligans"} sortDir={sortDirFor("total")} onSort={() => toggleSort("total")} underlineClass="border-muted-foreground/50" />
                   </span>
                 </TooltipTrigger>
-                <TooltipContent>grid + props - mulligans</TooltipContent>
+                <TooltipContent>{seasonBets ? "grid + props + season bets - mulligans" : "grid + props - mulligans"}</TooltipContent>
               </Tooltip>
             </StickyCell>
             {races.map((race) => {
@@ -213,6 +226,7 @@ export function StandingsTable({ rows, races, nameHeader, stages, showSummary = 
               stageRanksByRaceId={Object.fromEntries(stageData.map((s) => [s.lastRaceId, s.ranksByRowId[row.id] ?? 0]))}
               seasonRank={seasonRankByRowId[row.id] ?? 0}
               showSummary={showSummary}
+              bets={seasonBets}
             />
           ))}
         </tbody>

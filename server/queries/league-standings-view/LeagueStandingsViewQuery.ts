@@ -140,6 +140,7 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
 
     // Once the season's last race has started, the standings stay hidden from players until the
     // admins and the commissioner have both released the finale. Commissioners still see them (to finish grading).
+    const betsProps = await this.seasonProps.find(league.leagueId, league.seasonKey);
     const gate = await loadFinaleGate({ props: this.seasonProps, calendars: this.calendars }, league, races);
     const finalePending = gate.phase === "pending";
     const hideFromViewer = finalePending && !league.canManage(actorUserId);
@@ -152,6 +153,7 @@ export class LeagueStandingsViewQuery implements ILeagueStandingsViewQuery {
       finalePending,
       finaleHidden: hideFromViewer,
       seasonBetsHidden: !bonus.revealed,
+      seasonBetsOn: !!betsProps && betsProps.enabled && betsProps.open && betsProps.questions.length > 0,
       usersById: Object.fromEntries(userList.map(u => [u.userId, { id: u.userId, name: u.name }])),
     };
   }
