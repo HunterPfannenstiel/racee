@@ -77,7 +77,7 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
   const [open, setOpen] = useState(data.open);
   const [locksAt, setLocksAt] = useState<string>(data.locksAt ?? "");
   const [late, setLate] = useState<string[]>(data.latePickUserIds);
-  const [picksVisible, setPicksVisible] = useState(data.picksVisible);
+  const picksVisible = data.picksVisible;
   const [pointsReveal, setPointsReveal] = useState(data.pointsReveal);
   const [revealRacesLeft, setRevealRacesLeft] = useState(data.revealRacesLeft);
   const [scale, setScale] = useState<Step[]>(data.scale);
@@ -362,16 +362,9 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
             <span className="text-xs text-muted-foreground">{locksAt ? "" : "No lock: open until the season ends."}</span>
           </label>
 
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Everyone can see each other&apos;s picks…</p>
-            <Select value={picksVisible} onValueChange={(v) => { dirty(); setPicksVisible(v as typeof picksVisible); }}>
-              <SelectTrigger className="w-full sm:w-72"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="afterLock">Once picks lock</SelectItem>
-                <SelectItem value="seasonEnd">Only when the season ends</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Players only ever see their own picks. You can see everyone&apos;s on this page.
+          </p>
 
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">The bonus points count in the standings…</p>

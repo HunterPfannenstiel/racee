@@ -45,7 +45,13 @@ export type SeasonPropsViewResult = {
   latePickUserIds: string[];
   grid: { drivers: string[]; teams: string[] };
   myPicks: Record<string, string>;
-  /** Everyone's picks, or null while they're hidden. */
+  /** Your own picks marked right (true), wrong (false) or not graded yet (null), by question. */
+  myByQuestion: Record<string, boolean | null>;
+  /** Your bonus points once they count in the standings, else null. */
+  myPoints: { driverPoints: number; teamPoints: number } | null;
+  /** Races-left mode, before the points count: the race after which they start counting. */
+  revealAfterRace: string | null;
+  /** Everyone's picks, for the commissioner only (players never see each other's). */
   everyone: SeasonPropsPlayerDTO[] | null;
   /** Commissioners only: the admins' questions this league can add, and who is in the league. */
   library: LibraryQuestion[];

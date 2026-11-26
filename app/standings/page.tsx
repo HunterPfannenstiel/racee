@@ -12,7 +12,6 @@ import { useUser } from "@/app/context/UserContext";
 import { useLeague } from "@/app/context/LeagueContext";
 import { orpc } from "@/lib/orpc/client";
 import { StandingsGrid } from "./StandingsGrid";
-import { SeasonBetsCard } from "./SeasonBetsCard";
 import { FinaleLauncher } from "./finale/FinaleLauncher";
 import { FinalePendingSplash } from "./finale/FinalePendingSplash";
 import { mergeReplacedRaceColumns, orderSeasonRaces } from "@/lib/race-order";
@@ -60,7 +59,6 @@ export default function ViewPage() {
           </p>
         )}
         {user && !standingsQuery.data.finalePending && <FinaleLauncher leagueId={activeLeagueId} userId={user.id} />}
-        {!standingsQuery.data.finaleHidden && <SeasonBetsCard leagueId={activeLeagueId} />}
         {standingsQuery.data.finaleHidden ? (
           <FinalePendingSplash />
         ) : (
@@ -72,7 +70,9 @@ export default function ViewPage() {
           driverRows={standingsQuery.data.driverRows}
           constructorRows={standingsQuery.data.constructorRows}
           stages={standingsQuery.data.stages}
-          seasonBets={standingsQuery.data.seasonBetsOn ? { hidden: standingsQuery.data.seasonBetsHidden } : undefined}
+          seasonBetsTab={standingsQuery.data.seasonBetsOn}
+          // The Bets column only appears once the points count toward the totals.
+          seasonBets={standingsQuery.data.seasonBetsOn && !standingsQuery.data.seasonBetsHidden ? { hidden: false } : undefined}
         />
         )}
         <div className="grid grid-cols-2 gap-2">

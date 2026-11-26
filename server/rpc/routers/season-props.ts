@@ -87,6 +87,9 @@ const ViewSchema = z.object({
   latePickUserIds: z.array(z.string()),
   grid: GridSchema,
   myPicks: z.record(z.string(), z.string()),
+  myByQuestion: z.record(z.string(), z.boolean().nullable()),
+  myPoints: z.object({ driverPoints: z.number(), teamPoints: z.number() }).nullable(),
+  revealAfterRace: z.string().nullable(),
   everyone: z
     .array(z.object({ userId: z.string(), name: z.string(), picks: z.record(z.string(), z.string()), result: ResultSchema.nullable() }))
     .nullable(),
