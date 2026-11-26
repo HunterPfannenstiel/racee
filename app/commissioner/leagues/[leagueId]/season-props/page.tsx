@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { QueryError, QueryLoading } from "@/components/ui/query-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AnswerEditor, KIND_LABEL, parseOptions, type QuestionKind } from "@/components/season-props/SeasonPropInputs";
+import { AnswerEditor, AnswerStatusControl, KIND_LABEL, PickInput, parseOptions, type QuestionKind } from "@/components/season-props/SeasonPropInputs";
 
 type Question = {
   questionId: string;
@@ -28,6 +28,8 @@ type Question = {
   flatDriverPoints: number;
   flatTeamPoints: number;
   answers: string[];
+  answerStatus: "running" | "final";
+  answerUpdatedAt: string | null;
   voided: boolean;
 };
 type Step = { correct: number; driverPoints: number; teamPoints: number };
@@ -105,7 +107,7 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
     dirty();
     setQuestions((qs) => [
       ...qs,
-      { questionId: crypto.randomUUID(), libraryQuestionId: null, prompt: "", kind: "choice", options: [], numberMode: "exact", scoring: "scale", flatDriverPoints: 0, flatTeamPoints: 0, answers: [], voided: false },
+      { questionId: crypto.randomUUID(), libraryQuestionId: null, prompt: "", kind: "choice", options: [], numberMode: "exact", scoring: "scale", flatDriverPoints: 0, flatTeamPoints: 0, answers: [], voided: false, answerStatus: "final", answerUpdatedAt: null },
     ]);
   };
   const addFromLibrary = (libraryId: string) => {
@@ -114,7 +116,7 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
     dirty();
     setQuestions((qs) => [
       ...qs,
-      { questionId: crypto.randomUUID(), libraryQuestionId: lq.questionId, prompt: lq.prompt, kind: lq.kind, options: lq.options, numberMode: "exact", scoring: "scale", flatDriverPoints: 0, flatTeamPoints: 0, answers: [], voided: false },
+      { questionId: crypto.randomUUID(), libraryQuestionId: lq.questionId, prompt: lq.prompt, kind: lq.kind, options: lq.options, numberMode: "exact", scoring: "scale", flatDriverPoints: 0, flatTeamPoints: 0, answers: [], voided: false, answerStatus: "final", answerUpdatedAt: null },
     ]);
   };
   const available = data.library.filter((l) => !questions.some((q) => q.libraryQuestionId === l.questionId));
@@ -140,6 +142,14 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
 
   return (
     <div className="space-y-6">
+      {data.seasonEnded && (
+        <Alert>
+          <AlertDescription>
+            This season has ended, so season picks are locked for everyone, whatever the settings below say. Reopen the season on the
+            Season page to let players pick again. You can still set a player&apos;s picks further down.
+          </AlertDescription>
+        </Alert>
+      )}
       {error && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
@@ -266,6 +276,14 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
                     <p className="text-xs text-muted-foreground">Thrown out: nobody scores this question.</p>
                   ) : (
                     <AnswerEditor kind={q.kind} options={q.options} grid={data.grid} answers={q.answers} onChange={(answers) => edit(q.questionId, { answers })} />
+                  )}
+                  {!q.voided && (
+                    <AnswerStatusControl
+                      status={q.answerStatus}
+                      updatedAt={q.answerUpdatedAt}
+                      hasAnswer={q.answers.length > 0}
+                      onChange={(answerStatus) => edit(q.questionId, { answerStatus })}
+                    />
                   )}
                   <label className="flex items-center gap-2 text-xs pt-1">
                     <Switch size="sm" checked={q.voided} onCheckedChange={(voided) => edit(q.questionId, { voided })} />
@@ -405,6 +423,8 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
         {emptyChoice && <span className="text-xs text-destructive">Pick-from-a-list questions need at least 2 options.</span>}
       </div>
 
+      {data.enabled && data.questions.length > 0 && <SetPlayerPicks leagueId={leagueId} data={data} />}
+
       {data.everyone && data.everyone.length > 0 && (
         <Card>
           <CardHeader>
@@ -434,5 +454,80 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
         </Card>
       )}
     </div>
+  );
+}
+
+/** Commissioner sets a player's picks for them (works even when picks are locked). Everyone in the league is notified. */
+function SetPlayerPicks({ leagueId, data }: { leagueId: string; data: ViewData }) {
+  const queryClient = useQueryClient();
+  const [userId, setUserId] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, Record<string, string>>>({});
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const picks = drafts[userId] ?? data.memberPicks[userId] ?? {};
+  const save = useMutation(
+    orpc.seasonProps.setPlayerPicks.mutationOptions({
+      onSuccess: () => {
+        setError(null);
+        setDone(true);
+        setDrafts((d) => Object.fromEntries(Object.entries(d).filter(([id]) => id !== userId)));
+        queryClient.invalidateQueries({ queryKey: orpc.seasonProps.key() });
+      },
+      onError: (e) => setError(e instanceof Error && e.message ? e.message : "Couldn't save those picks."),
+    }),
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <SectionTitle>Set a player&apos;s picks</SectionTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          Fill in or fix a player&apos;s season picks, even after the lock. Everyone in the league gets a notice that you worked on that
+          player&apos;s picks. It never says what they are.
+        </p>
+        <Select value={userId} onValueChange={(v) => { setUserId(v); setDone(false); setError(null); }}>
+          <SelectTrigger className="max-w-xs">
+            <SelectValue placeholder="Pick a player" />
+          </SelectTrigger>
+          <SelectContent>
+            {data.members.map((m) => (
+              <SelectItem key={m.userId} value={m.userId}>
+                {m.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {userId && (
+          <div className="space-y-3">
+            {data.questions.map((q) => (
+              <div key={q.questionId} className="space-y-1">
+                <p className="text-sm font-semibold">{q.prompt}</p>
+                <PickInput
+                  kind={q.kind as QuestionKind}
+                  options={q.options}
+                  grid={data.grid}
+                  value={picks[q.questionId] ?? ""}
+                  onChange={(v) => { setDone(false); setDrafts({ ...drafts, [userId]: { ...picks, [q.questionId]: v } }); }}
+                />
+              </div>
+            ))}
+            <div className="flex items-center gap-3">
+              <Button onClick={() => save.mutate({ leagueId, userId, picks })} disabled={save.isPending}>
+                {save.isPending && <Spinner className="w-3 h-3 mr-1" />}
+                Save their picks
+              </Button>
+              {done && <span className="text-xs text-muted-foreground">Saved. The league has been notified.</span>}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

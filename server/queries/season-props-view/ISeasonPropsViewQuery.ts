@@ -3,7 +3,10 @@ import type { LibraryQuestion } from "@/server/domain/season-question-library";
 
 export type SeasonPropsQuestionDTO = SeasonQuestion & {
   fromLibrary: boolean;
-  answerState: "pending" | "answered" | "voided";
+  /** "running" = an answer so far that may still change. */
+  answerState: "pending" | "running" | "answered" | "voided";
+  /** When the answer last changed. */
+  answerUpdatedAt: string | null;
   /** Filled in once the correct answer is known. */
   correctAnswers: string[];
 };
@@ -22,6 +25,8 @@ export type SeasonPropsViewResult = {
   open: boolean;
   locksAt: string | null;
   locked: boolean;
+  /** Why picks are closed for everyone (null while open). */
+  lockReason: "closed" | "seasonEnded" | "lockDate" | null;
   canPick: boolean;
   picksVisible: "afterLock" | "seasonEnd";
   pointsReveal: "always" | "racesLeft" | "seasonEnd";
@@ -45,6 +50,10 @@ export type SeasonPropsViewResult = {
   /** Commissioners only: the admins' questions this league can add, and who is in the league. */
   library: LibraryQuestion[];
   members: Array<{ userId: string; name: string }>;
+  /** Commissioners only, while the season is ended: season-bet settings changed since it ended (for the reopen choice). */
+  changedSinceEnd: string[];
+  /** Commissioners only: every member's saved picks, for setting them on their behalf. */
+  memberPicks: Record<string, Record<string, string>>;
 };
 
 export interface ISeasonPropsViewQuery {

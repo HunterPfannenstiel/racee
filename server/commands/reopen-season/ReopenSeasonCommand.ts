@@ -4,6 +4,7 @@ import type {
   IRacePredictionBookRepository,
   IRaceRepository,
   ITeamRepository,
+  ISeasonPropsRepository,
 } from "@/server/repositories";
 import { NotFoundError } from "@/server/domain/errors";
 import { LeagueStandings } from "@/server/domain/league-standings";
@@ -25,6 +26,7 @@ export class ReopenSeasonCommand implements IReopenSeasonCommand {
     private readonly books: IRacePredictionBookRepository,
     private readonly standings: ILeagueStandingsRepository,
     private readonly teams: ITeamRepository,
+    private readonly seasonProps: ISeasonPropsRepository,
   ) {}
 
   async execute(payload: ReopenSeasonPayload): Promise<void> {
@@ -50,5 +52,12 @@ export class ReopenSeasonCommand implements IReopenSeasonCommand {
     await this.leagues.save(league);
     for (const { book } of books) await this.books.save(book);
     await this.standings.save(standings);
+
+    const bets = await this.seasonProps.find(league.leagueId, league.seasonKey);
+    if (bets) {
+      if (payload.betSettings === "restore") bets.restoreSettings();
+      else bets.clearSnapshot();
+      await this.seasonProps.save(bets);
+    }
   }
 }

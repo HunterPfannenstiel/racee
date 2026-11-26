@@ -8,6 +8,7 @@ import type {
   IUserRepository,
 } from "@/server/repositories";
 import { NotFoundError } from "@/server/domain/errors";
+import { centralToday } from "@/server/services/central-day";
 import { loadFinaleGate } from "@/server/queries/shared/finale-gate";
 import { SeasonProps } from "@/server/domain/season-props";
 import { assertLeagueMember, isLeagueCommissioner } from "@/server/roles/league";
@@ -45,7 +46,7 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
     ]);
     const props = stored ?? SeasonProps.empty(league.leagueId, league.seasonKey);
     const gate = await loadFinaleGate({ props: this.props, calendars: this.calendars }, league, races);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = centralToday();
     const seasonEnded = league.isSeasonEnded;
     const racesLeft = races.filter((r) => r.keySetAt === null && !r.cancelled).length;
     const revealed = pointsRevealed(props, { seasonEnded, racesLeft });
@@ -65,7 +66,8 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
       return {
         ...q,
         fromLibrary: q.libraryQuestionId !== null,
-        answerState: answer ? (answer.voided ? ("voided" as const) : ("answered" as const)) : ("pending" as const),
+        answerState: answer ? (answer.voided ? ("voided" as const) : answer.running ? ("running" as const) : ("answered" as const)) : ("pending" as const),
+        answerUpdatedAt: answer?.updatedAt ?? null,
         correctAnswers: answer?.answers ?? [],
       };
     });
@@ -76,6 +78,7 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
       open: props.open,
       locksAt: props.locksAt,
       locked: props.isLocked(today, seasonEnded),
+      lockReason: !props.enabled || !props.open ? ("closed" as const) : seasonEnded ? ("seasonEnded" as const) : props.isLocked(today, seasonEnded) ? ("lockDate" as const) : null,
       canPick: props.canPick(actorUserId, today, seasonEnded),
       picksVisible: props.picksVisible,
       pointsReveal: props.pointsReveal,
@@ -116,6 +119,8 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
       members: canManage
         ? league.memberIds.map((userId) => ({ userId, name: nameOf.get(userId) ?? "Unknown player" })).sort((a, b) => a.name.localeCompare(b.name))
         : [],
+      changedSinceEnd: canManage && seasonEnded ? props.changedSinceSnapshot() : [],
+      memberPicks: canManage ? Object.fromEntries(Object.entries(props.picks).map(([id, picks]) => [id, { ...picks }])) : {},
     };
   }
 }

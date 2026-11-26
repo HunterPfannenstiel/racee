@@ -11,3 +11,15 @@ export function finaleReadyNotification(leagueName: string, now: string): AppNot
     read: false,
   };
 }
+
+/** Tells the league the commissioner worked on a player's season picks (never what they are). */
+export function seasonPicksEditedNotification(leagueName: string, playerName: string, now: string): AppNotification {
+  return {
+    id: crypto.randomUUID(),
+    kind: "season_picks_edited",
+    title: `${leagueName}: season picks changed`,
+    body: `Your commissioner worked on ${playerName}'s season picks.`,
+    createdAt: now,
+    read: false,
+  };
+}

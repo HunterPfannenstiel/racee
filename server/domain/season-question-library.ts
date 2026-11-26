@@ -18,6 +18,10 @@ export const LibraryQuestionSchema = z.object({
   answers: z.array(z.string()).default([]),
   /** Thrown out: nobody scores it. */
   voided: z.boolean().default(false),
+  /** "running" = the answer so far (counts now, changes as the season goes); "final" = settled. */
+  answerStatus: z.enum(["running", "final"]).default("final"),
+  /** When the answer last changed (set by the server). */
+  answerUpdatedAt: z.string().nullable().default(null),
 });
 export type LibraryQuestion = z.infer<typeof LibraryQuestionSchema>;
 
@@ -40,7 +44,13 @@ export class SeasonQuestionLibrary {
 
   /** Replaces the whole list (the admin page edits it as one). */
   replaceAll(questions: z.input<typeof LibraryQuestionSchema>[]): void {
-    const parsed = questions.map(q => LibraryQuestionSchema.parse(q));
+    const now = new Date().toISOString();
+    const parsed = questions.map(q => {
+      const next = LibraryQuestionSchema.parse(q);
+      const prev = this.find(next.questionId);
+      const changed = !prev || prev.answers.join("\u0000") !== next.answers.join("\u0000") || prev.answerStatus !== next.answerStatus;
+      return { ...next, answerUpdatedAt: changed ? (next.answers.length > 0 ? now : null) : (prev?.answerUpdatedAt ?? null) };
+    });
     if (new Set(parsed.map(q => q.questionId)).size !== parsed.length) throw new Error("Two questions share an id");
     this._questions = parsed;
   }

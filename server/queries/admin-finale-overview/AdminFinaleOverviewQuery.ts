@@ -39,7 +39,7 @@ export class AdminFinaleOverviewQuery implements IAdminFinaleOverviewQuery {
         racesTotal: counted.length,
         racesUngraded: counted.filter((r) => r.keySetAt === null).length,
         questionsUnanswered: library.questions.filter(
-          (q) => q.motorsportSeasonId === season.seasonId && !q.voided && q.answers.length === 0,
+          (q) => q.motorsportSeasonId === season.seasonId && !q.voided && (q.answers.length === 0 || q.answerStatus === "running"),
         ).length,
         released: !!season.finaleReleasedAt,
         leagueCount: inSeason.length,

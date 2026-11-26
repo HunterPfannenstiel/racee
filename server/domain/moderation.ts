@@ -46,7 +46,7 @@ export function addStrike(m: UserModeration): UserModeration {
 
 export const NotificationSchema = z.object({
   id: z.string().uuid(),
-  kind: z.enum(["photo_removed", "season_ended", "season_started", "season_finale"]),
+  kind: z.enum(["photo_removed", "season_ended", "season_started", "season_finale", "season_picks_edited"]),
   title: z.string(),
   body: z.string(),
   createdAt: z.string(),

@@ -47,6 +47,7 @@ const StandingsViewSchema = z.object({
   finalePending: z.boolean(),
   finaleHidden: z.boolean(),
   seasonBetsHidden: z.boolean(),
+  seasonBetsOn: z.boolean(),
   usersById: z.record(z.string(), UserSchema),
 });
 

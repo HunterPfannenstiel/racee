@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { QueryError, QueryLoading } from "@/components/ui/query-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AnswerEditor, KIND_LABEL, parseOptions, type QuestionKind } from "@/components/season-props/SeasonPropInputs";
+import { AnswerEditor, AnswerStatusControl, KIND_LABEL, parseOptions, type QuestionKind } from "@/components/season-props/SeasonPropInputs";
 
 type LibraryQuestion = {
   questionId: string;
@@ -24,6 +24,8 @@ type LibraryQuestion = {
   options: string[];
   answers: string[];
   voided: boolean;
+  answerStatus: "running" | "final";
+  answerUpdatedAt: string | null;
 };
 
 const ANY_SEASON = "__any__";
@@ -76,7 +78,7 @@ export default function AdminSeasonQuestionsPage() {
     setSaved(false);
     setDraft([
       ...questions,
-      { questionId: crypto.randomUUID(), motorsportSeasonId: seasons[seasons.length - 1]?.seasonId ?? null, prompt: "", kind: "choice", options: [], answers: [], voided: false },
+      { questionId: crypto.randomUUID(), motorsportSeasonId: seasons[seasons.length - 1]?.seasonId ?? null, prompt: "", kind: "choice", options: [], answers: [], voided: false, answerStatus: "final", answerUpdatedAt: null },
     ]);
   };
   const remove = (id: string) => {
@@ -92,8 +94,7 @@ export default function AdminSeasonQuestionsPage() {
       </Link>
       <p className="text-sm text-muted-foreground">
         Year-long prop bets that commissioners can pick from when they set up a season, like &quot;Who finishes 4th in the
-        Constructors&apos; Cup?&quot; Players answer them at the start of the year. At the end of the season, set the correct
-        answer here and every league using the question is graded automatically. Changing an answer later regrades them all.
+        Constructors&apos; Cup?&quot; Players answer them at the start of the year. Set the correct answer here and every league using the question is graded automatically. Mark it a &quot;running answer&quot; while it can still change (like the current leader) and update it as the season goes. Players see it as the current answer, and points update right away. Mark it final when it&apos;s settled.
       </p>
 
       {(motorsportsQuery.data?.length ?? 0) > 1 && (
@@ -198,6 +199,14 @@ export default function AdminSeasonQuestionsPage() {
                   )}
                   {q.answers.length === 0 && !q.voided && (
                     <p className="text-[10px] text-muted-foreground">Not answered yet. Leagues wait until you set it.</p>
+                  )}
+                  {!q.voided && (
+                    <AnswerStatusControl
+                      status={q.answerStatus}
+                      updatedAt={q.answerUpdatedAt}
+                      hasAnswer={q.answers.length > 0}
+                      onChange={(answerStatus) => edit(q.questionId, { answerStatus })}
+                    />
                   )}
                   <label className="flex items-center gap-2 text-xs pt-1">
                     <Switch size="sm" checked={q.voided} onCheckedChange={(voided) => edit(q.questionId, { voided })} />

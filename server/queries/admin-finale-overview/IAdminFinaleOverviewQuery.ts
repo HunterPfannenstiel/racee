@@ -4,7 +4,7 @@ export type AdminFinaleSeasonDTO = {
   lastRaceStarted: boolean;
   racesTotal: number;
   racesUngraded: number;
-  /** Library questions for this season that still have no answer (and aren't thrown out). */
+  /** Library questions for this season with no answer yet, or only a running answer (not thrown out). */
   questionsUnanswered: number;
   released: boolean;
   leagueCount: number;
