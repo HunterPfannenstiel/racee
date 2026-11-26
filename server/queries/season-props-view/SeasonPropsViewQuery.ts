@@ -119,6 +119,7 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
       members: canManage
         ? league.memberIds.map((userId) => ({ userId, name: nameOf.get(userId) ?? "Unknown player" })).sort((a, b) => a.name.localeCompare(b.name))
         : [],
+      changedSinceEnd: canManage && seasonEnded ? props.changedSinceSnapshot() : [],
       memberPicks: canManage ? Object.fromEntries(Object.entries(props.picks).map(([id, picks]) => [id, { ...picks }])) : {},
     };
   }

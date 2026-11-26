@@ -1,4 +1,4 @@
-import type { ILeagueRepository, INotificationRepository, IRaceRepository } from "@/server/repositories";
+import type { ILeagueRepository, INotificationRepository, IRaceRepository, ISeasonPropsRepository } from "@/server/repositories";
 import { InvariantViolationError, NotFoundError } from "@/server/domain/errors";
 import { assertLeagueCommissioner } from "@/server/roles/league";
 import type { EndSeasonPayload, IEndSeasonCommand } from "./IEndSeasonCommand";
@@ -14,6 +14,7 @@ export class EndSeasonCommand implements IEndSeasonCommand {
     private readonly leagues: ILeagueRepository,
     private readonly races: IRaceRepository,
     private readonly notifications: INotificationRepository,
+    private readonly seasonProps: ISeasonPropsRepository,
   ) {}
 
   async execute(payload: EndSeasonPayload): Promise<void> {
@@ -28,6 +29,13 @@ export class EndSeasonCommand implements IEndSeasonCommand {
     const now = new Date().toISOString();
     league.endSeason(scored[scored.length - 1], now, crypto.randomUUID());
     await this.leagues.save(league);
+
+    // Remember the season-bet setup as it was, so reopening can offer to put it back.
+    const bets = await this.seasonProps.find(league.leagueId, league.seasonKey);
+    if (bets) {
+      bets.snapshotSettings();
+      await this.seasonProps.save(bets);
+    }
 
     const label = league.displaySeasonLabel(season, now.slice(0, 4));
     for (const userId of league.memberIds) {

@@ -50,6 +50,8 @@ export type SeasonPropsViewResult = {
   /** Commissioners only: the admins' questions this league can add, and who is in the league. */
   library: LibraryQuestion[];
   members: Array<{ userId: string; name: string }>;
+  /** Commissioners only, while the season is ended: season-bet settings changed since it ended (for the reopen choice). */
+  changedSinceEnd: string[];
   /** Commissioners only: every member's saved picks, for setting them on their behalf. */
   memberPicks: Record<string, Record<string, string>>;
 };

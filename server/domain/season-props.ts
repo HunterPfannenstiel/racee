@@ -62,8 +62,10 @@ export const SeasonPropsSchema = z.object({
   revealRacesLeft: z.number().int().min(0).max(60).default(3),
   scale: z.array(ScaleStepSchema).max(50).default([]),
   questions: z.array(SeasonQuestionSchema).max(40).default([]),
-  /** When the commissioner released the season finale (the final standings and video). Only counts if it's after the season ended. */
+  /** When the commissioner released the season finale (the final standings and video). */
   finaleReleasedAt: z.string().nullable().default(null),
+  /** The setup as it was when the season ended, so reopening can restore it. Null = not captured. */
+  settingsAtEnd: z.record(z.string(), z.unknown()).nullable().default(null),
   /** userId → questionId → answer. */
   picks: z.record(z.string(), z.record(z.string(), z.string())).default({}),
 });
@@ -71,7 +73,24 @@ export type SeasonPropsData = z.infer<typeof SeasonPropsSchema>;
 export type SeasonPropsInput = z.input<typeof SeasonPropsSchema>;
 
 /** The setup a commissioner edits (everything except the picks). */
-export type SeasonPropsSetup = Omit<SeasonPropsInput, "leagueId" | "seasonKey" | "picks" | "finaleReleasedAt">;
+export type SeasonPropsSetup = Omit<SeasonPropsInput, "leagueId" | "seasonKey" | "picks" | "finaleReleasedAt" | "settingsAtEnd">;
+
+const SETTING_KEYS = {
+  enabled: true, open: true, locksAt: true, latePickUserIds: true, picksVisible: true,
+  pointsReveal: true, revealRacesLeft: true, scale: true, questions: true,
+} as const;
+
+function pickSettings(p: SeasonPropsData) {
+  return {
+    enabled: p.enabled, open: p.open, locksAt: p.locksAt, latePickUserIds: p.latePickUserIds, picksVisible: p.picksVisible,
+    pointsReveal: p.pointsReveal, revealRacesLeft: p.revealRacesLeft, scale: p.scale, questions: p.questions,
+  };
+}
+
+/** Questions compared without the server-stamped "updated" time. */
+function stripStamps(questions: unknown): unknown {
+  return Array.isArray(questions) ? questions.map((q) => ({ ...(q as object), answerUpdatedAt: undefined })) : questions;
+}
 
 export class SeasonProps {
   private props: SeasonPropsData;
@@ -96,7 +115,50 @@ export class SeasonProps {
   get scale(): readonly ScaleStep[] { return this.props.scale; }
   get questions(): readonly SeasonQuestion[] { return this.props.questions; }
   get finaleReleasedAt(): string | null { return this.props.finaleReleasedAt; }
+  get settingsAtEnd(): Readonly<Record<string, unknown>> | null { return this.props.settingsAtEnd; }
   get picks(): Readonly<Record<string, Readonly<Record<string, string>>>> { return this.props.picks; }
+
+  /** Remembers the setup as it stands (called when the season ends). */
+  snapshotSettings(): void {
+    this.props = { ...this.props, settingsAtEnd: JSON.parse(JSON.stringify(pickSettings(this.props))) };
+  }
+
+  /** What was changed since the season ended, in plain words (empty = nothing, or no snapshot). */
+  changedSinceSnapshot(): string[] {
+    const snap = this.props.settingsAtEnd;
+    if (!snap) return [];
+    const now = pickSettings(this.props);
+    const labels: Record<string, string> = {
+      enabled: "Season bets on or off",
+      open: "Open to players",
+      locksAt: "Lock date",
+      latePickUserIds: "Who may pick after the lock",
+      picksVisible: "When picks are visible",
+      pointsReveal: "When bonus points count",
+      revealRacesLeft: "Races left before bonus points count",
+      scale: "The scale",
+      questions: "The questions",
+    };
+    const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+    return Object.entries(labels)
+      .filter(([key]) => {
+        if (key === "questions") return !same(stripStamps(snap.questions), stripStamps(now.questions));
+        return !same(snap[key], (now as Record<string, unknown>)[key]);
+      })
+      .map(([, label]) => label);
+  }
+
+  /** Puts the setup back to how it was when the season ended, and forgets the snapshot. */
+  restoreSettings(): void {
+    const snap = this.props.settingsAtEnd;
+    if (snap) this.configure(SeasonPropsSchema.pick(SETTING_KEYS).parse(snap));
+    this.props = { ...this.props, settingsAtEnd: null };
+  }
+
+  /** Forgets the snapshot (the commissioner kept the new settings). */
+  clearSnapshot(): void {
+    this.props = { ...this.props, settingsAtEnd: null };
+  }
 
   /** Replaces the setup. Picks for questions that were removed are dropped; the rest stay. */
   configure(setup: SeasonPropsSetup): void {

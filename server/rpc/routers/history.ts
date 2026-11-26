@@ -48,9 +48,9 @@ const seasonQuestionsRepo = new BlobSeasonQuestionLibraryRepository();
 const historyQuery = new LeagueHistoryQuery(leagueRepo, raceRepo, standingsRepo, teamRepo, userRepo, historyRepo, seasonPropsRepo, seasonQuestionsRepo, calendarRepo);
 const shelfQuery = new TrophyShelfQuery(userRepo, leagueRepo, raceRepo, standingsRepo, historyRepo, privacyRepo, seasonPropsRepo, seasonQuestionsRepo, calendarRepo);
 const nextSeasonSetupQuery = new NextSeasonSetupQuery(leagueRepo, raceRepo, teamRepo, userRepo, historyRepo, calendarRepo);
-const endSeasonCommand = new EndSeasonCommand(leagueRepo, raceRepo, notificationRepo);
+const endSeasonCommand = new EndSeasonCommand(leagueRepo, raceRepo, notificationRepo, seasonPropsRepo);
 const bookRepo = new BlobRacePredictionBookRepository();
-const reopenSeasonCommand = new ReopenSeasonCommand(leagueRepo, raceRepo, bookRepo, standingsRepo, teamRepo);
+const reopenSeasonCommand = new ReopenSeasonCommand(leagueRepo, raceRepo, bookRepo, standingsRepo, teamRepo, seasonPropsRepo);
 const startNextSeasonCommand = new StartNextSeasonCommand(
   leagueRepo, raceRepo, standingsRepo, teamRepo, userRepo, historyRepo, notificationRepo, calendarRepo, seasonPropsRepo, seasonQuestionsRepo,
 );
@@ -181,10 +181,10 @@ export const historyRouter = {
 
   /** Undoes endSeason before the next season starts. Commissioner-only. */
   reopenSeason: authed
-    .input(LeagueIdInput)
+    .input(LeagueIdInput.extend({ betSettings: z.enum(["keep", "restore"]).optional() }))
     .output(Ok)
     .handler(async ({ context, input }) => {
-      await reopenSeasonCommand.execute({ leagueId: input.leagueId, actorUserId: context.session.user.id });
+      await reopenSeasonCommand.execute({ leagueId: input.leagueId, actorUserId: context.session.user.id, betSettings: input.betSettings });
       return { ok: true as const };
     }),
 

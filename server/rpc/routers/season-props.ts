@@ -92,6 +92,7 @@ const ViewSchema = z.object({
     .nullable(),
   library: z.array(LibraryQuestionSchema),
   members: z.array(z.object({ userId: z.string(), name: z.string() })),
+  changedSinceEnd: z.array(z.string()),
   memberPicks: z.record(z.string(), z.record(z.string(), z.string())),
 });
 
