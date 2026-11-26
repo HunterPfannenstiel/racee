@@ -57,24 +57,33 @@ export function TrophySlide({
   leagueId: string;
   logos?: Logo[];
 }) {
-  const podium = rows.filter((r) => r.rank <= 3).sort((a, b) => a.rank - b.rank);
+  // Podium order: 2nd on the left, 1st in the middle (and highest), 3rd on the right. Ties share a step.
+  const byRank = (rank: number) => rows.filter((r) => r.rank === rank);
+  const podium = [...byRank(2), ...byRank(1), ...byRank(3)];
+  const stepHeight = (rank: number) => (rank === 1 ? 128 : rank === 2 ? 88 : 56);
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8 px-4 text-center">
       <motion.p {...rise(0)} className={label}>
         {title}
       </motion.p>
-      <div className="flex flex-wrap items-end justify-center gap-x-8 gap-y-6">
-        {podium.map((r, i) => {
+      <div className="flex items-end justify-center gap-2 sm:gap-4">
+        {podium.map((r) => {
           const trophy = medalForRank(r.rank, r.total);
+          const order = r.rank === 3 ? 1 : r.rank === 2 ? 2 : 3;
           return (
-            <motion.div key={r.id} {...rise(i + 1)} className="flex w-32 flex-col items-center gap-2 sm:w-40">
-              {trophy && <TrophyIcon medal={trophy} className={r.rank === 1 ? "size-24 sm:size-28" : "size-16 sm:size-20"} />}
-              <Identity id={r.id} name={r.name} size="xl" leagueId={leagueId} logos={logos} />
-              <p className="max-w-full truncate font-mono text-sm font-semibold uppercase tracking-wide text-white">{r.name}</p>
-              <p className="font-mono text-lg font-bold tabular-nums text-white">{formatPoints(r.total)}</p>
-              <p className="font-mono text-[10px] uppercase tracking-widest text-white/40">
-                {r.rank === 1 ? "1st" : r.rank === 2 ? "2nd" : "3rd"}
-              </p>
+            <motion.div key={r.id} {...rise(order)} className="flex w-28 flex-col items-center sm:w-40">
+              <div className="flex flex-col items-center gap-2 pb-3">
+                {trophy && <TrophyIcon medal={trophy} className={r.rank === 1 ? "size-24 sm:size-28" : "size-14 sm:size-20"} />}
+                <Identity id={r.id} name={r.name} size="xl" leagueId={leagueId} logos={logos} />
+                <p className="max-w-full truncate font-mono text-sm font-semibold uppercase tracking-wide text-white">{r.name}</p>
+                <p className="font-mono text-lg font-bold tabular-nums text-white">{formatPoints(r.total)}</p>
+              </div>
+              <div
+                className="flex w-full items-start justify-center rounded-t-md border border-b-0 border-white/15 bg-white/10 pt-2 font-mono text-xl font-bold text-white/60"
+                style={{ height: stepHeight(r.rank) }}
+              >
+                {r.rank}
+              </div>
             </motion.div>
           );
         })}

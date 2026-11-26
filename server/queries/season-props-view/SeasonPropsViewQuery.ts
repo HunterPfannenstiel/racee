@@ -8,6 +8,7 @@ import type {
   IUserRepository,
 } from "@/server/repositories";
 import { NotFoundError } from "@/server/domain/errors";
+import { centralToday } from "@/server/services/central-day";
 import { loadFinaleGate } from "@/server/queries/shared/finale-gate";
 import { SeasonProps } from "@/server/domain/season-props";
 import { assertLeagueMember, isLeagueCommissioner } from "@/server/roles/league";
@@ -45,7 +46,7 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
     ]);
     const props = stored ?? SeasonProps.empty(league.leagueId, league.seasonKey);
     const gate = await loadFinaleGate({ props: this.props, calendars: this.calendars }, league, races);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = centralToday();
     const seasonEnded = league.isSeasonEnded;
     const racesLeft = races.filter((r) => r.keySetAt === null && !r.cancelled).length;
     const revealed = pointsRevealed(props, { seasonEnded, racesLeft });

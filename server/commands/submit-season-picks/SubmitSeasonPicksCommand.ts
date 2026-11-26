@@ -1,5 +1,6 @@
 import type { ILeagueRepository, ISeasonPropsRepository } from "@/server/repositories";
 import { InvariantViolationError, NotFoundError } from "@/server/domain/errors";
+import { centralToday } from "@/server/services/central-day";
 import { assertLeagueMember } from "@/server/roles/league";
 import type { ISubmitSeasonPicksCommand, SubmitSeasonPicksPayload } from "./ISubmitSeasonPicksCommand";
 
@@ -17,7 +18,7 @@ export class SubmitSeasonPicksCommand implements ISubmitSeasonPicksCommand {
 
     const props = await this.props.find(league.leagueId, league.seasonKey);
     if (!props) throw new InvariantViolationError("This league isn't playing season bets");
-    const today = new Date().toISOString().slice(0, 10);
+    const today = centralToday();
     if (!props.canPick(payload.actorUserId, today, league.isSeasonEnded)) {
       throw new InvariantViolationError("Season picks are closed for you");
     }

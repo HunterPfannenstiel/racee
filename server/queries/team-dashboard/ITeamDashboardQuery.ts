@@ -78,6 +78,8 @@ export type TeamDashboardResult = {
   viewerTeamId: string | null;
   /** Whether the viewer may change this team's logo (its members and the league's commissioners). */
   canEditLogo: boolean;
+  /** The final results are still pending, so only the viewer's own team is shown (no ranks or other teams). */
+  finaleHidden: boolean;
 };
 
 export interface ITeamDashboardQuery {
