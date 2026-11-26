@@ -37,6 +37,8 @@ export default function CommissionerSeasonPage() {
   const historyQuery = useQuery(orpc.history.get.queryOptions({ input: { leagueId } }));
   const [error, setError] = useState<string | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [confirmReopen, setConfirmReopen] = useState(false);
+  const betsQuery = useQuery(orpc.seasonProps.get.queryOptions({ input: { leagueId } }));
   const [confirmUndo, setConfirmUndo] = useState(false);
 
   const invalidate = () => {
@@ -133,7 +135,7 @@ export default function CommissionerSeasonPage() {
                 </>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => reopenMutation.mutate({ leagueId })} disabled={reopenMutation.isPending}>
+                  <Button variant="outline" onClick={() => setConfirmReopen(true)} disabled={reopenMutation.isPending}>
                     {reopenMutation.isPending && <Spinner className="w-3 h-3 mr-1" />}
                     Reopen season
                   </Button>
@@ -203,6 +205,33 @@ export default function CommissionerSeasonPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => undoMutation.mutate({ leagueId })}>Go back</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmReopen} onOpenChange={setConfirmReopen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reopen the {data?.current.label} season?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Picks open again and the final standings go back to a season in progress. Anything you changed while it was
+              closed stays as it is now.
+            </AlertDialogDescription>
+            {betsQuery.data?.enabled && (
+              <div className="flex gap-2 rounded-sm border border-amber-400/60 bg-amber-400/10 px-3 py-2 text-sm">
+                <TriangleAlertIcon className="size-4 shrink-0 text-amber-500 mt-0.5" />
+                <p>
+                  Season bets come back exactly as saved: {betsQuery.data.open ? "open to players" : "closed to players"},{" "}
+                  {betsQuery.data.questions.length} question{betsQuery.data.questions.length === 1 ? "" : "s"},{" "}
+                  {betsQuery.data.locksAt ? `picks lock on ${betsQuery.data.locksAt}` : "no lock date"}. Check them on the Season
+                  bets page if you changed anything.
+                </p>
+              </div>
+            )}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => reopenMutation.mutate({ leagueId })}>Reopen season</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

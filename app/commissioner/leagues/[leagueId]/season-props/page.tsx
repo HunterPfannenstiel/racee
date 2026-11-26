@@ -140,6 +140,14 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
 
   return (
     <div className="space-y-6">
+      {data.seasonEnded && (
+        <Alert>
+          <AlertDescription>
+            This season has ended, so season picks are locked for everyone, whatever the settings below say. Reopen the season on the
+            Season page to let players pick again. You can still set a player&apos;s picks further down.
+          </AlertDescription>
+        </Alert>
+      )}
       {error && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
