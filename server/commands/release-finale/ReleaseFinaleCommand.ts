@@ -46,7 +46,10 @@ export class ReleaseFinaleCommand implements IReleaseFinaleCommand {
     if (props.isFinaleReleased()) return;
     if (props.enabled && props.open) {
       const library = await this.libraries.findByMotorsport(league.motorsportId);
-      const waiting = props.questions.filter((q) => resolveAnswer(q, library.questions) === null);
+      const waiting = props.questions.filter((q) => {
+        const answer = resolveAnswer(q, library.questions);
+        return answer === null || answer.running;
+      });
       if (waiting.length > 0) {
         throw new InvariantViolationError(
           `${waiting.length} season question${waiting.length === 1 ? " still needs its" : "s still need their"} answer before the finale can be released`,

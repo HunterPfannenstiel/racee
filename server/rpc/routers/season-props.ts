@@ -51,7 +51,8 @@ const saveLibraryCommand = new BlobSaveSeasonQuestionLibraryCommand(libraryRepo)
 
 const QuestionDTOSchema = SeasonQuestionSchema.extend({
   fromLibrary: z.boolean(),
-  answerState: z.enum(["pending", "answered", "voided"]),
+  answerState: z.enum(["pending", "running", "answered", "voided"]),
+  answerUpdatedAt: z.string().nullable(),
   correctAnswers: z.array(z.string()),
 });
 

@@ -66,7 +66,8 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
       return {
         ...q,
         fromLibrary: q.libraryQuestionId !== null,
-        answerState: answer ? (answer.voided ? ("voided" as const) : ("answered" as const)) : ("pending" as const),
+        answerState: answer ? (answer.voided ? ("voided" as const) : answer.running ? ("running" as const) : ("answered" as const)) : ("pending" as const),
+        answerUpdatedAt: answer?.updatedAt ?? null,
         correctAnswers: answer?.answers ?? [],
       };
     });

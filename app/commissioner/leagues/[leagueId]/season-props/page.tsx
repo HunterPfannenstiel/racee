@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { QueryError, QueryLoading } from "@/components/ui/query-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AnswerEditor, KIND_LABEL, PickInput, parseOptions, type QuestionKind } from "@/components/season-props/SeasonPropInputs";
+import { AnswerEditor, AnswerStatusControl, KIND_LABEL, PickInput, parseOptions, type QuestionKind } from "@/components/season-props/SeasonPropInputs";
 
 type Question = {
   questionId: string;
@@ -28,6 +28,8 @@ type Question = {
   flatDriverPoints: number;
   flatTeamPoints: number;
   answers: string[];
+  answerStatus: "running" | "final";
+  answerUpdatedAt: string | null;
   voided: boolean;
 };
 type Step = { correct: number; driverPoints: number; teamPoints: number };
@@ -105,7 +107,7 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
     dirty();
     setQuestions((qs) => [
       ...qs,
-      { questionId: crypto.randomUUID(), libraryQuestionId: null, prompt: "", kind: "choice", options: [], numberMode: "exact", scoring: "scale", flatDriverPoints: 0, flatTeamPoints: 0, answers: [], voided: false },
+      { questionId: crypto.randomUUID(), libraryQuestionId: null, prompt: "", kind: "choice", options: [], numberMode: "exact", scoring: "scale", flatDriverPoints: 0, flatTeamPoints: 0, answers: [], voided: false, answerStatus: "final", answerUpdatedAt: null },
     ]);
   };
   const addFromLibrary = (libraryId: string) => {
@@ -114,7 +116,7 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
     dirty();
     setQuestions((qs) => [
       ...qs,
-      { questionId: crypto.randomUUID(), libraryQuestionId: lq.questionId, prompt: lq.prompt, kind: lq.kind, options: lq.options, numberMode: "exact", scoring: "scale", flatDriverPoints: 0, flatTeamPoints: 0, answers: [], voided: false },
+      { questionId: crypto.randomUUID(), libraryQuestionId: lq.questionId, prompt: lq.prompt, kind: lq.kind, options: lq.options, numberMode: "exact", scoring: "scale", flatDriverPoints: 0, flatTeamPoints: 0, answers: [], voided: false, answerStatus: "final", answerUpdatedAt: null },
     ]);
   };
   const available = data.library.filter((l) => !questions.some((q) => q.libraryQuestionId === l.questionId));
@@ -274,6 +276,14 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
                     <p className="text-xs text-muted-foreground">Thrown out: nobody scores this question.</p>
                   ) : (
                     <AnswerEditor kind={q.kind} options={q.options} grid={data.grid} answers={q.answers} onChange={(answers) => edit(q.questionId, { answers })} />
+                  )}
+                  {!q.voided && (
+                    <AnswerStatusControl
+                      status={q.answerStatus}
+                      updatedAt={q.answerUpdatedAt}
+                      hasAnswer={q.answers.length > 0}
+                      onChange={(answerStatus) => edit(q.questionId, { answerStatus })}
+                    />
                   )}
                   <label className="flex items-center gap-2 text-xs pt-1">
                     <Switch size="sm" checked={q.voided} onCheckedChange={(voided) => edit(q.questionId, { voided })} />

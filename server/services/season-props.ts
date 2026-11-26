@@ -7,7 +7,13 @@ import type { Team } from "@/server/domain/team";
  * season's props, the admins' library and the teams, then call these.
  */
 
-export type ResolvedAnswer = { answers: string[]; voided: boolean };
+export type ResolvedAnswer = {
+  answers: string[];
+  voided: boolean;
+  /** The answer so far: it counts now but may still change. */
+  running: boolean;
+  updatedAt: string | null;
+};
 
 /** The correct answer for a question, or null while nobody has entered it yet. */
 export function resolveAnswer(question: SeasonQuestion, library: readonly LibraryQuestion[]): ResolvedAnswer | null {
@@ -15,8 +21,10 @@ export function resolveAnswer(question: SeasonQuestion, library: readonly Librar
     ? library.find((l) => l.questionId === question.libraryQuestionId)
     : question;
   if (!source) return null;
-  if (source.voided) return { answers: [], voided: true };
-  return source.answers.length > 0 ? { answers: [...source.answers], voided: false } : null;
+  if (source.voided) return { answers: [], voided: true, running: false, updatedAt: source.answerUpdatedAt };
+  return source.answers.length > 0
+    ? { answers: [...source.answers], voided: false, running: source.answerStatus === "running", updatedAt: source.answerUpdatedAt }
+    : null;
 }
 
 const norm = (s: string) => s.trim().toLowerCase();

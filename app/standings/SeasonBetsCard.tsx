@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { orpc } from "@/lib/orpc/client";
+import { shortDay } from "@/components/season-props/SeasonPropInputs";
 
 /** The viewer's year-long bets on the standings page: their pick, and the answer once it's known. */
 export function SeasonBetsCard({ leagueId }: { leagueId: string }) {
@@ -25,10 +26,12 @@ export function SeasonBetsCard({ leagueId }: { leagueId: string }) {
               <p className="font-semibold">{q.prompt}</p>
               <p className="text-xs text-muted-foreground">
                 Your pick: <span className="text-foreground">{pick || "none yet"}</span>
-                {q.answerState === "answered" && (
+                {(q.answerState === "answered" || q.answerState === "running") && (
                   <>
-                    {" · "}Answer: <span className="text-foreground">{q.correctAnswers.join(", ")}</span>
+                    {" · "}
+                    {q.answerState === "running" ? "Current answer" : "Answer"}: <span className="text-foreground">{q.correctAnswers.join(", ")}</span>
                     {pick && q.correctAnswers.includes(pick) && " ✓"}
+                    {q.answerState === "running" && q.answerUpdatedAt && ` (updated ${shortDay(q.answerUpdatedAt)}, still changing)`}
                   </>
                 )}
                 {q.answerState === "voided" && " · Thrown out"}

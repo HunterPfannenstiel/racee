@@ -36,7 +36,7 @@ export function FinaleCard({
   if (!p || !(p.lastRaceStarted || p.seasonEnded)) return null;
 
   const betsOn = p.enabled && p.open;
-  const open = p.questions.filter((q) => q.answerState === "pending");
+  const open = p.questions.filter((q) => q.answerState === "pending" || q.answerState === "running");
   const blocked = betsOn && open.length > 0;
   const released = p.finaleReleased;
 
@@ -58,7 +58,7 @@ export function FinaleCard({
           {betsOn && (
             <li className="flex items-center gap-2">
               <Tick done={open.length === 0} />
-              {open.length === 0 ? "Every season bet is answered" : `${open.length} season bet${open.length === 1 ? "" : "s"} still need an answer`}
+              {open.length === 0 ? "Every season bet is answered" : `${open.length} season bet${open.length === 1 ? "" : "s"} still need a final answer`}
             </li>
           )}
           <li className="flex items-center gap-2">

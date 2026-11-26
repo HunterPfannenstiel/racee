@@ -3,7 +3,10 @@ import type { LibraryQuestion } from "@/server/domain/season-question-library";
 
 export type SeasonPropsQuestionDTO = SeasonQuestion & {
   fromLibrary: boolean;
-  answerState: "pending" | "answered" | "voided";
+  /** "running" = an answer so far that may still change. */
+  answerState: "pending" | "running" | "answered" | "voided";
+  /** When the answer last changed. */
+  answerUpdatedAt: string | null;
   /** Filled in once the correct answer is known. */
   correctAnswers: string[];
 };

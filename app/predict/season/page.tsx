@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { QueryError, QueryLoading } from "@/components/ui/query-state";
-import { PickInput, KIND_LABEL, type QuestionKind } from "@/components/season-props/SeasonPropInputs";
+import { PickInput, KIND_LABEL, shortDay, type QuestionKind } from "@/components/season-props/SeasonPropInputs";
 
 function errorMessage(e: unknown, fallback: string) {
   return e instanceof Error && e.message ? e.message : fallback;
@@ -118,8 +118,11 @@ function PickForm({ leagueId, data }: { leagueId: string; data: ViewData }) {
                 disabled={!data.canPick}
                 onChange={(v) => { setSaved(false); setPicks({ ...picks, [q.questionId]: v }); }}
               />
-              {q.answerState === "answered" && (
-                <p className="text-xs text-muted-foreground">Answer: <span className="text-foreground">{q.correctAnswers.join(", ")}</span></p>
+              {(q.answerState === "answered" || q.answerState === "running") && (
+                <p className="text-xs text-muted-foreground">
+                  {q.answerState === "running" ? "Current answer" : "Answer"}: <span className="text-foreground">{q.correctAnswers.join(", ")}</span>
+                  {q.answerState === "running" && q.answerUpdatedAt && ` · updated ${shortDay(q.answerUpdatedAt)}, still changing`}
+                </p>
               )}
               {q.answerState === "voided" && <p className="text-xs text-muted-foreground">Thrown out.</p>}
             </CardContent>

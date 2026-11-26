@@ -29,6 +29,10 @@ export const SeasonQuestionSchema = z.object({
   answers: z.array(z.string()).default([]),
   /** Custom questions: thrown out (nobody scores it, and it doesn't count toward the scale). */
   voided: z.boolean().default(false),
+  /** "running" = the answer so far (it counts and updates as the season goes); "final" = settled. */
+  answerStatus: z.enum(["running", "final"]).default("final"),
+  /** When the answer last changed (set by the server). */
+  answerUpdatedAt: z.string().nullable().default(null),
 });
 export type SeasonQuestion = z.infer<typeof SeasonQuestionSchema>;
 
@@ -107,7 +111,15 @@ export class SeasonProps {
     for (const [userId, answers] of Object.entries(parsed.picks)) {
       picks[userId] = Object.fromEntries(Object.entries(answers).filter(([id]) => questionIds.has(id)));
     }
-    this.props = { ...parsed, scale: steps, picks };
+    // The server stamps when a custom question's answer last changed; the client's value is ignored.
+    const before = new Map(this.props.questions.map(q => [q.questionId, q]));
+    const now = new Date().toISOString();
+    const questions = parsed.questions.map(q => {
+      const prev = before.get(q.questionId);
+      const changed = !prev || prev.answers.join("\u0000") !== q.answers.join("\u0000") || prev.answerStatus !== q.answerStatus;
+      return { ...q, answerUpdatedAt: changed ? (q.answers.length > 0 ? now : null) : (prev?.answerUpdatedAt ?? null) };
+    });
+    this.props = { ...parsed, questions, scale: steps, picks };
   }
 
   /** True once picks have closed (the lock day arrived, or the season ended). */
