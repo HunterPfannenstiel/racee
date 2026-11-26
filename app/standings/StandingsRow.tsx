@@ -69,6 +69,8 @@ function StageCell({ value, rank }: { value: number; rank: boolean }) {
 
 export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, stageTotalsByRaceId, stageRanksByRaceId, seasonRank, showSummary, bets }: StandingsRowProps) {
   const gap = leaderTotal - row.total;
+  // Grid and prop points from the races the mulligans dropped.
+  const lostToMulligans = Math.max(0, row.rawTotal + row.propTotal - (row.total - (row.seasonBonus ?? 0)));
 
   return (
     <tr className="border-t border-border/50">
@@ -129,9 +131,9 @@ export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, 
       {showSummary && (
         <>
           <SummaryCell value={formatPoints(row.rawTotal)} />
-          <SummaryCell value={formatPoints(row.total - (row.seasonBonus ?? 0) - row.propTotal)} />
           <SummaryCell value={formatPoints(row.propTotal)} />
-          <SummaryCell value={formatPoints(row.rawTotal + row.propTotal)} />
+          <SummaryCell value={lostToMulligans > 0 ? `-${formatPoints(lostToMulligans)}` : "0"} muted={lostToMulligans === 0} />
+          <SummaryCell value={formatPoints(row.rawTotal + row.propTotal + (row.seasonBonus ?? 0))} />
           <SummaryCell value={<span className={medalColor[seasonRank] ?? "text-muted-foreground"}>{seasonRank}</span>} />
           <SummaryCell value={gap === 0 ? "—" : `-${formatPoints(gap)}`} muted={gap > 0} />
         </>

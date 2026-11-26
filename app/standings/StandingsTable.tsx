@@ -88,7 +88,7 @@ function computeStageData(rows: StandingsRowData[], stages: string[][]) {
 }
 
 function computeSeasonRanks(rows: StandingsRowData[]): Record<string, number> {
-  const withTotals = rows.map((r) => ({ id: r.id, total: r.rawTotal + r.propTotal }));
+  const withTotals = rows.map((r) => ({ id: r.id, total: r.rawTotal + r.propTotal + (r.seasonBonus ?? 0) }));
   const ranked = assignRanks(withTotals, (t) => t.total);
   return Object.fromEntries(ranked.map(({ id, rank }) => [id, rank]));
 }
@@ -111,10 +111,11 @@ export function StandingsTable({ rows, races, nameHeader, stages, showSummary = 
     if (key === "total" || key === "gap") return row.total;
     if (key === "move") return row.movement ?? Number.NEGATIVE_INFINITY;
     if (key === "grid") return row.rawTotal;
-    if (key === "mul") return row.total - (row.seasonBonus ?? 0) - row.propTotal;
+    // Points lost to mulligans, as a negative number (0 = nothing dropped), so "best first" means least lost.
+    if (key === "mul") return -(row.rawTotal + row.propTotal - (row.total - (row.seasonBonus ?? 0)));
     if (key === "bets") return row.seasonBonus ?? 0;
     if (key === "props") return row.propTotal;
-    if (key === "gross" || key === "srank") return row.rawTotal + row.propTotal;
+    if (key === "gross" || key === "srank") return row.rawTotal + row.propTotal + (row.seasonBonus ?? 0);
     if (key.startsWith("race:")) return row.raceScores[key.slice(5)] ?? Number.NEGATIVE_INFINITY;
     if (key.startsWith("stage:") || key.startsWith("stagerank:")) return stageData[stageIdxByKey(key)]?.totalsByRowId[row.id] ?? 0;
     return 0;
@@ -221,10 +222,10 @@ export function StandingsTable({ rows, races, nameHeader, stages, showSummary = 
             {showSummary && (
               <>
                 <SummaryHeaderCell label="Grid" tooltip="all grid points (no props, no mulligans)" sortDir={sortDirFor("grid")} onSort={() => toggleSort("grid")} />
-                <SummaryHeaderCell label="-Mul" tooltip="grid - mulligans (no props)" sortDir={sortDirFor("mul")} onSort={() => toggleSort("mul")} />
                 <SummaryHeaderCell label="Props" tooltip="all prop points" sortDir={sortDirFor("props")} onSort={() => toggleSort("props")} />
-                <SummaryHeaderCell label="Gross" tooltip="grid + props (no mulligans)" sortDir={sortDirFor("gross")} onSort={() => toggleSort("gross")} />
-                <SummaryHeaderCell label="S.Rank" tooltip="rank by Gross" sortDir={sortDirFor("srank")} onSort={() => toggleSort("srank")} />
+                <SummaryHeaderCell label="Mul" tooltip="points lost to mulligans (the grid and prop points from the races that were dropped)" sortDir={sortDirFor("mul")} onSort={() => toggleSort("mul")} />
+                <SummaryHeaderCell label="Gross" tooltip={seasonBets ? "everything added up with no mulligans: grid + props + season bets" : "everything added up with no mulligans: grid + props"} sortDir={sortDirFor("gross")} onSort={() => toggleSort("gross")} />
+                <SummaryHeaderCell label="G.Rank" tooltip="rank by Gross (no mulligans)" sortDir={sortDirFor("srank")} onSort={() => toggleSort("srank")} />
                 <SummaryHeaderCell label="Gap" tooltip="leader's Total minus your Total" sortDir={sortDirFor("gap")} onSort={() => toggleSort("gap")} />
               </>
             )}
