@@ -76,6 +76,7 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
       open: props.open,
       locksAt: props.locksAt,
       locked: props.isLocked(today, seasonEnded),
+      lockReason: !props.enabled || !props.open ? ("closed" as const) : seasonEnded ? ("seasonEnded" as const) : props.isLocked(today, seasonEnded) ? ("lockDate" as const) : null,
       canPick: props.canPick(actorUserId, today, seasonEnded),
       picksVisible: props.picksVisible,
       pointsReveal: props.pointsReveal,
@@ -116,6 +117,7 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
       members: canManage
         ? league.memberIds.map((userId) => ({ userId, name: nameOf.get(userId) ?? "Unknown player" })).sort((a, b) => a.name.localeCompare(b.name))
         : [],
+      memberPicks: canManage ? Object.fromEntries(Object.entries(props.picks).map(([id, picks]) => [id, { ...picks }])) : {},
     };
   }
 }

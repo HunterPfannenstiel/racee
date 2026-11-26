@@ -22,6 +22,8 @@ export type SeasonPropsViewResult = {
   open: boolean;
   locksAt: string | null;
   locked: boolean;
+  /** Why picks are closed for everyone (null while open). */
+  lockReason: "closed" | "seasonEnded" | "lockDate" | null;
   canPick: boolean;
   picksVisible: "afterLock" | "seasonEnd";
   pointsReveal: "always" | "racesLeft" | "seasonEnd";
@@ -45,6 +47,8 @@ export type SeasonPropsViewResult = {
   /** Commissioners only: the admins' questions this league can add, and who is in the league. */
   library: LibraryQuestion[];
   members: Array<{ userId: string; name: string }>;
+  /** Commissioners only: every member's saved picks, for setting them on their behalf. */
+  memberPicks: Record<string, Record<string, string>>;
 };
 
 export interface ISeasonPropsViewQuery {

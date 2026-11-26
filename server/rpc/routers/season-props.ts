@@ -8,6 +8,7 @@ import { BlobRacePredictionBookRepository } from "@/server/repositories/race-pre
 import { BlobNotificationRepository } from "@/server/repositories/notification/BlobNotificationRepository";
 import { LeagueFinaleQuery } from "@/server/queries/league-finale/LeagueFinaleQuery";
 import { ReleaseFinaleCommand } from "@/server/commands/release-finale/ReleaseFinaleCommand";
+import { CommissionerSetSeasonPicksCommand } from "@/server/commands/commissioner-set-season-picks/CommissionerSetSeasonPicksCommand";
 import { SetLateSeasonPickerCommand } from "@/server/commands/set-late-season-picker/SetLateSeasonPickerCommand";
 import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
 import { BlobMotorsportCalendarRepository } from "@/server/repositories/motorsport-calendar/BlobMotorsportCalendarRepository";
@@ -41,6 +42,7 @@ const finaleQuery = new LeagueFinaleQuery(
 const releaseFinaleCommand = new ReleaseFinaleCommand(leagueRepo, raceRepo, propsRepo, libraryRepo, calendarRepo, notificationRepo);
 const adminReleaseCommand = new AdminReleaseFinaleCommand(calendarRepo, raceRepo, leagueRepo, propsRepo, notificationRepo);
 const adminOverviewQuery = new AdminFinaleOverviewQuery(calendarRepo, raceRepo, leagueRepo, propsRepo, libraryRepo);
+const setPlayerPicksCommand = new CommissionerSetSeasonPicksCommand(leagueRepo, propsRepo, userRepo, notificationRepo);
 const lateSeasonPickerCommand = new SetLateSeasonPickerCommand(leagueRepo, propsRepo);
 const libraryQuery = new SeasonQuestionLibraryQuery(libraryRepo, racerRepo);
 const saveCommand = new SaveSeasonPropsCommand(leagueRepo, propsRepo);
@@ -68,6 +70,7 @@ const ViewSchema = z.object({
   open: z.boolean(),
   locksAt: z.string().nullable(),
   locked: z.boolean(),
+  lockReason: z.enum(["closed", "seasonEnded", "lockDate"]).nullable(),
   canPick: z.boolean(),
   picksVisible: z.enum(["afterLock", "seasonEnd"]),
   pointsReveal: z.enum(["always", "racesLeft", "seasonEnd"]),
@@ -88,6 +91,7 @@ const ViewSchema = z.object({
     .nullable(),
   library: z.array(LibraryQuestionSchema),
   members: z.array(z.object({ userId: z.string(), name: z.string() })),
+  memberPicks: z.record(z.string(), z.record(z.string(), z.string())),
 });
 
 const FinaleRowSchema = z.object({
@@ -161,6 +165,15 @@ export const seasonPropsRouter = {
     .output(z.object({ ok: z.literal(true) }))
     .handler(async ({ context, input }) => {
       await submitCommand.execute({ actorUserId: context.session.user.id, leagueId: input.leagueId, picks: input.picks });
+      return { ok: true as const };
+    }),
+
+  /** Commissioner: sets a player's season picks (even when locked). The whole league is told it happened, not what changed. */
+  setPlayerPicks: authed
+    .input(z.object({ leagueId: z.string().uuid(), userId: z.string(), picks: z.record(z.string(), z.string()) }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(async ({ context, input }) => {
+      await setPlayerPicksCommand.execute({ actorUserId: context.session.user.id, ...input });
       return { ok: true as const };
     }),
 
