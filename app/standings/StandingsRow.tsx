@@ -46,6 +46,8 @@ type StandingsRowProps = {
   stageRanksByRaceId: Record<string, number>;
   seasonRank: number;
   showSummary: boolean;
+  /** The Grid / Props / Mul / Gross / GSP / G.Rank block is expanded. */
+  summaryOpen?: boolean;
   /** The league plays season bets: show the Bets column (a dash while the points are hidden). */
   bets?: { hidden: boolean; open: boolean };
 };
@@ -67,7 +69,7 @@ function StageCell({ value, rank }: { value: number; rank: boolean }) {
   );
 }
 
-export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, stageTotalsByRaceId, stageRanksByRaceId, seasonRank, showSummary, bets }: StandingsRowProps) {
+export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, stageTotalsByRaceId, stageRanksByRaceId, seasonRank, showSummary, summaryOpen, bets }: StandingsRowProps) {
   const gap = leaderTotal - row.total;
   // Grid and prop points from the races the mulligans dropped.
   const lostToMulligans = Math.max(0, row.rawTotal + row.propTotal - (row.total - (row.seasonBonus ?? 0)));
@@ -130,11 +132,17 @@ export function StandingsRow({ rank, row, races, leaderTotal, stageLastRaceIds, 
 
       {showSummary && (
         <>
-          <SummaryCell value={formatPoints(row.rawTotal)} />
-          <SummaryCell value={formatPoints(row.propTotal)} />
-          <SummaryCell value={lostToMulligans > 0 ? `-${formatPoints(lostToMulligans)}` : "0"} muted={lostToMulligans === 0} />
-          <SummaryCell value={formatPoints(row.rawTotal + row.propTotal + (row.seasonBonus ?? 0))} />
-          <SummaryCell value={<span className={medalColor[seasonRank] ?? "text-muted-foreground"}>{seasonRank}</span>} />
+          <td className="w-7 border-l border-border/30" />
+          {summaryOpen && (
+            <>
+              <SummaryCell value={formatPoints(row.rawTotal)} />
+              <SummaryCell value={formatPoints(row.propTotal)} />
+              <SummaryCell value={lostToMulligans > 0 ? `-${formatPoints(lostToMulligans)}` : "0"} muted={lostToMulligans === 0} />
+              <SummaryCell value={formatPoints(row.rawTotal + row.propTotal)} />
+              {bets && <SummaryCell value={bets.hidden ? "—" : formatPoints(row.rawTotal + row.propTotal + (row.seasonBonus ?? 0))} />}
+              <SummaryCell value={<span className={medalColor[seasonRank] ?? "text-muted-foreground"}>{seasonRank}</span>} />
+            </>
+          )}
           <SummaryCell value={gap === 0 ? "—" : `-${formatPoints(gap)}`} muted={gap > 0} />
         </>
       )}
