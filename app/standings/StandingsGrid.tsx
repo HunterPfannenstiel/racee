@@ -5,6 +5,7 @@ import { type Race, type League, type Team, type User, type RaceScoreEntry } fro
 import { getMulliganedRaceIds } from "@/lib/scoring";
 import { useUser } from "@/app/context/UserContext";
 import { LayoutListIcon, TableIcon } from "lucide-react";
+import { SeasonBetsTab } from "./SeasonBetsTab";
 import { SeasonStandingsSection } from "./SeasonStandingsSection";
 import { StageSectionsBlock } from "./StageSectionsBlock";
 import { StageDetailSheet } from "./StageDetailSheet";
@@ -16,7 +17,7 @@ import { computeRaceMedals } from "@/lib/medals";
 
 export type { StandingsRowData };
 
-type Tab = "drivers" | "constructors";
+type Tab = "drivers" | "constructors" | "bets";
 type ViewMode = "cards" | "table";
 
 type DriverRow = { userId: string; total: number; rawTotal: number; propTotal: number; seasonBonus: number; raceScores: RaceScoreEntry[] };
@@ -32,9 +33,11 @@ type StandingsGridProps = {
   stages: string[][];
   /** The league plays season bets; `hidden` while their points are kept out of the totals. */
   seasonBets?: { hidden: boolean };
+  /** The league plays season bets: show the Season bets tab. */
+  seasonBetsTab?: boolean;
 };
 
-export function StandingsGrid({ league, races, usersById, teams, driverRows, constructorRows, stages, seasonBets }: StandingsGridProps) {
+export function StandingsGrid({ league, races, usersById, teams, driverRows, constructorRows, stages, seasonBets, seasonBetsTab }: StandingsGridProps) {
   const [tab, setTab] = useState<Tab>("drivers");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [sheet, setSheet] = useState<{ rowId: string; stageIdx: number } | null>(null);
@@ -122,7 +125,7 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-1">
-        {(["drivers", "constructors"] as Tab[]).map((t) => (
+        {(["drivers", "constructors", ...(seasonBetsTab ? ["bets"] : [])] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -132,11 +135,11 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t}
+            {t === "bets" ? "season bets" : t}
           </button>
         ))}
 
-        <div className="ml-auto flex gap-1">
+        <div className={`ml-auto flex gap-1 ${tab === "bets" ? "hidden" : ""}`}>
           <button
             onClick={() => setViewMode("table")}
             className={`p-2.5 rounded-md transition-colors ${
@@ -162,7 +165,9 @@ export function StandingsGrid({ league, races, usersById, teams, driverRows, con
         </div>
       </div>
 
-      {tab === "constructors" && !teamScoringEnabled ? (
+      {tab === "bets" ? (
+        <SeasonBetsTab leagueId={league.id} />
+      ) : tab === "constructors" && !teamScoringEnabled ? (
         <p className="text-xs tracking-widest uppercase text-muted-foreground">
           Team scoring is not set up for this league.
         </p>

@@ -8,11 +8,12 @@ import type {
   IUserRepository,
 } from "@/server/repositories";
 import { NotFoundError } from "@/server/domain/errors";
+import { orderSeasonRaces } from "@/lib/race-order";
 import { centralToday } from "@/server/services/central-day";
 import { loadFinaleGate } from "@/server/queries/shared/finale-gate";
 import { SeasonProps } from "@/server/domain/season-props";
 import { assertLeagueMember, isLeagueCommissioner } from "@/server/roles/league";
-import { gradeSeasonProps, picksRevealed, pointsRevealed, resolveAnswer } from "@/server/services/season-props";
+import { gradeSeasonProps, pointsRevealed, resolveAnswer } from "@/server/services/season-props";
 import type { ISeasonPropsViewQuery, SeasonPropsViewResult } from "./ISeasonPropsViewQuery";
 
 /**
@@ -50,7 +51,6 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
     const seasonEnded = league.isSeasonEnded;
     const racesLeft = races.filter((r) => r.keySetAt === null && !r.cancelled).length;
     const revealed = pointsRevealed(props, { seasonEnded, racesLeft });
-    const picksShown = picksRevealed(props, { today, seasonEnded });
 
     const grid = racers.filter((r) => r.motorsportId === league.motorsportId);
     const grade = gradeSeasonProps(props, library.questions);
@@ -72,6 +72,13 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
       };
     });
 
+    // The race after which the bonus points start counting (races-left mode), for the "added to your total" note.
+    const counted = orderSeasonRaces(races, (r) => r.raceId).filter((r) => !r.cancelled);
+    const startIndex = counted.length - props.revealRacesLeft - 1;
+    const revealAfterRace =
+      props.pointsReveal === "racesLeft" && !revealed && startIndex >= 0 ? (counted[startIndex].label ?? counted[startIndex].title) : null;
+    const mine = grade.players.get(actorUserId);
+
     return {
       canManage,
       enabled: props.enabled,
@@ -84,6 +91,7 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
       pointsReveal: props.pointsReveal,
       revealRacesLeft: props.revealRacesLeft,
       pointsRevealed: revealed,
+      pointsReleased: props.pointsReleasedAt !== null,
       racesLeft,
       seasonEnded,
       finaleReleased: gate.commissionerReleased,
@@ -98,8 +106,13 @@ export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
         teams: [...new Set(grid.map((r) => r.constructorName))].sort((a, b) => a.localeCompare(b)),
       },
       myPicks: props.picks[actorUserId] ? { ...props.picks[actorUserId] } : {},
+      // Your own picks are graded for you at all times; the points only show once they count.
+      myByQuestion: mine ? { ...mine.byQuestion } : {},
+      myPoints: revealed && mine ? { driverPoints: mine.driverPoints, teamPoints: mine.teamPoints } : null,
+      revealAfterRace,
+      // Other players' picks stay private. Only the commissioner sees them.
       everyone:
-        visible && picksShown
+        canManage && visible
           ? Object.keys(props.picks)
               .filter((id) => league.showsInStandings(id))
               .map((userId) => {
