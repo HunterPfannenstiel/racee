@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { QueryError, QueryLoading } from "@/components/ui/query-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImportPicksCard } from "./ImportPicksCard";
 import { AnswerEditor, AnswerStatusControl, KIND_LABEL, PickInput, parseOptions, type QuestionKind } from "@/components/season-props/SeasonPropInputs";
 
 type Question = {
@@ -446,6 +447,7 @@ function Editor({ leagueId, data }: { leagueId: string; data: ViewData }) {
       </div>
 
       {data.enabled && data.questions.length > 0 && <SetPlayerPicks leagueId={leagueId} data={data} />}
+      {data.enabled && data.questions.length > 0 && <ImportPicksCard leagueId={leagueId} />}
 
       {data.everyone && data.everyone.length > 0 && (
         <Card>
