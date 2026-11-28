@@ -15,6 +15,9 @@ import { UpdateTeamCommand } from "@/server/commands/update-team/UpdateTeamComma
 import { DeleteTeamCommand } from "@/server/commands/delete-team/DeleteTeamCommand";
 import { JoinTeamCommand } from "@/server/commands/join-team/JoinTeamCommand";
 import { SetTeamLogoCommand } from "@/server/commands/set-team-logo/SetTeamLogoCommand";
+import { BlobSeasonPropsRepository } from "@/server/repositories/season-props/BlobSeasonPropsRepository";
+import { BlobSeasonQuestionLibraryRepository } from "@/server/repositories/season-question-library/BlobSeasonQuestionLibraryRepository";
+import { BlobMotorsportCalendarRepository } from "@/server/repositories/motorsport-calendar/BlobMotorsportCalendarRepository";
 import { BlobTeamLogoRepository } from "@/server/repositories/team-logo/BlobTeamLogoRepository";
 import { BlobUserModerationRepository } from "@/server/repositories/moderation/BlobModerationRepository";
 
@@ -31,6 +34,9 @@ const teamDashboardQuery = new TeamDashboardQuery(
   new BlobRaceRepository(),
   new BlobRacePredictionBookRepository(),
   userRepo,
+  new BlobSeasonPropsRepository(),
+  new BlobSeasonQuestionLibraryRepository(),
+  new BlobMotorsportCalendarRepository(),
 );
 
 // Mirrors server/queries/team-dashboard/ITeamDashboardQuery.ts.
@@ -98,6 +104,7 @@ const TeamDashboardSchema = z.object({
   }),
   viewerTeamId: z.string().nullable(),
   canEditLogo: z.boolean(),
+  finaleHidden: z.boolean(),
 });
 const createTeamCommand = new CreateTeamCommand(leagueRepo, teamRepo);
 const updateTeamCommand = new UpdateTeamCommand(leagueRepo, teamRepo);

@@ -1,0 +1,297 @@
+import { z } from "zod";
+import { adminOnly, authed } from "@/server/rpc/procedures";
+import { QuestionKindSchema, ScaleStepSchema, SeasonQuestionSchema } from "@/server/domain/season-props";
+import { LibraryQuestionSchema } from "@/server/domain/season-question-library";
+import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
+import { BlobLeagueStandingsRepository } from "@/server/repositories/league-standings/BlobLeagueStandingsRepository";
+import { BlobRacePredictionBookRepository } from "@/server/repositories/race-prediction-book/BlobRacePredictionBookRepository";
+import { BlobNotificationRepository } from "@/server/repositories/notification/BlobNotificationRepository";
+import { LeagueFinaleQuery } from "@/server/queries/league-finale/LeagueFinaleQuery";
+import { ReleaseFinaleCommand } from "@/server/commands/release-finale/ReleaseFinaleCommand";
+import { CommissionerSetSeasonPicksCommand } from "@/server/commands/commissioner-set-season-picks/CommissionerSetSeasonPicksCommand";
+import { ImportSeasonPicksCommand } from "@/server/commands/import-season-picks/ImportSeasonPicksCommand";
+import { SetSeasonPointsReleasedCommand } from "@/server/commands/set-season-points-released/SetSeasonPointsReleasedCommand";
+import { SetLateSeasonPickerCommand } from "@/server/commands/set-late-season-picker/SetLateSeasonPickerCommand";
+import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
+import { BlobMotorsportCalendarRepository } from "@/server/repositories/motorsport-calendar/BlobMotorsportCalendarRepository";
+import { AdminReleaseFinaleCommand } from "@/server/commands/admin-release-finale/AdminReleaseFinaleCommand";
+import { AdminFinaleOverviewQuery } from "@/server/queries/admin-finale-overview/AdminFinaleOverviewQuery";
+import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepository";
+import { BlobRacerRepository } from "@/server/repositories/racer/BlobRacerRepository";
+import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
+import { BlobSeasonPropsRepository } from "@/server/repositories/season-props/BlobSeasonPropsRepository";
+import { BlobSeasonQuestionLibraryRepository } from "@/server/repositories/season-question-library/BlobSeasonQuestionLibraryRepository";
+import { SeasonPropsViewQuery } from "@/server/queries/season-props-view/SeasonPropsViewQuery";
+import { SeasonQuestionLibraryQuery } from "@/server/queries/season-question-library/SeasonQuestionLibraryQuery";
+import { SaveSeasonPropsCommand } from "@/server/commands/save-season-props/SaveSeasonPropsCommand";
+import { SubmitSeasonPicksCommand } from "@/server/commands/submit-season-picks/SubmitSeasonPicksCommand";
+import { BlobSaveSeasonQuestionLibraryCommand } from "@/server/commands/save-season-question-library/BlobSaveSeasonQuestionLibraryCommand";
+
+const leagueRepo = new BlobLeagueRepository();
+const propsRepo = new BlobSeasonPropsRepository();
+const libraryRepo = new BlobSeasonQuestionLibraryRepository();
+const racerRepo = new BlobRacerRepository();
+
+const raceRepo = new BlobRaceRepository();
+const userRepo = new PrismaUserRepository();
+const calendarRepo = new BlobMotorsportCalendarRepository();
+const notificationRepo = new BlobNotificationRepository();
+const viewQuery = new SeasonPropsViewQuery(leagueRepo, propsRepo, libraryRepo, racerRepo, raceRepo, userRepo, calendarRepo);
+const finaleQuery = new LeagueFinaleQuery(
+  leagueRepo, raceRepo, new BlobLeagueStandingsRepository(), new BlobTeamRepository(), userRepo,
+  new BlobRacePredictionBookRepository(), propsRepo, libraryRepo, calendarRepo,
+);
+const releaseFinaleCommand = new ReleaseFinaleCommand(leagueRepo, raceRepo, propsRepo, libraryRepo, calendarRepo, notificationRepo);
+const adminReleaseCommand = new AdminReleaseFinaleCommand(calendarRepo, raceRepo, leagueRepo, propsRepo, notificationRepo);
+const adminOverviewQuery = new AdminFinaleOverviewQuery(calendarRepo, raceRepo, leagueRepo, propsRepo, libraryRepo);
+const setPlayerPicksCommand = new CommissionerSetSeasonPicksCommand(leagueRepo, propsRepo, userRepo, notificationRepo);
+const importPicksCommand = new ImportSeasonPicksCommand(leagueRepo, propsRepo, userRepo, racerRepo, notificationRepo);
+const pointsReleasedCommand = new SetSeasonPointsReleasedCommand(leagueRepo, propsRepo);
+const lateSeasonPickerCommand = new SetLateSeasonPickerCommand(leagueRepo, propsRepo);
+const libraryQuery = new SeasonQuestionLibraryQuery(libraryRepo, racerRepo);
+const saveCommand = new SaveSeasonPropsCommand(leagueRepo, propsRepo);
+const submitCommand = new SubmitSeasonPicksCommand(leagueRepo, propsRepo);
+const saveLibraryCommand = new BlobSaveSeasonQuestionLibraryCommand(libraryRepo);
+
+const QuestionDTOSchema = SeasonQuestionSchema.extend({
+  fromLibrary: z.boolean(),
+  answerState: z.enum(["pending", "running", "answered", "voided"]),
+  answerUpdatedAt: z.string().nullable(),
+  correctAnswers: z.array(z.string()),
+});
+
+const ResultSchema = z.object({
+  correctScaled: z.number(),
+  driverPoints: z.number(),
+  teamPoints: z.number(),
+  byQuestion: z.record(z.string(), z.boolean().nullable()),
+});
+
+const GridSchema = z.object({ drivers: z.array(z.string()), teams: z.array(z.string()) });
+
+const ViewSchema = z.object({
+  canManage: z.boolean(),
+  enabled: z.boolean(),
+  open: z.boolean(),
+  locksAt: z.string().nullable(),
+  locked: z.boolean(),
+  lockReason: z.enum(["closed", "seasonEnded", "lockDate"]).nullable(),
+  canPick: z.boolean(),
+  picksVisible: z.enum(["afterLock", "seasonEnd"]),
+  pointsReveal: z.enum(["always", "racesLeft", "seasonEnd", "manual"]),
+  revealRacesLeft: z.number(),
+  pointsRevealed: z.boolean(),
+  pointsReleased: z.boolean(),
+  racesLeft: z.number(),
+  seasonEnded: z.boolean(),
+  finaleReleased: z.boolean(),
+  finaleAdminReleased: z.boolean(),
+  lastRaceStarted: z.boolean(),
+  scale: z.array(ScaleStepSchema),
+  questions: z.array(QuestionDTOSchema),
+  latePickUserIds: z.array(z.string()),
+  grid: GridSchema,
+  myPicks: z.record(z.string(), z.string()),
+  myByQuestion: z.record(z.string(), z.boolean().nullable()),
+  myPoints: z.object({ driverPoints: z.number(), teamPoints: z.number() }).nullable(),
+  revealAfterRace: z.string().nullable(),
+  everyone: z
+    .array(z.object({ userId: z.string(), name: z.string(), picks: z.record(z.string(), z.string()), result: ResultSchema.nullable() }))
+    .nullable(),
+  library: z.array(LibraryQuestionSchema),
+  members: z.array(z.object({ userId: z.string(), name: z.string() })),
+  changedSinceEnd: z.array(z.string()),
+  memberPicks: z.record(z.string(), z.record(z.string(), z.string())),
+});
+
+const FinaleRowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  total: z.number(),
+  rank: z.number(),
+  color: z.string(),
+  subtitle: z.string(),
+});
+const FinaleMedalRowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.string(),
+  gold: z.number(),
+  silver: z.number(),
+  bronze: z.number(),
+});
+const FinaleSchema = z.object({
+  state: z.enum(["none", "pending", "released", "preview"]),
+  leagueId: z.string(),
+  leagueName: z.string(),
+  seasonLabel: z.string(),
+  seasonKey: z.string(),
+  drivers: z.array(FinaleRowSchema),
+  teams: z.array(FinaleRowSchema),
+  teamLogos: z.array(z.object({ id: z.string(), name: z.string(), color: z.string().nullable(), logo: z.string().nullable() })),
+  medals: z.object({ players: z.array(FinaleMedalRowSchema), teams: z.array(FinaleMedalRowSchema) }),
+  awards: z.array(
+    z.object({
+      id: z.enum(["highScore", "mostMedals", "highestAverage", "consistent", "propWizard", "traveler", "hotStreak"]),
+      title: z.string(),
+      blurb: z.string(),
+      winners: z.array(z.object({ id: z.string(), name: z.string(), value: z.string() })),
+    }),
+  ),
+  viewerTeamId: z.string().nullable(),
+});
+
+const SetupSchema = z.object({
+  enabled: z.boolean(),
+  open: z.boolean(),
+  locksAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  latePickUserIds: z.array(z.string()),
+  picksVisible: z.enum(["afterLock", "seasonEnd"]),
+  pointsReveal: z.enum(["always", "racesLeft", "seasonEnd", "manual"]),
+  revealRacesLeft: z.number().int().min(0).max(60),
+  scale: z.array(ScaleStepSchema),
+  questions: z.array(SeasonQuestionSchema),
+});
+
+export const seasonPropsRouter = {
+  /** A league's season bets: setup, the player's own picks, and everyone's once revealed. Members only. */
+  get: authed
+    .input(z.object({ leagueId: z.string().uuid() }))
+    .output(ViewSchema)
+    .handler(async ({ context, input }) => viewQuery.execute(context.session.user.id, input.leagueId)),
+
+  /** Commissioner: saves the setup for the season in progress. */
+  save: authed
+    .input(z.object({ leagueId: z.string().uuid(), setup: SetupSchema }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(async ({ context, input }) => {
+      await saveCommand.execute({ actorUserId: context.session.user.id, leagueId: input.leagueId, setup: input.setup });
+      return { ok: true as const };
+    }),
+
+  /** Player: saves their year-long picks. */
+  submitPicks: authed
+    .input(z.object({ leagueId: z.string().uuid(), picks: z.record(z.string(), z.string()) }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(async ({ context, input }) => {
+      await submitCommand.execute({ actorUserId: context.session.user.id, leagueId: input.leagueId, picks: input.picks });
+      return { ok: true as const };
+    }),
+
+  /** Commissioner: sets a player's season picks (even when locked). The whole league is told it happened, not what changed. */
+  setPlayerPicks: authed
+    .input(z.object({ leagueId: z.string().uuid(), userId: z.string(), picks: z.record(z.string(), z.string()) }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(async ({ context, input }) => {
+      await setPlayerPicksCommand.execute({ actorUserId: context.session.user.id, ...input });
+      return { ok: true as const };
+    }),
+
+  /** Commissioner: loads many players' season picks from a spreadsheet (check first, then save). */
+  importPicks: authed
+    .input(z.object({
+      leagueId: z.string().uuid(),
+      apply: z.boolean(),
+      rows: z.array(z.object({ player: z.string().max(100), userId: z.string().optional(), picks: z.record(z.string().max(300), z.string().max(100)) })).max(200),
+    }))
+    .output(z.object({
+      saved: z.boolean(),
+      members: z.array(z.object({ userId: z.string(), name: z.string() })),
+      players: z.array(z.object({ name: z.string(), matchedAs: z.string().nullable(), matchedUserId: z.string().nullable(), saved: z.number(), problems: z.array(z.string()) })),
+      unmatchedQuestions: z.array(z.string()),
+      missingQuestions: z.array(z.string()),
+    }))
+    .handler(async ({ context, input }) => importPicksCommand.execute({ actorUserId: context.session.user.id, ...input })),
+
+  /** Commissioner: may this player still make season picks after the lock? */
+  allowLatePicker: authed
+    .input(z.object({ leagueId: z.string().uuid(), userId: z.string(), allowed: z.boolean() }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(async ({ context, input }) => {
+      await lateSeasonPickerCommand.execute({ actorUserId: context.session.user.id, ...input });
+      return { ok: true as const };
+    }),
+
+  /** Commissioner: release (or take back) the season bet points by hand. */
+  releasePoints: authed
+    .input(z.object({ leagueId: z.string().uuid(), released: z.boolean() }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(async ({ context, input }) => {
+      await pointsReleasedCommand.execute({ actorUserId: context.session.user.id, ...input });
+      return { ok: true as const };
+    }),
+
+  /** Commissioner: releases the season finale (needs every season question answered). */
+  releaseFinale: authed
+    .input(z.object({ leagueId: z.string().uuid() }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(async ({ context, input }) => {
+      await releaseFinaleCommand.execute({ actorUserId: context.session.user.id, leagueId: input.leagueId });
+      return { ok: true as const };
+    }),
+
+  finale: {
+    /** The season finale: players get it once the admins and the commissioner have both released it. */
+    get: authed
+      .input(z.object({ leagueId: z.string().uuid() }))
+      .output(FinaleSchema)
+      .handler(async ({ context, input }) =>
+        finaleQuery.execute({ actorUserId: context.session.user.id, leagueId: input.leagueId }),
+      ),
+
+    /** Admin: each season's finale status for a motorsport (what is left to grade, who has released). */
+    adminOverview: adminOnly
+      .input(z.object({ motorsportId: z.string().uuid() }))
+      .output(z.object({
+        motorsportId: z.string(),
+        seasons: z.array(z.object({
+          seasonId: z.string(),
+          label: z.string(),
+          lastRaceStarted: z.boolean(),
+          racesTotal: z.number(),
+          racesUngraded: z.number(),
+          questionsUnanswered: z.number(),
+          released: z.boolean(),
+          leagueCount: z.number(),
+          leaguesReleased: z.number(),
+        })),
+      }))
+      .handler(async ({ input }) => adminOverviewQuery.execute(input.motorsportId)),
+
+    /** Admin: release (or take back) the admins' half of the finale for every league racing the season. */
+    adminRelease: adminOnly
+      .input(z.object({ motorsportId: z.string().uuid(), seasonId: z.string().uuid(), release: z.boolean() }))
+      .output(z.object({ ok: z.literal(true) }))
+      .handler(async ({ input }) => {
+        await adminReleaseCommand.execute(input);
+        return { ok: true as const };
+      }),
+
+    /** Admin: watch the finale for any league's current standings. */
+    adminPreview: adminOnly
+      .input(z.object({ leagueId: z.string().uuid() }))
+      .output(FinaleSchema)
+      .handler(async ({ context, input }) =>
+        finaleQuery.execute({ actorUserId: context.session.user.id, leagueId: input.leagueId, preview: true, asAdmin: true }),
+      ),
+  },
+
+  library: {
+    /** Admin: the question library (with correct answers) and the grid names. */
+    get: adminOnly
+      .input(z.object({ motorsportId: z.string().uuid() }))
+      .output(z.object({ questions: z.array(LibraryQuestionSchema), grid: GridSchema }))
+      .handler(async ({ input }) => libraryQuery.execute(input.motorsportId)),
+
+    /** Admin: saves the whole library. */
+    save: adminOnly
+      .input(z.object({ motorsportId: z.string().uuid(), questions: z.array(LibraryQuestionSchema) }))
+      .output(z.object({ ok: z.literal(true) }))
+      .handler(async ({ input }) => {
+        await saveLibraryCommand.execute(input);
+        return { ok: true as const };
+      }),
+  },
+};
+
+export { QuestionKindSchema };

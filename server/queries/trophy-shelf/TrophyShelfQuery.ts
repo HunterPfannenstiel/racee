@@ -5,7 +5,12 @@ import type {
   IProfilePrivacyRepository,
   IRaceRepository,
   IUserRepository,
+  ISeasonPropsRepository,
+  ISeasonQuestionLibraryRepository,
+  IMotorsportCalendarRepository,
 } from "@/server/repositories";
+import { loadSeasonBonus } from "@/server/queries/shared/season-bonus";
+import { loadFinaleGate } from "@/server/queries/shared/finale-gate";
 import { NotFoundError } from "@/server/domain/errors";
 import { trophyKey } from "@/server/domain/profile-privacy";
 import type { SeasonPlayerRecord } from "@/server/domain/league-history";
@@ -28,6 +33,9 @@ export class TrophyShelfQuery implements ITrophyShelfQuery {
     private readonly standings: ILeagueStandingsRepository,
     private readonly history: ILeagueHistoryRepository,
     private readonly privacy: IProfilePrivacyRepository,
+    private readonly seasonProps: ISeasonPropsRepository,
+    private readonly seasonQuestions: ISeasonQuestionLibraryRepository,
+    private readonly calendars: IMotorsportCalendarRepository,
   ) {}
 
   async execute(input: { viewerId: string; userId: string }): Promise<TrophyShelfResult> {
@@ -77,9 +85,19 @@ export class TrophyShelfQuery implements ITrophyShelfQuery {
           return row ? [toSeason(s.seasonId, s.label, "complete", row)] : [];
         });
 
-        if (league.showsInStandings(input.userId) || league.commissionerId === input.userId) {
+        // This season's results stay secret until the admins and the commissioner release the finale.
+        const gate = await loadFinaleGate(
+          { props: this.seasonProps, calendars: this.calendars },
+          league,
+          league.currentSeasonRaces(allRaces),
+        );
+        const finaleWaiting = gate.phase === "pending";
+
+        if (!finaleWaiting && (league.showsInStandings(input.userId) || league.commissionerId === input.userId)) {
           const seasonRaces = league.currentSeasonRaces(allRaces);
+          const bonus = await loadSeasonBonus({ props: this.seasonProps, libraries: this.seasonQuestions }, league, [], seasonRaces);
           const current = buildSeasonRecord({
+            bonus,
             seasonId: league.currentSeasonKey,
             label: league.displaySeasonLabel(seasonRaces, now.slice(0, 4)),
             endedAt: league.seasonEndedAt ?? now,

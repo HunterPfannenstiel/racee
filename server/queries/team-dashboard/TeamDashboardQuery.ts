@@ -9,7 +9,12 @@ import type {
   IRaceRepository,
   ITeamRepository,
   IUserRepository,
+  ISeasonPropsRepository,
+  ISeasonQuestionLibraryRepository,
+  IMotorsportCalendarRepository,
 } from "@/server/repositories";
+import { loadSeasonBonus } from "@/server/queries/shared/season-bonus";
+import { loadFinaleGate } from "@/server/queries/shared/finale-gate";
 import type { Team } from "@/server/domain/team";
 import type {
   ITeamDashboardQuery,
@@ -66,6 +71,9 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
     private readonly races: IRaceRepository,
     private readonly books: IRacePredictionBookRepository,
     private readonly users: IUserRepository,
+    private readonly seasonProps: ISeasonPropsRepository,
+    private readonly seasonQuestions: ISeasonQuestionLibraryRepository,
+    private readonly calendars: IMotorsportCalendarRepository,
   ) {}
 
   async execute(leagueId: string, teamId: string | null, actorUserId: string): Promise<TeamDashboardResult> {
@@ -81,15 +89,27 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
     const teamScoringEnabled = (league.teamPositionPoints?.length ?? 0) > 0;
     const viewerTeamId = teams.find((t) => t.memberIds.includes(actorUserId))?.teamId ?? null;
 
+    // While the final results are pending, players only get their own team (no ranks, no other teams).
+    const gate = await loadFinaleGate({ props: this.seasonProps, calendars: this.calendars }, league, seasonRaces);
+    const finaleHidden = gate.phase === "pending" && !league.canManage(actorUserId);
+
     const emptyAverages = { teamPoints: 0, avgTeamPointsPerRace: 0, combinedDriverPoints: 0, avgDriverPointsPerMember: 0, propAccuracy: 0 };
     if (teams.length === 0) {
       return {
         teamScoringEnabled, teamCount: 0, team: null, pointsBehindLeader: 0, members: [],
-        teamPropAccuracyByType: [], races: [], leagueTeams: [], leagueAverages: emptyAverages, viewerTeamId, canEditLogo: false,
+        teamPropAccuracyByType: [], races: [], leagueTeams: [], leagueAverages: emptyAverages, viewerTeamId, canEditLogo: false, finaleHidden,
       };
     }
-    const target = (teamId && teams.find((t) => t.teamId === teamId)) || teams.find((t) => t.teamId === viewerTeamId) || teams[0];
-    if (teamId && target.teamId !== teamId) throw new NotFoundError("Team", teamId);
+    if (finaleHidden && !viewerTeamId) {
+      return {
+        teamScoringEnabled, teamCount: teams.length, team: null, pointsBehindLeader: 0, members: [],
+        teamPropAccuracyByType: [], races: [], leagueTeams: [], leagueAverages: emptyAverages, viewerTeamId, canEditLogo: false, finaleHidden,
+      };
+    }
+    const target = finaleHidden
+      ? teams.find((t) => t.teamId === viewerTeamId)!
+      : (teamId && teams.find((t) => t.teamId === teamId)) || teams.find((t) => t.teamId === viewerTeamId) || teams[0];
+    if (!finaleHidden && teamId && target.teamId !== teamId) throw new NotFoundError("Team", teamId);
 
     // Season order, graded (scored) races only. Order BEFORE dropping cancelled
     // races: a replacement is placed right after the cancelled race it replaces,
@@ -100,7 +120,11 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
 
     // ---- Driver scoring (matches the standings page) ----
     const individual = new Map((standings?.individual ?? []).map((u) => [u.userId, u.raceScores]));
-    const driverRanking = (standings?.rankIndividual(league.mulliganCount) ?? []).filter((r) => league.showsInStandings(r.userId));
+    const bonus = await loadSeasonBonus({ props: this.seasonProps, libraries: this.seasonQuestions }, league, teams, seasonRaces);
+    const driverRanking = (standings?.rankIndividual(league.mulliganCount) ?? [])
+      .filter((r) => league.showsInStandings(r.userId))
+      .map((r) => ({ ...r, total: r.total + (bonus.players.get(r.userId) ?? 0) }))
+      .sort((a, b) => b.total - a.total);
     const driverTotal = new Map(driverRanking.map((r) => [r.userId, r.total]));
     const driverRank = new Map(driverRanking.map((r, i) => [r.userId, i + 1]));
 
@@ -117,7 +141,8 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
       teamRacePoints.set(t.teamId, byRace);
       teamRaceEntries.set(t.teamId, entries);
     }
-    const teamTotal = (id: string) => [...(teamRacePoints.get(id)?.values() ?? [])].reduce((a, b) => a + b, 0);
+    const teamTotal = (id: string) =>
+      [...(teamRacePoints.get(id)?.values() ?? [])].reduce((a, b) => a + b, 0) + (bonus.teams.get(id) ?? 0);
 
     // ---- Prop accuracy from prediction books ----
     const allMemberIds = [...new Set(teams.flatMap((t) => [...t.memberIds]))];
@@ -158,7 +183,9 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
       for (const id of team.memberIds) addTally(tally, propTally.get(id) ?? new Map());
       return tally;
     };
-    const teamRanking = standings?.rankTeams() ?? [];
+    const teamRanking = (standings?.rankTeams() ?? [])
+      .map((r) => ({ ...r, total: r.total + (bonus.teams.get(r.teamId) ?? 0) }))
+      .sort((a, b) => b.total - a.total);
     const summaries: TeamSummaryDTO[] = teams.map((team) => {
       const driverPts = team.memberIds.map((id) => driverTotal.get(id) ?? 0);
       const racesWithTeamScore = [...(teamRacePoints.get(team.teamId)?.keys() ?? [])].filter((id) => gradedIds.has(id)).length;
@@ -181,7 +208,7 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
     const leagueTeams = [...summaries].sort((a, b) =>
       teamScoringEnabled ? b.teamPoints - a.teamPoints : b.combinedDriverPoints - a.combinedDriverPoints,
     );
-    const team = summaries.find((s) => s.id === target.teamId)!;
+    const team = { ...summaries.find((s) => s.id === target.teamId)!, ...(finaleHidden ? { teamRank: null } : {}) };
     const leaderPoints = teamScoringEnabled ? (leagueTeams[0]?.teamPoints ?? 0) : (leagueTeams[0]?.combinedDriverPoints ?? 0);
     const myPoints = teamScoringEnabled ? team.teamPoints : team.combinedDriverPoints;
 
@@ -272,12 +299,12 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
       teamScoringEnabled,
       teamCount: teams.length,
       team,
-      pointsBehindLeader: Math.max(0, leaderPoints - myPoints),
-      members,
+      pointsBehindLeader: finaleHidden ? 0 : Math.max(0, leaderPoints - myPoints),
+      members: finaleHidden ? members.map((m) => ({ ...m, driverRank: null })) : members,
       teamPropAccuracyByType: tallyToStats(teamPropTally(target)).byType,
       races,
-      leagueTeams,
-      leagueAverages: {
+      leagueTeams: finaleHidden ? [] : leagueTeams,
+      leagueAverages: finaleHidden ? emptyAverages : {
         teamPoints: avg(summaries.map((s) => s.teamPoints)),
         avgTeamPointsPerRace: avg(summaries.map((s) => s.avgTeamPointsPerRace)),
         combinedDriverPoints: avg(summaries.map((s) => s.combinedDriverPoints)),
@@ -286,6 +313,7 @@ export class TeamDashboardQuery implements ITeamDashboardQuery {
       },
       viewerTeamId,
       canEditLogo: league.canManage(actorUserId) || target.memberIds.includes(actorUserId),
+      finaleHidden,
     };
   }
 }

@@ -6,6 +6,9 @@ import { BlobRaceRepository } from "@/server/repositories/race/BlobRaceRepositor
 import { BlobLeagueStandingsRepository } from "@/server/repositories/league-standings/BlobLeagueStandingsRepository";
 import { PrismaUserRepository } from "@/server/repositories/user/PrismaUserRepository";
 import { BlobTeamRepository } from "@/server/repositories/team/BlobTeamRepository";
+import { BlobSeasonPropsRepository } from "@/server/repositories/season-props/BlobSeasonPropsRepository";
+import { BlobSeasonQuestionLibraryRepository } from "@/server/repositories/season-question-library/BlobSeasonQuestionLibraryRepository";
+import { BlobMotorsportCalendarRepository } from "@/server/repositories/motorsport-calendar/BlobMotorsportCalendarRepository";
 import { LeagueStandingsViewQuery } from "@/server/queries/league-standings-view/LeagueStandingsViewQuery";
 
 const standingsViewQuery = new LeagueStandingsViewQuery(
@@ -14,12 +17,16 @@ const standingsViewQuery = new LeagueStandingsViewQuery(
   new BlobLeagueStandingsRepository(),
   new PrismaUserRepository(),
   new BlobTeamRepository(),
+  new BlobSeasonPropsRepository(),
+  new BlobSeasonQuestionLibraryRepository(),
+  new BlobMotorsportCalendarRepository(),
 );
 
 const DriverRowSchema = z.object({
   userId: z.string(),
   total: z.number(),
   mulliganed: z.number().int().min(0),
+  seasonBonus: z.number(),
   rawTotal: z.number(),
   propTotal: z.number(),
   raceScores: z.array(RaceScoreEntrySchema),
@@ -37,6 +44,10 @@ const StandingsViewSchema = z.object({
   stages: z.array(z.array(z.string().uuid())),
   driverRows: z.array(DriverRowSchema),
   constructorRows: z.array(ConstructorRowSchema),
+  finalePending: z.boolean(),
+  finaleHidden: z.boolean(),
+  seasonBetsHidden: z.boolean(),
+  seasonBetsOn: z.boolean(),
   usersById: z.record(z.string(), UserSchema),
 });
 

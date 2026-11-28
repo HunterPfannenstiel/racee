@@ -1,0 +1,139 @@
+import type {
+  ILeagueRepository,
+  IRacerRepository,
+  IMotorsportCalendarRepository,
+  IRaceRepository,
+  ISeasonPropsRepository,
+  ISeasonQuestionLibraryRepository,
+  IUserRepository,
+} from "@/server/repositories";
+import { NotFoundError } from "@/server/domain/errors";
+import { orderSeasonRaces } from "@/lib/race-order";
+import { centralToday } from "@/server/services/central-day";
+import { loadFinaleGate } from "@/server/queries/shared/finale-gate";
+import { SeasonProps } from "@/server/domain/season-props";
+import { assertLeagueMember, isLeagueCommissioner } from "@/server/roles/league";
+import { gradeSeasonProps, pointsRevealed, resolveAnswer } from "@/server/services/season-props";
+import type { ISeasonPropsViewQuery, SeasonPropsViewResult } from "./ISeasonPropsViewQuery";
+
+/**
+ * Everything the season-bets screens need for one league: the setup, the
+ * player's own picks, everyone's picks and points once those are revealed, and
+ * (for commissioners) the admins' library and the member list. Unprefixed —
+ * spans several repositories.
+ */
+export class SeasonPropsViewQuery implements ISeasonPropsViewQuery {
+  constructor(
+    private readonly leagues: ILeagueRepository,
+    private readonly props: ISeasonPropsRepository,
+    private readonly libraries: ISeasonQuestionLibraryRepository,
+    private readonly racers: IRacerRepository,
+    private readonly races: IRaceRepository,
+    private readonly users: IUserRepository,
+    private readonly calendars: IMotorsportCalendarRepository,
+  ) {}
+
+  async execute(actorUserId: string, leagueId: string): Promise<SeasonPropsViewResult> {
+    const league = await this.leagues.findById(leagueId);
+    if (!league) throw new NotFoundError("League", leagueId);
+    assertLeagueMember(actorUserId, league);
+    const canManage = isLeagueCommissioner(actorUserId, league);
+
+    const [stored, library, racers, races] = await Promise.all([
+      this.props.find(league.leagueId, league.seasonKey),
+      this.libraries.findByMotorsport(league.motorsportId),
+      this.racers.findAll(),
+      this.races.findAllForMotorsport(league.motorsportId).then((all) => league.currentSeasonRaces(all)),
+    ]);
+    const props = stored ?? SeasonProps.empty(league.leagueId, league.seasonKey);
+    const gate = await loadFinaleGate({ props: this.props, calendars: this.calendars }, league, races);
+    const today = centralToday();
+    const seasonEnded = league.isSeasonEnded;
+    const racesLeft = races.filter((r) => r.keySetAt === null && !r.cancelled).length;
+    const revealed = pointsRevealed(props, { seasonEnded, racesLeft });
+
+    const grid = racers.filter((r) => r.motorsportId === league.motorsportId);
+    const grade = gradeSeasonProps(props, library.questions);
+
+    const people = [...new Set([...league.memberIds, ...Object.keys(props.picks)])];
+    const userList = await this.users.findByIds(people);
+    const nameOf = new Map(userList.map((u) => [u.userId, u.name]));
+
+    // Only the commissioner's own page needs every question's setup; players see them all anyway (they're answering them).
+    const visible = props.enabled && props.open;
+    const questions = props.questions.map((q) => {
+      const answer = resolveAnswer(q, library.questions);
+      return {
+        ...q,
+        fromLibrary: q.libraryQuestionId !== null,
+        answerState: answer ? (answer.voided ? ("voided" as const) : answer.running ? ("running" as const) : ("answered" as const)) : ("pending" as const),
+        answerUpdatedAt: answer?.updatedAt ?? null,
+        correctAnswers: answer?.answers ?? [],
+      };
+    });
+
+    // The race after which the bonus points start counting (races-left mode), for the "added to your total" note.
+    const counted = orderSeasonRaces(races, (r) => r.raceId).filter((r) => !r.cancelled);
+    const startIndex = counted.length - props.revealRacesLeft - 1;
+    const revealAfterRace =
+      props.pointsReveal === "racesLeft" && !revealed && startIndex >= 0 ? (counted[startIndex].label ?? counted[startIndex].title) : null;
+    const mine = grade.players.get(actorUserId);
+
+    return {
+      canManage,
+      enabled: props.enabled,
+      open: props.open,
+      locksAt: props.locksAt,
+      locked: props.isLocked(today, seasonEnded),
+      lockReason: !props.enabled || !props.open ? ("closed" as const) : seasonEnded ? ("seasonEnded" as const) : props.isLocked(today, seasonEnded) ? ("lockDate" as const) : null,
+      canPick: props.canPick(actorUserId, today, seasonEnded),
+      picksVisible: props.picksVisible,
+      pointsReveal: props.pointsReveal,
+      revealRacesLeft: props.revealRacesLeft,
+      pointsRevealed: revealed,
+      pointsReleased: props.pointsReleasedAt !== null,
+      racesLeft,
+      seasonEnded,
+      finaleReleased: gate.commissionerReleased,
+      finaleAdminReleased: gate.adminReleased,
+      lastRaceStarted: gate.lastRaceStarted,
+      scale: [...props.scale],
+      // Players only see questions once the commissioner has pushed them out.
+      questions: canManage || visible ? questions : [],
+      latePickUserIds: [...props.latePickUserIds],
+      grid: {
+        drivers: grid.map((r) => r.name).sort((a, b) => a.localeCompare(b)),
+        teams: [...new Set(grid.map((r) => r.constructorName))].sort((a, b) => a.localeCompare(b)),
+      },
+      myPicks: props.picks[actorUserId] ? { ...props.picks[actorUserId] } : {},
+      // Your own picks are graded for you at all times; the points only show once they count.
+      myByQuestion: mine ? { ...mine.byQuestion } : {},
+      myPoints: revealed && mine ? { driverPoints: mine.driverPoints, teamPoints: mine.teamPoints } : null,
+      revealAfterRace,
+      // Other players' picks stay private. Only the commissioner sees them.
+      everyone:
+        canManage && visible
+          ? Object.keys(props.picks)
+              .filter((id) => league.showsInStandings(id))
+              .map((userId) => {
+                const r = grade.players.get(userId);
+                return {
+                  userId,
+                  name: nameOf.get(userId) ?? "Unknown player",
+                  picks: { ...props.picks[userId] },
+                  result: revealed && r ? { correctScaled: r.correctScaled, driverPoints: r.driverPoints, teamPoints: r.teamPoints, byQuestion: r.byQuestion } : null,
+                };
+              })
+              .sort((a, b) => a.name.localeCompare(b.name))
+          : null,
+      library: canManage
+        ? library.questions.filter((q) => q.motorsportSeasonId === null || league.motorsportSeasonId === null || q.motorsportSeasonId === league.motorsportSeasonId)
+        : [],
+      members: canManage
+        ? league.memberIds.map((userId) => ({ userId, name: nameOf.get(userId) ?? "Unknown player" })).sort((a, b) => a.name.localeCompare(b.name))
+        : [],
+      changedSinceEnd: canManage && seasonEnded ? props.changedSinceSnapshot() : [],
+      memberPicks: canManage ? Object.fromEntries(Object.entries(props.picks).map(([id, picks]) => [id, { ...picks }])) : {},
+    };
+  }
+}

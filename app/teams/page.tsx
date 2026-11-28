@@ -70,22 +70,33 @@ function TeamsDashboard() {
         ) : dashboardQuery.isError ? (
           <QueryError error={dashboardQuery.error} onRetry={() => dashboardQuery.refetch()} />
         ) : !dashboardQuery.data.team ? (
-          <p className="text-sm text-muted-foreground">This league doesn&apos;t have any teams yet.</p>
+          <p className="text-sm text-muted-foreground">
+            {dashboardQuery.data.finaleHidden
+              ? "The final results are still pending. Teams unlock with the season finale."
+              : "This league doesn't have any teams yet."}
+          </p>
         ) : (
           <div className="space-y-6">
-            <TeamSwitcher
-              leagueId={activeLeagueId}
-              teams={dashboardQuery.data.leagueTeams}
-              selectedId={dashboardQuery.data.team.id}
-              viewerTeamId={dashboardQuery.data.viewerTeamId}
-              onSelect={select}
-            />
+            {dashboardQuery.data.finaleHidden && (
+              <p className="rounded-md border border-primary/40 bg-primary/10 p-3 text-xs text-muted-foreground">
+                The final results are still pending, so only your own team is shown. The rest unlocks with the season finale.
+              </p>
+            )}
+            {!dashboardQuery.data.finaleHidden && (
+              <TeamSwitcher
+                leagueId={activeLeagueId}
+                teams={dashboardQuery.data.leagueTeams}
+                selectedId={dashboardQuery.data.team.id}
+                viewerTeamId={dashboardQuery.data.viewerTeamId}
+                onSelect={select}
+              />
+            )}
             <TeamHeader leagueId={activeLeagueId} data={dashboardQuery.data} />
             <TeamStatGrid data={dashboardQuery.data} />
             <ContributionSection leagueId={activeLeagueId} data={dashboardQuery.data} />
             <MembersSection leagueId={activeLeagueId} data={dashboardQuery.data} />
             <TeamPropsSection data={dashboardQuery.data} />
-            <LeagueComparison leagueId={activeLeagueId} data={dashboardQuery.data} onSelect={select} />
+            {!dashboardQuery.data.finaleHidden && <LeagueComparison leagueId={activeLeagueId} data={dashboardQuery.data} onSelect={select} />}
             <RaceByRace leagueId={activeLeagueId} data={dashboardQuery.data} />
           </div>
         )}
