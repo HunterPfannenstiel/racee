@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 /** Loads many players' season picks from a downloaded spreadsheet (.csv) in one go. Check first, then save. */
 export function ImportPicksCard({ leagueId }: { leagueId: string }) {
@@ -15,6 +16,7 @@ export function ImportPicksCard({ leagueId }: { leagueId: string }) {
   const [rows, setRows] = useState<ReturnType<typeof parsePicksSheet> | null>(null);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [chosen, setChosen] = useState<Record<string, string>>({});
 
   const run = useMutation(
     orpc.seasonProps.importPicks.mutationOptions({
@@ -30,6 +32,7 @@ export function ImportPicksCard({ leagueId }: { leagueId: string }) {
   async function onFile(file: File | undefined) {
     if (!file) return;
     run.reset();
+    setChosen({});
     setFileName(file.name);
     const parsed = parsePicksSheet(await file.text());
     setRows(parsed);
@@ -40,6 +43,7 @@ export function ImportPicksCard({ leagueId }: { leagueId: string }) {
     run.mutate({ leagueId, apply: false, rows: parsed });
   }
 
+  const withChoices = (list: NonNullable<typeof rows>) => list.map((r) => (chosen[r.player] ? { ...r, userId: chosen[r.player] } : r));
   const problems = report ? report.players.filter((p) => p.problems.length > 0) : [];
   const canSave = !!report && !report.saved && report.players.some((p) => p.matchedAs);
 
@@ -51,7 +55,7 @@ export function ImportPicksCard({ leagueId }: { leagueId: string }) {
       <CardContent className="space-y-3 text-sm">
         <p className="text-xs text-muted-foreground">
           Download your sheet as a .csv (File → Download → Comma-separated values) and choose it here. You&apos;ll see what matched before
-          anything is saved. Players are matched by name, so they need to have joined this league first. The league gets one notice that picks
+          anything is saved. Players are matched by name (nicknames and short forms are fine); any that don&apos;t match get a dropdown so you can choose who they are. They need to have joined this league first. The league gets one notice that picks
           were loaded, never what they are.
         </p>
         <input type="file" accept=".csv,text/csv" onChange={(e) => onFile(e.target.files?.[0])} className="text-xs" />
@@ -74,8 +78,27 @@ export function ImportPicksCard({ leagueId }: { leagueId: string }) {
                       {p.matchedAs !== p.name ? ` (matched ${p.matchedAs})` : ""}: {p.saved} picks{report.saved ? " saved" : ""}
                     </span>
                   ) : (
-                    <span className="text-destructive"> not in this league</span>
+                    <span className="text-destructive"> isn&apos;t matched to anyone in this league</span>
                   )}
+                  {!p.matchedAs || chosen[p.name] ? (
+                    <Select
+                      value={chosen[p.name] ?? ""}
+                      onValueChange={(v) => {
+                        const next = { ...chosen, [p.name]: v };
+                        setChosen(next);
+                        if (rows) run.mutate({ leagueId, apply: false, rows: rows.map((r) => (next[r.player] ? { ...r, userId: next[r.player] } : r)) });
+                      }}
+                    >
+                      <SelectTrigger size="sm" className="mt-1 w-full sm:w-72">
+                        <SelectValue placeholder="Choose who this is…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {report.members.map((m) => (
+                          <SelectItem key={m.userId} value={m.userId}>{m.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : null}
                   {p.problems.map((x) => (
                     <p key={x} className="text-destructive">{x}</p>
                   ))}
@@ -94,7 +117,7 @@ export function ImportPicksCard({ leagueId }: { leagueId: string }) {
             )}
             {canSave && (
               <div className="flex flex-wrap items-center gap-3">
-                <Button onClick={() => rows && run.mutate({ leagueId, apply: true, rows })} disabled={run.isPending}>
+                <Button onClick={() => rows && run.mutate({ leagueId, apply: true, rows: withChoices(rows) })} disabled={run.isPending}>
                   Save these picks{problems.length > 0 ? " (skipping the ones with problems)" : ""}
                 </Button>
                 <span className="text-xs text-muted-foreground">Replaces each matched player&apos;s picks.</span>

@@ -192,11 +192,12 @@ export const seasonPropsRouter = {
     .input(z.object({
       leagueId: z.string().uuid(),
       apply: z.boolean(),
-      rows: z.array(z.object({ player: z.string().max(100), picks: z.record(z.string().max(300), z.string().max(100)) })).max(200),
+      rows: z.array(z.object({ player: z.string().max(100), userId: z.string().optional(), picks: z.record(z.string().max(300), z.string().max(100)) })).max(200),
     }))
     .output(z.object({
       saved: z.boolean(),
-      players: z.array(z.object({ name: z.string(), matchedAs: z.string().nullable(), saved: z.number(), problems: z.array(z.string()) })),
+      members: z.array(z.object({ userId: z.string(), name: z.string() })),
+      players: z.array(z.object({ name: z.string(), matchedAs: z.string().nullable(), matchedUserId: z.string().nullable(), saved: z.number(), problems: z.array(z.string()) })),
       unmatchedQuestions: z.array(z.string()),
       missingQuestions: z.array(z.string()),
     }))
