@@ -9,6 +9,7 @@ import { BlobNotificationRepository } from "@/server/repositories/notification/B
 import { LeagueFinaleQuery } from "@/server/queries/league-finale/LeagueFinaleQuery";
 import { ReleaseFinaleCommand } from "@/server/commands/release-finale/ReleaseFinaleCommand";
 import { CommissionerSetSeasonPicksCommand } from "@/server/commands/commissioner-set-season-picks/CommissionerSetSeasonPicksCommand";
+import { ImportSeasonPicksCommand } from "@/server/commands/import-season-picks/ImportSeasonPicksCommand";
 import { SetSeasonPointsReleasedCommand } from "@/server/commands/set-season-points-released/SetSeasonPointsReleasedCommand";
 import { SetLateSeasonPickerCommand } from "@/server/commands/set-late-season-picker/SetLateSeasonPickerCommand";
 import { BlobLeagueRepository } from "@/server/repositories/league/BlobLeagueRepository";
@@ -44,6 +45,7 @@ const releaseFinaleCommand = new ReleaseFinaleCommand(leagueRepo, raceRepo, prop
 const adminReleaseCommand = new AdminReleaseFinaleCommand(calendarRepo, raceRepo, leagueRepo, propsRepo, notificationRepo);
 const adminOverviewQuery = new AdminFinaleOverviewQuery(calendarRepo, raceRepo, leagueRepo, propsRepo, libraryRepo);
 const setPlayerPicksCommand = new CommissionerSetSeasonPicksCommand(leagueRepo, propsRepo, userRepo, notificationRepo);
+const importPicksCommand = new ImportSeasonPicksCommand(leagueRepo, propsRepo, userRepo, racerRepo, notificationRepo);
 const pointsReleasedCommand = new SetSeasonPointsReleasedCommand(leagueRepo, propsRepo);
 const lateSeasonPickerCommand = new SetLateSeasonPickerCommand(leagueRepo, propsRepo);
 const libraryQuery = new SeasonQuestionLibraryQuery(libraryRepo, racerRepo);
@@ -184,6 +186,21 @@ export const seasonPropsRouter = {
       await setPlayerPicksCommand.execute({ actorUserId: context.session.user.id, ...input });
       return { ok: true as const };
     }),
+
+  /** Commissioner: loads many players' season picks from a spreadsheet (check first, then save). */
+  importPicks: authed
+    .input(z.object({
+      leagueId: z.string().uuid(),
+      apply: z.boolean(),
+      rows: z.array(z.object({ player: z.string().max(100), picks: z.record(z.string().max(300), z.string().max(100)) })).max(200),
+    }))
+    .output(z.object({
+      saved: z.boolean(),
+      players: z.array(z.object({ name: z.string(), matchedAs: z.string().nullable(), saved: z.number(), problems: z.array(z.string()) })),
+      unmatchedQuestions: z.array(z.string()),
+      missingQuestions: z.array(z.string()),
+    }))
+    .handler(async ({ context, input }) => importPicksCommand.execute({ actorUserId: context.session.user.id, ...input })),
 
   /** Commissioner: may this player still make season picks after the lock? */
   allowLatePicker: authed
